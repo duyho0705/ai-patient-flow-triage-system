@@ -50,4 +50,22 @@ public class TenantService {
         return tenantBranchRepository.findByTenantIdAndCode(tenantId, code)
                 .orElseThrow(() -> new ResourceNotFoundException("TenantBranch", tenantId + "/" + code));
     }
+
+    @Transactional
+    public Tenant createTenant(Tenant tenant) {
+        if (tenantRepository.existsByCode(tenant.getCode())) {
+            throw new IllegalArgumentException("Tenant code already exists: " + tenant.getCode());
+        }
+        return tenantRepository.save(tenant);
+    }
+
+    @Transactional
+    public TenantBranch createBranch(TenantBranch branch) {
+        Tenant tenant = getById(branch.getTenant().getId());
+        if (tenantBranchRepository.existsByTenantIdAndCode(tenant.getId(), branch.getCode())) {
+            throw new IllegalArgumentException("Branch code already exists for tenant: " + branch.getCode());
+        }
+        branch.setTenant(tenant);
+        return tenantBranchRepository.save(branch);
+    }
 }

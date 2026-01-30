@@ -26,16 +26,17 @@ Sau khi đã có **ERD** ([erd-patient-flow-triage-vi.md](./erd-patient-flow-tri
 
 ---
 
-## 3. Thiết kế API (REST)
+## 3. Thiết kế API (REST) ✅ Đã xong
 
 - **Mục đích:** Định nghĩa endpoint chính (OpenAPI/Swagger) cho từng module.
-- **Ví dụ:**  
-  - Tenant: `GET/POST /api/tenants`, `GET/POST /api/tenants/{id}/branches`  
-  - Patient: `GET/POST /api/patients`, tìm theo CCCD/phone  
-  - Scheduling: `GET/POST /api/appointments`, slot theo chi nhánh + ngày  
-  - Triage: `POST /api/triage/sessions`, gửi lý do khám + sinh hiệu → nhận acuity (AI hoặc human)  
-  - Queue: `GET /api/queues/.../entries`, `PATCH` gọi bệnh nhân / cập nhật trạng thái  
-- **Kết quả:** File `openapi.yaml` hoặc tài liệu API trong `docs/`.
+- **Đã có:**
+  - **Tenant:** GET/POST /api/tenants, GET/POST /api/tenants/.../branches (DTO, validation).
+  - **Patient:** GET/POST/PUT /api/patients, GET by-cccd, GET /insurances (phân trang, DTO).
+  - **Scheduling:** GET/POST /api/appointments, PATCH status, GET slots (branchId, date).
+  - **Triage:** POST /api/triage/sessions (complaints, vitals), GET session, complaints, vitals.
+  - **Queue:** GET definitions, GET/POST entries, PATCH entry, PATCH /call.
+  - DTO request/response, PagedResponse, validation; Swagger qua Springdoc. Xem `docs/api-endpoints.md`.
+- **Bước sau:** Tích hợp auth (JWT/OAuth2), set tenant từ token thay vì header.
 
 ---
 

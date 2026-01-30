@@ -1,0 +1,44 @@
+package vn.clinic.patientflow.api.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import vn.clinic.patientflow.tenant.domain.Tenant;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class TenantDto {
+
+    private UUID id;
+    private String code;
+    private String nameVi;
+    private String nameEn;
+    private String taxCode;
+    private String locale;
+    private String timezone;
+    private Boolean isActive;
+    private Instant createdAt;
+    private Instant updatedAt;
+
+    public static TenantDto fromEntity(Tenant e) {
+        if (e == null) return null;
+        return TenantDto.builder()
+                .id(e.getId())
+                .code(e.getCode())
+                .nameVi(e.getNameVi())
+                .nameEn(e.getNameEn())
+                .taxCode(e.getTaxCode())
+                .locale(e.getLocale())
+                .timezone(e.getTimezone())
+                .isActive(e.getIsActive())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .build();
+    }
+}
