@@ -53,11 +53,15 @@ Sau khi đã có **ERD** ([erd-patient-flow-triage-vi.md](./erd-patient-flow-tri
 
 ---
 
-## 5. Frontend (Web)
+## 5. Frontend (Web) ✅ Đã xong
 
 - **Mục đích:** Ứng dụng web cho lễ tân / y tá / bác sĩ: đăng ký bệnh nhân, đặt lịch, phân loại, xem hàng chờ, gọi số.
-- **Tech:** Có thể React, Vue, hoặc Next.js; gọi REST API backend.
-- **Ưu tiên:** Màn hình đăng ký + phân loại + hàng chờ trước; sau đó lịch hẹn và khám.
+- **Đã có:**
+  - **Tech:** React 18 + TypeScript, Vite, React Router 7, TanStack Query 5, Tailwind CSS.
+  - **Đa tenant:** TenantContext + TenantSelect (mã tenant → chi nhánh); header X-Tenant-Id, X-Branch-Id; lưu localStorage.
+  - **Màn hình:** Trang chủ; **Bệnh nhân** (tìm CCCD, đăng ký/cập nhật, danh sách phân trang); **Phân loại** (chọn BN → lý do khám → gợi ý AI → sinh hiệu → mức ưu tiên 1–5 → tạo phiên); **Hàng chờ** (định nghĩa hàng, thêm BN vào hàng, danh sách WAITING, gọi số).
+  - API client (`/api`), proxy Vite → backend 8080. Xem `frontend/README.md`.
+- **Bước sau:** Màn hình lịch hẹn (scheduling), khám lâm sàng; tích hợp auth (JWT) khi backend có.
 
 ---
 
