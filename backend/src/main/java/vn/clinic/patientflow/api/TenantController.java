@@ -30,6 +30,14 @@ public class TenantController {
 
     private final TenantService tenantService;
 
+    @GetMapping
+    @Operation(summary = "Danh sách tenant (phòng khám) đang hoạt động")
+    public List<TenantDto> list() {
+        return tenantService.listAllActive().stream()
+                .map(TenantDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Lấy tenant theo ID")
     public TenantDto getById(@PathVariable UUID id) {

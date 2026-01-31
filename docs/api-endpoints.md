@@ -1,15 +1,25 @@
 # API Endpoints – Patient Flow & Triage
 
-Tất cả API theo tenant (trừ Tenant) **yêu cầu header** `X-Tenant-Id: <uuid>`.
-
-Base URL: `http://localhost:8080` (dev). Swagger UI: `/swagger-ui.html`.
+- **Base URL:** `http://localhost:8080` (dev). Swagger UI: `/swagger-ui.html`.
+- **Xác thực:** Các API (trừ login và GET tenants) **yêu cầu** header `Authorization: Bearer <JWT>`. JWT chứa userId, email, tenantId, branchId, roles.
+- **Tenant:** Khi có JWT, tenant/branch lấy từ token; có thể gửi thêm `X-Tenant-Id`, `X-Branch-Id` để override.
 
 ---
 
-## Tenant (không cần X-Tenant-Id)
+## Auth
 
 | Method | Path | Mô tả |
 |--------|------|--------|
+| POST | /api/auth/login | Đăng nhập. Body: email, password, tenantId (bắt buộc), branchId (tùy chọn). Trả về token, expiresAt, user (id, email, fullNameVi, roles, tenantId, branchId). **Public.** |
+| GET | /api/auth/me | Thông tin user hiện tại (từ JWT). Trả về AuthUserDto. **Cần JWT.** |
+
+---
+
+## Tenant (public: GET list & by-code & branches cho màn login)
+
+| Method | Path | Mô tả |
+|--------|------|--------|
+| GET | /api/tenants | Danh sách tenant đang hoạt động (public cho login) |
 | GET | /api/tenants/{id} | Lấy tenant theo ID |
 | GET | /api/tenants/by-code/{code} | Lấy tenant theo mã |
 | POST | /api/tenants | Tạo tenant (body: code, nameVi, nameEn, taxCode, locale, timezone) |
@@ -67,6 +77,27 @@ Base URL: `http://localhost:8080` (dev). Swagger UI: `/swagger-ui.html`.
 | POST | /api/queues/entries | Thêm vào hàng (query: queueDefinitionId, patientId, position, triageSessionId?, appointmentId?) |
 | PATCH | /api/queues/entries/{id} | Cập nhật trạng thái (body: status, calledAt, completedAt, position) |
 | PATCH | /api/queues/entries/{id}/call | Gọi bệnh nhân (status=CALLED, calledAt=now) |
+
+---
+
+## Admin (chỉ role ADMIN, JWT bắt buộc)
+
+| Method | Path | Mô tả |
+|--------|------|--------|
+| GET | /api/admin/users?tenantId=&page=&size= | Danh sách user (phân trang, lọc theo tenant). |
+| GET | /api/admin/users/{id} | Chi tiết user (roleAssignments theo tenant/branch). |
+| POST | /api/admin/users | Tạo user (body: email, fullNameVi, password, phone?, tenantId, roleCode, branchId?). |
+| PATCH | /api/admin/users/{id} | Cập nhật user (fullNameVi?, isActive?, roleAssignments?). |
+| PATCH | /api/admin/users/{id}/password | Đặt mật khẩu (body: newPassword). |
+| GET | /api/admin/roles | Danh sách role (id, code, nameVi). |
+
+---
+
+## AI Audit (X-Tenant-Id, X-Branch-Id)
+
+| Method | Path | Mô tả |
+|--------|------|--------|
+| GET | /api/ai-audit?branchId=&page=&size= | Danh sách AI audit theo chi nhánh (suggested vs actual acuity, matched/override). Phân trang. |
 
 ---
 

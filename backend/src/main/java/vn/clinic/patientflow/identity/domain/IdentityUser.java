@@ -5,6 +5,8 @@ import lombok.*;
 import vn.clinic.patientflow.common.domain.BaseAuditableEntity;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -37,6 +39,10 @@ public class IdentityUser extends BaseAuditableEntity {
 
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = {})
+    @Builder.Default
+    private List<IdentityUserRole> userRoles = new ArrayList<>();
 
     public IdentityUser(UUID id) {
         super(id);

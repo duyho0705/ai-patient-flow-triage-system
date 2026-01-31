@@ -1,24 +1,28 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 
-export type Role = 'reception' | 'nurse' | 'doctor' | 'admin'
+/** Role chính theo thực tế phòng khám VN */
+export type Role = 'admin' | 'receptionist' | 'triage_nurse' | 'doctor' | 'clinic_manager'
 
 const ROLES: { value: Role; label: string }[] = [
-  { value: 'reception', label: 'Lễ tân' },
-  { value: 'nurse', label: 'Y tá' },
-  { value: 'doctor', label: 'Bác sĩ' },
-  { value: 'admin', label: 'Quản lý' },
+  { value: 'admin', label: 'Admin (Quản trị hệ thống)' },
+  { value: 'receptionist', label: 'Lễ tân (Receptionist)' },
+  { value: 'triage_nurse', label: 'Y tá phân loại (Triage Nurse)' },
+  { value: 'doctor', label: 'Bác sĩ (Doctor)' },
+  { value: 'clinic_manager', label: 'Quản lý vận hành (Clinic Manager)' },
 ]
 
 const STORAGE_KEY = 'patient-flow-role'
 
+const VALID_ROLES: Role[] = ['admin', 'receptionist', 'triage_nurse', 'doctor', 'clinic_manager']
+
 function loadRole(): Role {
   try {
     const r = localStorage.getItem(STORAGE_KEY)
-    if (r && ['reception', 'nurse', 'doctor', 'admin'].includes(r)) return r as Role
+    if (r && VALID_ROLES.includes(r as Role)) return r as Role
   } catch {
     // ignore
   }
-  return 'reception'
+  return 'receptionist'
 }
 
 type RoleContextValue = {

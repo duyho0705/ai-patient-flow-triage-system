@@ -2,42 +2,51 @@ import { Link } from 'react-router-dom'
 import { useRole } from '@/context/RoleContext'
 import type { Role } from '@/context/RoleContext'
 
+/** Cấu hình dashboard theo role — khớp spec thực tế phòng khám VN */
 const ROLE_CONFIG: Record<
   Role,
   { title: string; subtitle: string; actions: { to: string; label: string; desc: string }[] }
 > = {
-  reception: {
-    title: 'Lễ tân',
-    subtitle: 'Đăng ký bệnh nhân, tìm hồ sơ, thêm vào hàng chờ.',
+  admin: {
+    title: 'Admin – Quản trị hệ thống',
+    subtitle: 'Quản lý tenant, người dùng, phân quyền, cấu hình, AI audit. Không đụng bệnh nhân.',
     actions: [
-      { to: '/patients', label: 'Bệnh nhân', desc: 'Tìm CCCD, đăng ký mới, cập nhật hồ sơ' },
-      { to: '/queue', label: 'Hàng chờ', desc: 'Thêm bệnh nhân vào hàng, xem danh sách chờ' },
+      { to: '/patients', label: 'Báo cáo / Dữ liệu', desc: 'Xem báo cáo tổng hợp (sẽ có)' },
+      { to: '/triage', label: 'AI Audit', desc: 'Xem lịch sử AI, so sánh đề xuất vs quyết định (sẽ có)' },
+      { to: '/queue', label: 'Cấu hình hàng chờ', desc: 'Quản lý queue theo chi nhánh (sẽ có)' },
     ],
   },
-  nurse: {
-    title: 'Y tá',
-    subtitle: 'Phân loại ưu tiên, ghi sinh hiệu, gợi ý AI.',
+  receptionist: {
+    title: 'Lễ tân (Receptionist)',
+    subtitle: 'Tiếp nhận bệnh nhân, đặt lịch / check-in, walk-in. Gửi sang y tá phân loại. Không quyết định ưu tiên.',
     actions: [
-      { to: '/triage', label: 'Phân loại', desc: 'Tạo phiên phân loại, gợi ý mức ưu tiên AI' },
+      { to: '/patients', label: 'Tiếp nhận bệnh nhân', desc: 'Tìm CCCD/SĐT, tạo mới, đặt lịch, check-in, walk-in' },
+      { to: '/queue', label: 'Luồng bệnh nhân', desc: 'Xem trạng thái: đã chờ, đang phân loại, đang khám' },
+    ],
+  },
+  triage_nurse: {
+    title: 'Y tá phân loại (Triage Nurse)',
+    subtitle: 'Thu thập lý do khám + sinh hiệu. AI gợi ý mức nguy cấp. Chấp nhận hoặc override, đưa vào hàng theo ưu tiên.',
+    actions: [
+      { to: '/triage', label: 'Phân loại', desc: 'Lý do khám, sinh hiệu, AI gợi ý acuity, override, đưa vào hàng' },
       { to: '/patients', label: 'Bệnh nhân', desc: 'Tìm bệnh nhân theo CCCD trước khi phân loại' },
-      { to: '/queue', label: 'Hàng chờ', desc: 'Thêm bệnh nhân vào hàng sau phân loại' },
+      { to: '/queue', label: 'Hàng chờ', desc: 'Thêm bệnh nhân vào hàng theo mức ưu tiên (không FIFO)' },
     ],
   },
   doctor: {
-    title: 'Bác sĩ',
-    subtitle: 'Xem hàng chờ, gọi bệnh nhân vào khám.',
+    title: 'Bác sĩ (Doctor)',
+    subtitle: 'Danh sách chờ theo mức nguy cấp + thời gian. Xem trước hồ sơ, khám, ghi chẩn đoán/chỉ định.',
     actions: [
-      { to: '/queue', label: 'Hàng chờ', desc: 'Xem danh sách đang chờ, gọi số khi sẵn sàng' },
-      { to: '/patients', label: 'Bệnh nhân', desc: 'Tra cứu hồ sơ bệnh nhân khi cần' },
+      { to: '/queue', label: 'Danh sách chờ khám', desc: 'Sắp xếp theo acuity + thời gian chờ, gọi số' },
+      { to: '/patients', label: 'Hồ sơ bệnh nhân', desc: 'Xem lý do khám, sinh hiệu, kết quả AI triage' },
     ],
   },
-  admin: {
-    title: 'Quản lý',
-    subtitle: 'Tổng quan chi nhánh, cấu hình tenant.',
+  clinic_manager: {
+    title: 'Quản lý vận hành (Clinic Manager)',
+    subtitle: 'Báo cáo thời gian chờ, số bệnh nhân/ngày. So sánh trước/sau AI. Đánh giá hiệu quả nhân sự.',
     actions: [
-      { to: '/patients', label: 'Bệnh nhân', desc: 'Xem danh sách bệnh nhân' },
-      { to: '/triage', label: 'Phân loại', desc: 'Xem phiên phân loại' },
-      { to: '/queue', label: 'Hàng chờ', desc: 'Theo dõi hàng chờ các chi nhánh' },
+      { to: '/patients', label: 'Báo cáo', desc: 'Số bệnh nhân/ngày (sẽ có)' },
+      { to: '/queue', label: 'Thời gian chờ', desc: 'Thời gian chờ trung bình, so sánh trước/sau AI (sẽ có)' },
     ],
   },
 }

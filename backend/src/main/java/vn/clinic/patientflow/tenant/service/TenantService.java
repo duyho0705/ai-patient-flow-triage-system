@@ -23,6 +23,13 @@ public class TenantService {
     private final TenantBranchRepository tenantBranchRepository;
 
     @Transactional(readOnly = true)
+    public List<Tenant> listAllActive() {
+        return tenantRepository.findAll().stream()
+                .filter(Tenant::getIsActive)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Tenant getById(UUID id) {
         return tenantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant", id));

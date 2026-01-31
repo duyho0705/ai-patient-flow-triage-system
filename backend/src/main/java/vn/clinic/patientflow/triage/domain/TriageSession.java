@@ -69,6 +69,10 @@ public class TriageSession extends BaseAuditableEntity {
     @Column(name = "notes", columnDefinition = "text")
     private String notes;
 
+    /** Lý do override khi không chấp nhận gợi ý AI (Explainability). */
+    @Column(name = "override_reason", columnDefinition = "text")
+    private String overrideReason;
+
     public TriageSession(UUID id) {
         super(id);
     }

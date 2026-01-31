@@ -8,6 +8,72 @@ export interface PagedResponse<T> {
   last: boolean
 }
 
+export interface AuthUserDto {
+  id: string
+  email: string
+  fullNameVi: string
+  roles: string[]
+  tenantId: string
+  branchId: string | null
+}
+
+export interface LoginRequest {
+  email: string
+  password: string
+  tenantId: string
+  branchId?: string | null
+}
+
+export interface LoginResponse {
+  token: string
+  expiresAt: string
+  user: AuthUserDto
+}
+
+export interface UserRoleAssignmentDto {
+  tenantId: string
+  tenantName?: string
+  branchId?: string | null
+  branchName?: string | null
+  roleCode: string
+}
+
+export interface AdminUserDto {
+  id: string
+  email: string
+  fullNameVi: string
+  phone?: string | null
+  isActive: boolean
+  lastLoginAt?: string | null
+  roleAssignments: UserRoleAssignmentDto[]
+}
+
+export interface CreateUserRequest {
+  email: string
+  fullNameVi: string
+  password: string
+  phone?: string | null
+  tenantId: string
+  roleCode: string
+  branchId?: string | null
+}
+
+export interface UpdateUserRequest {
+  fullNameVi?: string
+  isActive?: boolean
+  roleAssignments?: { tenantId: string; roleCode: string; branchId?: string | null }[]
+}
+
+export interface SetPasswordRequest {
+  newPassword: string
+}
+
+export interface RoleDto {
+  id: string
+  code: string
+  nameVi: string
+}
+
 export interface TenantDto {
   id: string
   code: string
@@ -67,6 +133,18 @@ export interface CreatePatientRequest {
   ethnicity?: string
 }
 
+export interface AiTriageAuditDto {
+  id: string
+  triageSessionId: string
+  suggestedAcuity: string | null
+  actualAcuity: string
+  matched: boolean
+  calledAt: string
+  latencyMs: number | null
+  patientId: string
+  branchId: string
+}
+
 export interface TriageSessionDto {
   id: string
   tenantId: string
@@ -82,6 +160,7 @@ export interface TriageSessionDto {
   aiConfidenceScore?: number
   chiefComplaintText?: string
   notes?: string
+  overrideReason?: string
   createdAt?: string
   updatedAt?: string
 }
@@ -126,6 +205,7 @@ export interface CreateTriageSessionRequest {
   aiConfidenceScore?: number
   chiefComplaintText?: string
   notes?: string
+  overrideReason?: string
   useAiSuggestion?: boolean
   complaints?: ComplaintItem[]
   vitals?: VitalItem[]
@@ -153,6 +233,8 @@ export interface QueueEntryDto {
   appointmentId?: string
   position?: number
   status: string
+  /** Mức ưu tiên từ phiên phân loại (1–5). */
+  acuityLevel?: string | null
   joinedAt: string
   calledAt?: string
   completedAt?: string

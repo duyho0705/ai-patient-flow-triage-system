@@ -1,8 +1,22 @@
 const API_BASE = '/api'
+const TOKEN_KEY = 'patient-flow-token'
 
 export type TenantHeaders = {
   tenantId: string
   branchId?: string
+}
+
+export function getStoredToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setStoredToken(token: string | null) {
+  if (token) localStorage.setItem(TOKEN_KEY, token)
+  else localStorage.removeItem(TOKEN_KEY)
 }
 
 function headers(tenant: TenantHeaders | null): HeadersInit {
@@ -10,6 +24,8 @@ function headers(tenant: TenantHeaders | null): HeadersInit {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   }
+  const token = getStoredToken()
+  if (token) h['Authorization'] = `Bearer ${token}`
   if (tenant?.tenantId) {
     h['X-Tenant-Id'] = tenant.tenantId
     if (tenant.branchId) h['X-Branch-Id'] = tenant.branchId

@@ -1,6 +1,10 @@
 import { get } from './client'
 import type { TenantDto, TenantBranchDto } from '@/types/api'
 
+export async function listTenants(): Promise<TenantDto[]> {
+  return get<TenantDto[]>('/tenants')
+}
+
 export async function getTenant(id: string): Promise<TenantDto> {
   return get<TenantDto>(`/tenants/${id}`)
 }

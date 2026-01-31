@@ -19,6 +19,7 @@ export function Triage() {
   const [suggestion, setSuggestion] = useState<{ suggestedAcuity: string; confidence: number; latencyMs: number } | null>(null)
   const [vitals, setVitals] = useState<{ type: string; value: string; unit: string }[]>([])
   const [notes, setNotes] = useState('')
+  const [overrideReason, setOverrideReason] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -98,6 +99,7 @@ export function Triage() {
           vitals: vitalItems.length ? vitalItems : undefined,
           complaints: complaints.length ? complaints : undefined,
           notes: notes.trim() || undefined,
+          overrideReason: overrideReason.trim() || undefined,
         },
         headers
       )
@@ -232,6 +234,16 @@ export function Triage() {
                     <option key={l} value={l}>{l}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="label">Lý do override (khi không chấp nhận gợi ý AI)</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Ghi lý do nếu bạn thay đổi mức ưu tiên so với AI"
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                />
               </div>
               <div>
                 <label className="label">Ghi chú</label>

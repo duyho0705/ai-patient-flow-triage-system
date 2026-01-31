@@ -57,20 +57,51 @@ Sau khi đã có **ERD** ([erd-patient-flow-triage-vi.md](./erd-patient-flow-tri
 
 - **Mục đích:** Ứng dụng web cho lễ tân / y tá / bác sĩ: đăng ký bệnh nhân, đặt lịch, phân loại, xem hàng chờ, gọi số.
 - **Đã có:**
-  - **Tech:** React 18 + TypeScript, Vite, React Router 7, TanStack Query 5, Tailwind CSS.
-  - **Đa tenant:** TenantContext + TenantSelect (mã tenant → chi nhánh); header X-Tenant-Id, X-Branch-Id; lưu localStorage.
-  - **Màn hình:** Trang chủ; **Bệnh nhân** (tìm CCCD, đăng ký/cập nhật, danh sách phân trang); **Phân loại** (chọn BN → lý do khám → gợi ý AI → sinh hiệu → mức ưu tiên 1–5 → tạo phiên); **Hàng chờ** (định nghĩa hàng, thêm BN vào hàng, danh sách WAITING, gọi số).
+  - **Tech:** React 18 + TypeScript, Vite, React Router, TanStack Query, Tailwind CSS.
+  - **Đa tenant:** TenantContext + TenantSelect; header X-Tenant-Id, X-Branch-Id.
+  - **Role:** RoleContext (Admin, Receptionist, Triage Nurse, Doctor, Clinic Manager); Dashboard theo role.
+  - **Màn hình:** Trang chủ; **Tổng quan** (Dashboard theo role); **Bệnh nhân**; **Phân loại** (gợi ý AI, override reason); **Hàng chờ** (sort theo acuity, cột ưu tiên); **AI Audit** (so sánh suggested vs actual).
   - API client (`/api`), proxy Vite → backend 8080. Xem `frontend/README.md`.
-- **Bước sau:** Màn hình lịch hẹn (scheduling), khám lâm sàng; tích hợp auth (JWT) khi backend có.
+- **Bước sau:** Auth (JWT), phân quyền theo role (ẩn menu/theo API).
 
 ---
 
-## 6. Cập nhật tài liệu kiến trúc
+## 5b. Enterprise / CV (AI Audit, Explainability, Queue acuity) ✅ Đã xong
 
-- **Mục đích:** File `docs/architecture.md` thêm:
-  - Link tới ERD (tiếng Việt + tiếng Anh).
-  - Sơ đồ component (Frontend ↔ Backend ↔ DB ↔ AI Service).
-  - Giải thích ngắn từng module và luồng chính (đặt lịch → đến khám → phân loại → hàng chờ → khám).
+- **Mục đích:** Làm đẹp CV / enterprise: AI Audit + Explainability, override reason, hàng chờ theo ưu tiên.
+- **Đã có:**
+  - **Backend:** GET /api/ai-audit?branchId=&page=&size= — danh sách AI audit, so sánh suggested acuity vs actual acuity (matched/override). Triage: cột `override_reason` (migration 00002), DTO + entity. Queue: getWaitingEntries sort theo acuity (1 trước 5) rồi joinedAt; QueueEntryDto có `acuityLevel`.
+  - **Frontend:** Trang **AI Audit** (bảng suggested vs actual, Khớp/Override, latency); form **Phân loại** có field "Lý do override"; **Hàng chờ** có cột Ưu tiên (acuity), danh sách đã sort.
+  - **Docs:** `docs/architecture.md` cập nhật (sơ đồ, luồng, module, enterprise highlights); `docs/roles-and-features.md` (role & chức năng).
+- **Bước sau:** Auth (JWT) + phân quyền; Admin quản lý user/role; Clinic Manager báo cáo.
+
+---
+
+## 6. Auth (JWT) + Phân quyền ✅ Đã xong
+
+- **Mục đích:** Login, JWT chứa tenant/branch/role; API kiểm tra JWT; frontend ẩn menu theo role.
+- **Đã có:**
+  - **Backend:** Spring Security + JWT (JJWT 0.12). POST /api/auth/login (email, password, tenantId, branchId?) → token + user. GET /api/auth/me (cần JWT). JwtAuthFilter: Bearer token → validate → SecurityContext (AuthPrincipal) + TenantContext. SecurityConfig: permit /api/auth/login, GET /api/tenants/**; authenticated /api/**.
+  - **Identity:** getRoleCodesForUserInTenantAndBranch (branch_id IS NULL hoặc = branchId). Seed: 5 role (admin, receptionist, triage_nurse, doctor, clinic_manager), tenant CLINIC_DEMO, user admin@example.com / password.
+  - **Frontend:** Trang /login (email, password, chọn tenant + branch); AuthContext (token, user, login, logout); api client gửi Authorization: Bearer; RequireAuth → redirect /login; Layout hiển thị user + Đăng xuất; nav AI Audit chỉ cho role admin.
+- **Bước sau:** Phân quyền chi tiết theo endpoint (method security) cho từng API; Clinic Manager báo cáo.
+
+---
+
+## 6b. Admin API + Method Security ✅ Đã xong
+
+- **Mục đích:** Quản lý user, gán role theo tenant/branch; chỉ ADMIN truy cập.
+- **Đã có:**
+  - **Backend:** AdminService (listUsers theo tenant, createUser, updateUser, setPassword, getRoles). AdminController: GET/POST/PATCH /api/admin/users, PATCH .../password, GET /api/admin/roles. @PreAuthorize("hasRole('ADMIN')") trên controller. IdentityUser có OneToMany userRoles; IdentityUserRepository.findDistinctByTenantId cho list theo tenant.
+  - **Frontend:** Trang /admin (chỉ admin): bảng user (lọc tenant, phân trang), form tạo user (email, fullNameVi, password, tenant, role, branch), form sửa (fullNameVi, isActive), form đặt mật khẩu. Nav "Quản trị" chỉ hiện khi role admin.
+- **Bước sau:** Clinic Manager báo cáo; tùy chọn phân quyền từng API (e.g. AI Audit chỉ admin).
+
+---
+
+## 7. Cập nhật tài liệu kiến trúc ✅ Đã xong
+
+- **Mục đích:** File `docs/architecture.md` thêm link ERD, sơ đồ component, luồng, module, enterprise highlights.
+- **Đã có:** Xem `docs/architecture.md`.
 
 ---
 

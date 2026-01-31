@@ -130,6 +130,7 @@ export function Queue() {
                 <table className="min-w-full">
                   <thead>
                     <tr>
+                      <th className="table-th">Ưu tiên</th>
                       <th className="table-th">Vị trí</th>
                       <th className="table-th">Bệnh nhân</th>
                       <th className="table-th">Trạng thái</th>
@@ -165,7 +166,7 @@ function QueueRow({
   loading,
   headers,
 }: {
-  entry: { id: string; patientId: string; position?: number; status: string }
+  entry: { id: string; patientId: string; position?: number; status: string; acuityLevel?: string | null }
   onCall: () => void
   loading: boolean
   headers: { tenantId: string; branchId?: string } | null
@@ -177,6 +178,7 @@ function QueueRow({
   })
   return (
     <tr className="hover:bg-slate-50/80">
+      <td className="table-td font-semibold text-slate-900">{entry.acuityLevel ?? '—'}</td>
       <td className="table-td font-medium text-slate-900">{entry.position ?? '—'}</td>
       <td className="table-td font-medium text-slate-900">
         {patient ? patient.fullNameVi : entry.patientId.slice(0, 8) + '…'}

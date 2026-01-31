@@ -24,6 +24,8 @@ public class QueueEntryDto {
     private UUID appointmentId;
     private Integer position;
     private String status;
+    /** Mức ưu tiên từ phiên phân loại (nếu có). Dùng để hiển thị và sort. */
+    private String acuityLevel;
     private Instant joinedAt;
     private Instant calledAt;
     private Instant completedAt;
@@ -42,6 +44,7 @@ public class QueueEntryDto {
                 .appointmentId(e.getAppointment() != null ? e.getAppointment().getId() : null)
                 .position(e.getPosition())
                 .status(e.getStatus())
+                .acuityLevel(e.getTriageSession() != null ? e.getTriageSession().getAcuityLevel() : null)
                 .joinedAt(e.getJoinedAt())
                 .calledAt(e.getCalledAt())
                 .completedAt(e.getCompletedAt())

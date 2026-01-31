@@ -47,6 +47,9 @@ public class CreateTriageSessionRequest {
 
     private String notes;
 
+    /** Lý do override khi không chấp nhận gợi ý AI. */
+    private String overrideReason;
+
     /** Nếu true: gọi AI gợi ý acuity, ghi audit; acuityLevel từ request bị ghi đè bởi kết quả AI. */
     private Boolean useAiSuggestion;
 

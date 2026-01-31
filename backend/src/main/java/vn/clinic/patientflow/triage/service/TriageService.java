@@ -120,6 +120,7 @@ public class TriageService {
                 .aiConfidenceScore(aiConfidenceScore)
                 .chiefComplaintText(request.getChiefComplaintText())
                 .notes(request.getNotes())
+                .overrideReason(request.getOverrideReason())
                 .build();
         session = triageSessionRepository.save(session);
 

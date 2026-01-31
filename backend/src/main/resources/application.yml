@@ -57,6 +57,12 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
 
+# Auth (JWT) – secret nên đặt qua env trong prod
+auth:
+  jwt:
+    secret: ${JWT_SECRET:patient-flow-triage-secret-key-min-256-bits-for-hs256-enterprise}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
 # AI Triage (rule-based mặc định; sau có thể thêm provider: openai, rest)
 triage:
   ai:

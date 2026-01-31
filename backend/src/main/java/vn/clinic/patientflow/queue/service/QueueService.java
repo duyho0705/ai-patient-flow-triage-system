@@ -20,6 +20,7 @@ import vn.clinic.patientflow.scheduling.domain.SchedulingAppointment;
 import vn.clinic.patientflow.scheduling.repository.SchedulingAppointmentRepository;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,10 +48,15 @@ public class QueueService {
                 .orElseThrow(() -> new ResourceNotFoundException("QueueEntry", id));
     }
 
+    /** Danh sách đang chờ, sắp xếp theo mức ưu tiên (acuity 1 trước 5) rồi thời gian vào hàng. */
     @Transactional(readOnly = true)
     public List<QueueEntry> getWaitingEntries(UUID branchId, UUID queueDefinitionId) {
-        return queueEntryRepository.findByBranchIdAndQueueDefinitionIdAndStatusOrderByPositionAsc(
+        List<QueueEntry> list = queueEntryRepository.findWaitingWithTriageByBranchAndQueue(
                 branchId, queueDefinitionId, "WAITING");
+        list.sort(Comparator
+                .comparing((QueueEntry e) -> e.getTriageSession() != null ? e.getTriageSession().getAcuityLevel() : "9")
+                .thenComparing(QueueEntry::getJoinedAt));
+        return list;
     }
 
     @Transactional

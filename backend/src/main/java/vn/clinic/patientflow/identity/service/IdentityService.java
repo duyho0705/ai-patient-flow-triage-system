@@ -9,8 +9,10 @@ import vn.clinic.patientflow.identity.domain.IdentityUserRole;
 import vn.clinic.patientflow.identity.repository.IdentityUserRepository;
 import vn.clinic.patientflow.identity.repository.IdentityUserRoleRepository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Identity (user, roles) – lookup and tenant-scoped role resolution.
@@ -37,5 +39,23 @@ public class IdentityService {
     @Transactional(readOnly = true)
     public List<IdentityUserRole> getUserRolesForTenant(UUID userId, UUID tenantId) {
         return identityUserRoleRepository.findByUserIdAndTenantId(userId, tenantId);
+    }
+
+    /**
+     * Role codes áp dụng cho user trong tenant tại chi nhánh (branch_id IS NULL hoặc = branchId).
+     */
+    @Transactional(readOnly = true)
+    public List<String> getRoleCodesForUserInTenantAndBranch(UUID userId, UUID tenantId, UUID branchId) {
+        List<IdentityUserRole> list = identityUserRoleRepository
+                .findByUserIdAndTenantIdAndBranchNullOrBranchId(userId, tenantId, branchId);
+        return list.stream()
+                .map(ur -> ur.getRole().getCode())
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void updateLastLoginAt(IdentityUser user) {
+        user.setLastLoginAt(Instant.now());
+        identityUserRepository.save(user);
     }
 }

@@ -7,6 +7,7 @@ Spring Boot **modular monolith** cho hệ thống luồng bệnh nhân và phân
 - **Java 17**, **Spring Boot 3.2.x**
 - **Spring Data JPA**, **PostgreSQL**
 - **Spring Web**, **Validation**, **Actuator**
+- **Spring Security**, **JWT (JJWT 0.12)**
 - **Springdoc OpenAPI 2** (Swagger UI)
 - **Lombok**
 
@@ -35,12 +36,12 @@ src/main/java/vn/clinic/patientflow/
 - **Domain:** JPA entities map đúng bảng trong `backend/db/migrations/`.
 - **Repository:** Spring Data JPA, tenant-scoped query qua service.
 - **Service:** Nghiệp vụ, gọi `TenantContext.getTenantIdOrThrow()` cho API theo tenant.
-- **API:** REST; tenant từ header `X-Tenant-Id` (filter), sau này gắn với auth.
+- **API:** REST; tenant từ JWT (sau login) hoặc header `X-Tenant-Id`; xác thực JWT cho `/api/**` (trừ `/api/auth/login`, GET `/api/tenants/**`).
 
 ## Yêu cầu
 
 - **JDK 17+**
-- **PostgreSQL** đã chạy migration `backend/db/migrations/00001_initial_schema.sql`
+- **PostgreSQL** đã chạy migration `00001_initial_schema.sql`, `00002_*` (nếu có), `00003_seed_roles_and_admin.sql` (roles + user admin@example.com / password, tenant CLINIC_DEMO)
 - Biến môi trường hoặc `application-dev.yml`: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 
 ## Chạy
