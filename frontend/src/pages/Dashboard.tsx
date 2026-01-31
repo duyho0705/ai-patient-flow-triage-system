@@ -11,8 +11,8 @@ const ROLE_CONFIG: Record<
     title: 'Admin – Quản trị hệ thống',
     subtitle: 'Quản lý tenant, người dùng, phân quyền, cấu hình, AI audit. Không đụng bệnh nhân.',
     actions: [
-      { to: '/patients', label: 'Báo cáo / Dữ liệu', desc: 'Xem báo cáo tổng hợp (sẽ có)' },
-      { to: '/triage', label: 'AI Audit', desc: 'Xem lịch sử AI, so sánh đề xuất vs quyết định (sẽ có)' },
+      { to: '/reports', label: 'Báo cáo / Dữ liệu', desc: 'Xem báo cáo tổng hợp (wait time, volume, AI)' },
+      { to: '/ai-audit', label: 'AI Audit', desc: 'Xem lịch sử AI, so sánh đề xuất vs quyết định (sẽ có)' },
       { to: '/queue', label: 'Cấu hình hàng chờ', desc: 'Quản lý queue theo chi nhánh (sẽ có)' },
     ],
   },
@@ -45,8 +45,8 @@ const ROLE_CONFIG: Record<
     title: 'Quản lý vận hành (Clinic Manager)',
     subtitle: 'Báo cáo thời gian chờ, số bệnh nhân/ngày. So sánh trước/sau AI. Đánh giá hiệu quả nhân sự.',
     actions: [
-      { to: '/patients', label: 'Báo cáo', desc: 'Số bệnh nhân/ngày (sẽ có)' },
-      { to: '/queue', label: 'Thời gian chờ', desc: 'Thời gian chờ trung bình, so sánh trước/sau AI (sẽ có)' },
+      { to: '/reports', label: 'Báo cáo hoạt động', desc: 'Số bệnh nhân/ngày, thời gian chờ, hiệu quả AI' },
+      { to: '/reports?tab=wait-time', label: 'Thời gian chờ', desc: 'Chi tiết thời gian chờ trung bình' },
     ],
   },
 }

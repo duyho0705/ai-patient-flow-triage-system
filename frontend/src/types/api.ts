@@ -248,3 +248,34 @@ export interface UpdateQueueEntryRequest {
   completedAt?: string
   position?: number
 }
+
+export interface WaitTimeSummaryDto {
+  branchId: string
+  branchName: string
+  fromDate: string
+  toDate: string
+  averageWaitMinutes: number | null
+  totalCompletedEntries: number
+}
+
+export interface DailyVolumeDto {
+  date: string
+  branchId: string
+  branchName: string
+  triageCount: number
+  completedQueueEntries: number
+}
+
+export interface AiEffectivenessDto {
+  branchId: string
+  branchName: string
+  fromDate: string
+  toDate: string
+  totalSessions: number
+  aiSessions: number
+  humanSessions: number
+  matchCount: number
+  overrideCount: number
+  matchRate: number | null
+  overrideRate: number | null
+}
