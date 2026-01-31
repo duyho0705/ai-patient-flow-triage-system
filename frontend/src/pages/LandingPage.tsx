@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import {
   Calendar,
-  Activity, // Corrected from 'activity'
+  Activity,
   MapPin,
   Phone,
   Clock,
@@ -17,6 +17,7 @@ import {
   PlayCircle,
   Check
 } from 'lucide-react'
+import { LoginModal } from '@/pages/Login'
 
 // CustomSelect Component
 // CustomSelect Component
@@ -96,9 +97,12 @@ function CustomSelect({ options, defaultValue, onChange }: CustomSelectProps) {
 
 export function LandingPage() {
   const [date, setDate] = useState('')
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+
       {/* Navbar */}
       <nav className="fixed inset-x-0 top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-slate-100">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -117,6 +121,12 @@ export function LandingPage() {
           </div>
 
           <div className="hidden sm:flex items-center gap-4">
+            <button
+              onClick={() => setIsLoginOpen(true)}
+              className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition"
+            >
+              Đăng Nhập
+            </button>
             <Link
               to="/dashboard"
               className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
