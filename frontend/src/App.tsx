@@ -10,6 +10,8 @@ import { Triage } from '@/pages/Triage'
 import { Queue } from '@/pages/Queue'
 import { AiAudit } from '@/pages/AiAudit'
 import { Admin } from '@/pages/Admin'
+import { Reports } from '@/pages/Reports'
+import { DoctorConsultation } from '@/pages/DoctorConsultation'
 
 function App() {
   return (
@@ -23,7 +25,9 @@ function App() {
           <Route path="triage" element={<Triage />} />
           <Route path="queue" element={<Queue />} />
           <Route path="ai-audit" element={<AiAudit />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="admin" element={<Admin />} />
+          <Route path="doctor/consultation/:consultationId" element={<DoctorConsultation />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

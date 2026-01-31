@@ -279,3 +279,25 @@ export interface AiEffectivenessDto {
   matchRate: number | null
   overrideRate: number | null
 }
+
+export interface ConsultationDto {
+  id: string
+  patientId: string
+  queueEntryId?: string
+  triageSessionId?: string
+  acuityLevel?: string | null
+  chiefComplaintSummary?: string | null
+  doctorUserId?: string | null
+  doctorName?: string | null
+  status: string
+  startedAt: string
+  endedAt?: string | null
+  diagnosisNotes?: string | null
+  prescriptionNotes?: string | null
+}
+
+export interface CreateConsultationRequest {
+  queueEntryId?: string
+  diagnosisNotes?: string
+  prescriptionNotes?: string
+}

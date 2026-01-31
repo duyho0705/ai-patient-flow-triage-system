@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import { getPatient, findPatientByCccd } from '@/api/patients'
 import { suggestAcuity, createTriageSession } from '@/api/triage'
-import type { PatientDto, VitalItem, ComplaintItem } from '@/types/api'
+import { getQueueDefinitions, addQueueEntry } from '@/api/queues'
+import type { PatientDto, VitalItem, ComplaintItem, QueueDefinitionDto, TriageSessionDto } from '@/types/api'
 
 const ACUITY_LEVELS = ['1', '2', '3', '4', '5'] as const
 const VITAL_TYPES = ['TEMPERATURE', 'HEART_RATE', 'BLOOD_PRESSURE_SYSTOLIC', 'BLOOD_PRESSURE_DIASTOLIC', 'RESPIRATORY_RATE', 'SPO2'] as const
@@ -22,6 +23,32 @@ export function Triage() {
   const [overrideReason, setOverrideReason] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const [triageResultSession, setTriageResultSession] = useState<TriageSessionDto | null>(null)
+
+  const { data: queueDefinitions } = useQuery({
+    queryKey: ['queue-definitions', branchId, headers?.tenantId],
+    queryFn: () => getQueueDefinitions(branchId!, headers),
+    enabled: !!branchId && !!headers?.tenantId,
+  })
+
+  const addToQueue = useMutation({
+    mutationFn: (queueId: string) => {
+      if (!triageResultSession) throw new Error('Chưa có phiên phân loại')
+      return addQueueEntry({ queueDefinitionId: queueId, patientId, triageSessionId: triageResultSession.id }, headers)
+    },
+    onSuccess: () => {
+      setSuccess('Đã thêm vào hàng chờ thành công.')
+      setTriageResultSession(null)
+      // Reset form
+      setPatientId('')
+      setCccdSearch('')
+      setChiefComplaint('')
+      setVitals([])
+      setTimeout(() => setSuccess(''), 3000)
+    },
+    onError: (e: Error) => setError(e.message),
+  })
 
   const { data: patient } = useQuery({
     queryKey: ['patient', patientId],
@@ -104,10 +131,11 @@ export function Triage() {
         headers
       )
     },
-    onSuccess: () => {
-      setSuccess('Đã tạo phiên phân loại.')
+    onSuccess: (data) => {
+      setSuccess('Đã tạo phiên phân loại. Chọn hàng chờ để chuyển bệnh nhân vào.')
+      setTriageResultSession(data)
       queryClient.invalidateQueries({ queryKey: ['triage'] })
-      setTimeout(() => setSuccess(''), 3000)
+      // Don't auto-clear success immediately
     },
     onError: (e: Error) => setError(e.message),
   })
@@ -150,120 +178,153 @@ export function Triage() {
 
       {patientId && (
         <>
-          {/* Lý do khám + AI gợi ý */}
-          <section className="card max-w-2xl">
-            <h2 className="section-title mb-4">Lý do đến khám / Triệu chứng</h2>
-            <textarea
-              className="input min-h-[80px]"
-              placeholder="Nhập lý do khám (tiếng Việt hoặc tiếng Anh)..."
-              value={chiefComplaint}
-              onChange={(e) => setChiefComplaint(e.target.value)}
-            />
-            <label className="mt-2 flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={useAi}
-                onChange={(e) => setUseAi(e.target.checked)}
-              />
-              <span className="text-sm">Dùng gợi ý AI (rule-based)</span>
-            </label>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={runSuggest} className="btn-secondary rounded-lg">
-                Gợi ý mức ưu tiên (AI)
-              </button>
-              {suggestion && (
-                <span className="text-sm text-slate-600">
-                  Gợi ý: <strong className="text-slate-900">{suggestion.suggestedAcuity}</strong> (độ tin cậy {suggestion.confidence}, {suggestion.latencyMs}ms)
-                </span>
+          {/* Kết quả phân loại & Chuyển hàng chờ */}
+          {triageResultSession ? (
+            <section className="card max-w-2xl bg-blue-50 border-blue-100">
+              <h2 className="section-title mb-4 text-blue-900">Hoàn tất phân loại</h2>
+              <div className="mb-4 text-sm text-blue-800">
+                <p>Mức ưu tiên: <strong>{triageResultSession.acuityLevel}</strong></p>
+                <p>Gợi ý AI: {triageResultSession.aiSuggestedAcuity ?? '—'} (tin cậy: {triageResultSession.aiConfidenceScore})</p>
+              </div>
+              <h3 className="mb-3 font-semibold text-blue-900">Chuyển bệnh nhân vào hàng chờ:</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {queueDefinitions?.map((q) => (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => addToQueue.mutate(q.id)}
+                    disabled={addToQueue.isPending}
+                    className="flex items-center justify-between rounded-lg border border-blue-200 bg-white p-3 hover:bg-blue-100 disabled:opacity-50"
+                  >
+                    <span className="font-medium text-slate-900">{q.nameVi}</span>
+                    <span className="text-xs text-slate-500">
+                      {addToQueue.isPending ? '...' : 'Chọn'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {!queueDefinitions?.length && (
+                <p className="text-sm text-slate-500">Chưa có hàng chờ nào được cấu hình.</p>
               )}
-            </div>
-          </section>
-
-          {/* Sinh hiệu */}
-          <section className="card max-w-2xl">
-            <h2 className="section-title mb-4">Sinh hiệu (tùy chọn)</h2>
-            <div className="space-y-2">
-              {VITAL_TYPES.map((type) => (
-                <div key={type} className="flex items-center gap-2">
-                  <span className="w-48 text-sm">{type}</span>
+            </section>
+          ) : (
+            <>
+              {/* Lý do khám + AI gợi ý */}
+              <section className="card max-w-2xl">
+                <h2 className="section-title mb-4">Lý do đến khám / Triệu chứng</h2>
+                <textarea
+                  className="input min-h-[80px]"
+                  placeholder="Nhập lý do khám (tiếng Việt hoặc tiếng Anh)..."
+                  value={chiefComplaint}
+                  onChange={(e) => setChiefComplaint(e.target.value)}
+                />
+                <label className="mt-2 flex items-center gap-2">
                   <input
-                    type="text"
-                    placeholder="Giá trị"
-                    className="input w-24"
-                    value={vitals.find((v) => v.type === type)?.value ?? ''}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setVitals((prev) => {
-                        const rest = prev.filter((v) => v.type !== type)
-                        if (!val) return rest
-                        return [...rest, { type, value: val, unit: '' }]
-                      })
-                    }}
+                    type="checkbox"
+                    checked={useAi}
+                    onChange={(e) => setUseAi(e.target.checked)}
                   />
-                  <input
-                    type="text"
-                    placeholder="Đơn vị"
-                    className="input w-20"
-                    value={vitals.find((v) => v.type === type)?.unit ?? ''}
-                    onChange={(e) => {
-                      const unit = e.target.value
-                      setVitals((prev) => {
-                        const existing = prev.find((v) => v.type === type)
-                        if (existing) return prev.map((v) => (v.type === type ? { ...v, unit } : v))
-                        return [...prev, { type, value: '', unit }]
-                      })
-                    }}
-                  />
+                  <span className="text-sm">Dùng gợi ý AI (rule-based)</span>
+                </label>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={runSuggest} className="btn-secondary rounded-lg">
+                    Gợi ý mức ưu tiên (AI)
+                  </button>
+                  {suggestion && (
+                    <span className="text-sm text-slate-600">
+                      Gợi ý: <strong className="text-slate-900">{suggestion.suggestedAcuity}</strong> (độ tin cậy {suggestion.confidence}, {suggestion.latencyMs}ms)
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
-          </section>
+              </section>
 
-          {/* Mức ưu tiên + Ghi chú + Tạo phiên */}
-          <section className="card max-w-2xl">
-            <h2 className="section-title mb-4">Mức ưu tiên & Ghi chú</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="label">Mức độ ưu tiên (ESI 1–5)</label>
-                <select
-                  className="input w-32 rounded-lg"
-                  value={acuityLevel}
-                  onChange={(e) => setAcuityLevel(e.target.value)}
-                >
-                  {ACUITY_LEVELS.map((l) => (
-                    <option key={l} value={l}>{l}</option>
+              {/* Sinh hiệu */}
+              <section className="card max-w-2xl">
+                <h2 className="section-title mb-4">Sinh hiệu (tùy chọn)</h2>
+                <div className="space-y-2">
+                  {VITAL_TYPES.map((type) => (
+                    <div key={type} className="flex items-center gap-2">
+                      <span className="w-48 text-sm">{type}</span>
+                      <input
+                        type="text"
+                        placeholder="Giá trị"
+                        className="input w-24"
+                        value={vitals.find((v) => v.type === type)?.value ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setVitals((prev) => {
+                            const rest = prev.filter((v) => v.type !== type)
+                            if (!val) return rest
+                            return [...rest, { type, value: val, unit: '' }]
+                          })
+                        }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Đơn vị"
+                        className="input w-20"
+                        value={vitals.find((v) => v.type === type)?.unit ?? ''}
+                        onChange={(e) => {
+                          const unit = e.target.value
+                          setVitals((prev) => {
+                            const existing = prev.find((v) => v.type === type)
+                            if (existing) return prev.map((v) => (v.type === type ? { ...v, unit } : v))
+                            return [...prev, { type, value: '', unit }]
+                          })
+                        }}
+                      />
+                    </div>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className="label">Lý do override (khi không chấp nhận gợi ý AI)</label>
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="Ghi lý do nếu bạn thay đổi mức ưu tiên so với AI"
-                  value={overrideReason}
-                  onChange={(e) => setOverrideReason(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="label">Ghi chú</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => createSession.mutate()}
-                disabled={createSession.isPending}
-                className="btn-success rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:ring-emerald-500"
-              >
-                {createSession.isPending ? 'Đang tạo...' : 'Tạo phiên phân loại'}
-              </button>
-            </div>
-          </section>
+                </div>
+              </section>
+
+              {/* Mức ưu tiên + Ghi chú + Tạo phiên */}
+              <section className="card max-w-2xl">
+                <h2 className="section-title mb-4">Mức ưu tiên & Ghi chú</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="label">Mức độ ưu tiên (ESI 1–5)</label>
+                    <select
+                      className="input w-32 rounded-lg"
+                      value={acuityLevel}
+                      onChange={(e) => setAcuityLevel(e.target.value)}
+                    >
+                      {ACUITY_LEVELS.map((l) => (
+                        <option key={l} value={l}>{l}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">Lý do override (khi không chấp nhận gợi ý AI)</label>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="Ghi lý do nếu bạn thay đổi mức ưu tiên so với AI"
+                      value={overrideReason}
+                      onChange={(e) => setOverrideReason(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Ghi chú</label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => createSession.mutate()}
+                    disabled={createSession.isPending}
+                    className="btn-success rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:ring-emerald-500"
+                  >
+                    {createSession.isPending ? 'Đang tạo...' : 'Tạo phiên phân loại'}
+                  </button>
+                </div>
+              </section>
+            </>
+          )}
         </>
       )}
     </div>

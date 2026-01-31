@@ -128,7 +128,7 @@ export function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-40 lg:pt-48 lg:pb-48 bg-slate-50">
+      <section className="relative pt-32 pb-40 lg:pt-48 lg:pb-48 bg-slate-50 z-20">
         {/* Background Effects Wrapper - Clips the background but allows content (Booking Bar) to overflow */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 -z-10 h-full w-full bg-white [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#63e_100%)] opacity-30"></div>
@@ -219,17 +219,18 @@ export function LandingPage() {
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Ngày Khám</label>
                 <div className="relative group">
-                  {/* Functional overlay date input */}
-                  <input
-                    type="date"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    onChange={(e) => setDate(e.target.value)}
-                  />
                   {/* Visual custom style */}
                   <div className={`w-full bg-slate-50 border border-transparent rounded-xl py-3.5 px-4 font-medium flex items-center justify-between transition-all duration-200 group-hover:bg-blue-50/50 group-hover:border-blue-200 group-hover:text-blue-600 ${date ? 'text-slate-900' : 'text-slate-500'}`}>
                     <span>{date ? new Date(date).toLocaleDateString('vi-VN') : 'dd/mm/yyyy'}</span>
                     <Calendar className="h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
                   </div>
+                  {/* Functional overlay date input - Placed after visual to ensure it receives clicks */}
+                  <input
+                    type="date"
+                    value={date}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                    onChange={(e) => setDate(e.target.value)}
+                  />
                 </div>
               </div>
               <div className="pt-6">
