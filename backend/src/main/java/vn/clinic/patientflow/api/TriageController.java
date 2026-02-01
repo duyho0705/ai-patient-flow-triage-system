@@ -57,6 +57,7 @@ public class TriageController {
                 .confidence(result.getConfidence())
                 .latencyMs(result.getLatencyMs())
                 .providerKey(aiTriageProvider.getProviderKey())
+                .explanation(result.getExplanation())
                 .build();
     }
 

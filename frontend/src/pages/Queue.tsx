@@ -1,13 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import { getQueueDefinitions, getQueueEntries, addQueueEntry, callQueueEntry } from '@/api/queues'
-import { startConsultation } from '@/api/clinical'
 import { getPatient } from '@/api/patients'
 
 export function Queue() {
-  const navigate = useNavigate()
   const { headers, branchId } = useTenant()
   const queryClient = useQueryClient()
   const [selectedQueueId, setSelectedQueueId] = useState<string | null>(null)
@@ -57,14 +54,6 @@ export function Queue() {
     },
   })
 
-  const startExam = useMutation({
-    mutationFn: (queueEntryId: string) => startConsultation({ queueEntryId }, headers),
-    onSuccess: (data) => {
-      navigate(`/doctor/consultation/${data.id}`)
-    },
-    onError: (e: Error) => setError('Không thể bắt đầu khám: ' + e.message),
-  })
-
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="page-header">
@@ -85,10 +74,11 @@ export function Queue() {
                 key={d.id}
                 type="button"
                 onClick={() => setSelectedQueueId(d.id)}
-                className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition ${selectedQueueId === d.id
-                  ? 'border-slate-900 bg-slate-900 text-white'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                  }`}
+                className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition ${
+                  selectedQueueId === d.id
+                    ? 'border-slate-900 bg-slate-900 text-white'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                }`}
               >
                 {d.nameVi}
               </button>
@@ -153,7 +143,6 @@ export function Queue() {
                         key={e.id}
                         entry={e}
                         onCall={() => callEntry.mutate(e.id)}
-                        onStartExam={() => startExam.mutate(e.id)}
                         loading={callEntry.isPending && callEntry.variables === e.id}
                         headers={headers}
                       />
@@ -174,13 +163,11 @@ export function Queue() {
 function QueueRow({
   entry,
   onCall,
-  onStartExam,
   loading,
   headers,
 }: {
   entry: { id: string; patientId: string; position?: number; status: string; acuityLevel?: string | null }
   onCall: () => void
-  onStartExam: () => void
   loading: boolean
   headers: { tenantId: string; branchId?: string } | null
 }) {
@@ -210,15 +197,6 @@ function QueueRow({
             className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50"
           >
             {loading ? '...' : 'Gọi'}
-          </button>
-        )}
-        {entry.status === 'CALLED' && (
-          <button
-            type="button"
-            onClick={onStartExam}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
-          >
-            Khám
           </button>
         )}
       </td>

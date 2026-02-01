@@ -65,11 +65,34 @@ public class RuleBasedTriageProvider implements AiTriageProvider {
     @Override
     public TriageSuggestionResult suggest(TriageInput input) {
         String text = normalize(input.getChiefComplaintText());
-        String level = matchLevel(text);
+        
+        // Match level and capture reason
+        MatchResult matchResult = matchLevelWithReason(text);
+        String level = matchResult.level;
+        String matchedPattern = matchResult.matchedPattern;
+        
+        // Build explanation
+        StringBuilder explanation = new StringBuilder();
+        explanation.append("Acuity ").append(level).append(": ");
+        
+        if (matchedPattern != null) {
+            explanation.append("Detected '").append(matchedPattern).append("'");
+        } else {
+            explanation.append("No critical keywords");
+        }
+        
+        // Check vitals for risk factors
+        List<String> riskFactors = checkVitalsRisk(input.getVitals());
+        if (!riskFactors.isEmpty()) {
+            explanation.append(" + ").append(String.join(", ", riskFactors));
+        }
+        
         BigDecimal confidence = confidenceFromInput(text, input.getVitals(), level);
+        
         return TriageSuggestionResult.builder()
                 .suggestedAcuity(level)
                 .confidence(confidence)
+                .explanation(explanation.toString())
                 .build();
     }
 
@@ -83,17 +106,60 @@ public class RuleBasedTriageProvider implements AiTriageProvider {
         return s.trim().toLowerCase(Locale.ROOT);
     }
 
-    private String matchLevel(String text) {
+    private MatchResult matchLevelWithReason(String text) {
         for (var e : HIGH_ACUITY_PATTERNS.entrySet()) {
-            if (e.getKey().matcher(text).find()) return e.getValue();
+            if (e.getKey().matcher(text).find()) {
+                return new MatchResult(e.getValue(), extractFirstMatch(e.getKey(), text));
+            }
         }
         for (var e : MID_ACUITY_PATTERNS.entrySet()) {
-            if (e.getKey().matcher(text).find()) return e.getValue();
+            if (e.getKey().matcher(text).find()) {
+                return new MatchResult(e.getValue(), extractFirstMatch(e.getKey(), text));
+            }
         }
         for (var e : LOW_ACUITY_PATTERNS.entrySet()) {
-            if (e.getKey().matcher(text).find()) return e.getValue();
+            if (e.getKey().matcher(text).find()) {
+                return new MatchResult(e.getValue(), extractFirstMatch(e.getKey(), text));
+            }
         }
-        return LEVEL_4; // default: less urgent
+        return new MatchResult(LEVEL_4, null); // default: less urgent
+    }
+    
+    private String extractFirstMatch(Pattern pattern, String text) {
+        var matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+        return null;
+    }
+    
+    private List<String> checkVitalsRisk(Map<String, BigDecimal> vitals) {
+        List<String> risks = new ArrayList<>();
+        if (vitals == null) return risks;
+        
+        BigDecimal spo2 = vitals.get("SPO2");
+        BigDecimal temp = vitals.get("TEMPERATURE");
+        BigDecimal hr = vitals.get("HEART_RATE");
+        BigDecimal bpSys = vitals.get("BLOOD_PRESSURE_SYSTOLIC");
+        
+        if (spo2 != null && spo2.compareTo(new BigDecimal("92")) < 0) {
+            risks.add("SpO2 " + spo2 + "% (low)");
+        }
+        if (temp != null && temp.compareTo(new BigDecimal("39")) >= 0) {
+            risks.add("Temp " + temp + "°C (high)");
+        }
+        if (hr != null) {
+            if (hr.compareTo(new BigDecimal("120")) > 0) {
+                risks.add("HR " + hr + " (tachycardia)");
+            } else if (hr.compareTo(new BigDecimal("50")) < 0) {
+                risks.add("HR " + hr + " (bradycardia)");
+            }
+        }
+        if (bpSys != null && bpSys.compareTo(new BigDecimal("180")) >= 0) {
+            risks.add("BP " + bpSys + " (hypertension)");
+        }
+        
+        return risks;
     }
 
     private BigDecimal confidenceFromInput(String text, Map<String, BigDecimal> vitals, String level) {
@@ -110,5 +176,16 @@ public class RuleBasedTriageProvider implements AiTriageProvider {
             if (spo2 != null && spo2.compareTo(new BigDecimal("92")) < 0) c += 0.1;
         }
         return BigDecimal.valueOf(Math.min(1.0, c)).setScale(2, RoundingMode.HALF_UP);
+    }
+    
+    /** Helper class to hold match result with pattern info */
+    private static class MatchResult {
+        final String level;
+        final String matchedPattern;
+        
+        MatchResult(String level, String matchedPattern) {
+            this.level = level;
+            this.matchedPattern = matchedPattern;
+        }
     }
 }

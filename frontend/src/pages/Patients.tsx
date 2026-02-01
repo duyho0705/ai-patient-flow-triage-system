@@ -1,94 +1,8 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import { listPatients, findPatientByCccd, createPatient, updatePatient } from '@/api/patients'
-import { getQueueDefinitions, addQueueEntry } from '@/api/queues'
-import type { PatientDto, CreatePatientRequest, QueueDefinitionDto } from '@/types/api'
-
-function AddToQueueModal({
-  patient,
-  onClose,
-}: {
-  patient: PatientDto
-  onClose: () => void
-}) {
-  const { headers, branchId } = useTenant()
-  const queryClient = useQueryClient()
-  const [selectedQueueId, setSelectedQueueId] = useState('')
-  const [error, setError] = useState('')
-
-  const { data: definitions } = useQuery({
-    queryKey: ['queue-definitions', branchId, headers?.tenantId],
-    queryFn: () => getQueueDefinitions(branchId!, headers),
-    enabled: !!branchId && !!headers?.tenantId,
-  })
-
-  const add = useMutation({
-    mutationFn: () => {
-      if (!selectedQueueId) throw new Error('Vui lòng chọn hàng chờ')
-      return addQueueEntry({ queueDefinitionId: selectedQueueId, patientId: patient.id }, headers)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['queue-entries'] })
-      alert('Đã thêm vào hàng chờ thành công!')
-      onClose()
-    },
-    onError: (e: Error) => setError(e.message),
-  })
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <h3 className="section-title mb-2">Đăng ký khám</h3>
-        <p className="mb-4 text-sm text-slate-600">
-          Thêm bệnh nhân <strong>{patient.fullNameVi}</strong> vào hàng chờ khám.
-        </p>
-
-        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
-
-        <label className="label">Chọn phòng khám / hàng chờ</label>
-        <div className="space-y-2">
-          {definitions?.map((d) => (
-            <label
-              key={d.id}
-              className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition ${selectedQueueId === d.id
-                ? 'border-blue-600 bg-blue-50 text-blue-900'
-                : 'border-slate-200 hover:bg-slate-50'
-                }`}
-            >
-              <div className="flex items-center gap-3">
-                <input
-                  type="radio"
-                  name="queue"
-                  value={d.id}
-                  checked={selectedQueueId === d.id}
-                  onChange={(e) => setSelectedQueueId(e.target.value)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="font-medium">{d.nameVi}</span>
-              </div>
-            </label>
-          ))}
-          {!definitions?.length && <p className="text-sm text-slate-500">Không có hàng chờ nào.</p>}
-        </div>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="btn-secondary">
-            Hủy
-          </button>
-          <button
-            type="button"
-            onClick={() => add.mutate()}
-            disabled={!selectedQueueId || add.isPending}
-            className="btn-primary"
-          >
-            {add.isPending ? 'Đang thêm...' : 'Xác nhận'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
+import type { PatientDto, CreatePatientRequest } from '@/types/api'
 
 function PatientForm({
   initial,
@@ -226,7 +140,6 @@ export function Patients() {
   const [foundPatient, setFoundPatient] = useState<PatientDto | null | 'none'>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingPatient, setEditingPatient] = useState<PatientDto | null>(null)
-  const [queuePatient, setQueuePatient] = useState<PatientDto | null>(null)
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['patients', headers?.tenantId, page],
@@ -287,25 +200,16 @@ export function Patients() {
             <p className="mt-1 text-sm text-slate-600">
               {foundPatient.dateOfBirth} · {foundPatient.cccd || '—'} · {foundPatient.phone || '—'}
             </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingPatient(foundPatient)
-                  setShowForm(true)
-                }}
-                className="btn-secondary text-sm"
-              >
-                Cập nhật thông tin
-              </button>
-              <button
-                type="button"
-                onClick={() => setQueuePatient(foundPatient)}
-                className="btn-primary text-sm"
-              >
-                Đăng ký khám
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingPatient(foundPatient)
+                setShowForm(true)
+              }}
+              className="btn-secondary mt-3 text-sm"
+            >
+              Cập nhật thông tin
+            </button>
           </div>
         )}
       </section>
@@ -323,14 +227,6 @@ export function Patients() {
             setShowForm(false)
             setEditingPatient(null)
           }}
-        />
-      )}
-
-      {/* Modal đăng ký khám */}
-      {queuePatient && (
-        <AddToQueueModal
-          patient={queuePatient}
-          onClose={() => setQueuePatient(null)}
         />
       )}
 
@@ -357,18 +253,7 @@ export function Patients() {
                       <td className="table-td font-medium text-slate-900">{p.fullNameVi}</td>
                       <td className="table-td">{p.dateOfBirth}</td>
                       <td className="table-td">{p.cccd || '—'}</td>
-                      <td className="table-td">
-                        <div className="flex items-center justify-between">
-                          <span>{p.phone || '—'}</span>
-                          <button
-                            type="button"
-                            onClick={() => setQueuePatient(p)}
-                            className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                          >
-                            Đăng ký khám
-                          </button>
-                        </div>
-                      </td>
+                      <td className="table-td">{p.phone || '—'}</td>
                     </tr>
                   ))}
                 </tbody>

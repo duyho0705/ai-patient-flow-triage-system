@@ -50,6 +50,12 @@ public class PatientController {
         return patientService.findByCccd(cccd).map(PatientDto::fromEntity);
     }
 
+    @GetMapping("/by-phone")
+    @Operation(summary = "Tìm bệnh nhân theo số điện thoại")
+    public Optional<PatientDto> findByPhone(@RequestParam String phone) {
+        return patientService.findByPhone(phone).map(PatientDto::fromEntity);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Tạo bệnh nhân")

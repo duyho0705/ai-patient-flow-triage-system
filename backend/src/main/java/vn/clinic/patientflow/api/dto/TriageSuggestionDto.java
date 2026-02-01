@@ -27,4 +27,7 @@ public class TriageSuggestionDto {
 
     /** Provider đã dùng (rule-based, ...). */
     private String providerKey;
+
+    /** Giải thích ngắn gọn lý do AI đề xuất mức độ này (VD: "High priority: SpO2 89% + chest pain"). */
+    private String explanation;
 }

@@ -37,4 +37,8 @@ public interface TriageSessionRepository extends JpaRepository<TriageSession, UU
     /** Số phiên phân loại theo từng ngày (date, count) – native để GROUP BY date. */
     @Query(value = "SELECT (ts.started_at AT TIME ZONE 'UTC')::date AS d, COUNT(*) FROM triage_session ts WHERE ts.branch_id = :branchId AND ts.started_at >= :from AND ts.started_at <= :to GROUP BY (ts.started_at AT TIME ZONE 'UTC')::date ORDER BY d", nativeQuery = true)
     List<Object[]> countTriageByDay(@Param("branchId") UUID branchId, @Param("from") Instant from, @Param("to") Instant to);
+
+    /** Count sessions by tenant (across all branches). */
+    @Query("SELECT COUNT(ts) FROM TriageSession ts WHERE ts.tenant.id = :tenantId AND ts.startedAt >= :from AND ts.startedAt <= :to")
+    long countByTenantIdAndStartedAtBetween(@Param("tenantId") UUID tenantId, @Param("from") Instant from, @Param("to") Instant to);
 }

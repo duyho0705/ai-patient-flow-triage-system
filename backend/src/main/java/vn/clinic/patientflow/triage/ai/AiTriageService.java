@@ -134,5 +134,6 @@ public class AiTriageService {
         private String suggestedAcuity;
         private java.math.BigDecimal confidence;
         private Integer latencyMs;
+        private String explanation; // Giải thích ngắn gọn lý do AI đề xuất
     }
 }

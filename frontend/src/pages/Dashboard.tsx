@@ -12,7 +12,7 @@ const ROLE_CONFIG: Record<
     subtitle: 'Quản lý tenant, người dùng, phân quyền, cấu hình, AI audit. Không đụng bệnh nhân.',
     actions: [
       { to: '/reports', label: 'Báo cáo / Dữ liệu', desc: 'Xem báo cáo tổng hợp (wait time, volume, AI)' },
-      { to: '/ai-audit', label: 'AI Audit', desc: 'Xem lịch sử AI, so sánh đề xuất vs quyết định (sẽ có)' },
+      { to: '/triage', label: 'AI Audit', desc: 'Xem lịch sử AI, so sánh đề xuất vs quyết định (sẽ có)' },
       { to: '/queue', label: 'Cấu hình hàng chờ', desc: 'Quản lý queue theo chi nhánh (sẽ có)' },
     ],
   },

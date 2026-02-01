@@ -48,6 +48,11 @@ public class PatientService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<Patient> findByPhone(String phone) {
+        return patientRepository.findByTenantIdAndPhone(TenantContext.getTenantIdOrThrow(), phone);
+    }
+
+    @Transactional(readOnly = true)
     public List<PatientInsurance> getInsurances(UUID patientId) {
         getById(patientId);
         return patientInsuranceRepository.findByPatientIdOrderByIsPrimaryDesc(patientId);
