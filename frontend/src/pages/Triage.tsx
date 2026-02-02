@@ -94,7 +94,13 @@ export function Triage() {
           patientId,
           startedAt: new Date().toISOString(),
           acuityLevel,
-          useAiSuggestion: useAi,
+          // Nếu đã chạy suggest trước đó: gửi kết quả chi tiết và KHÔNG chạy lại AI ở backend (useAiSuggestion=false)
+          // Nếu chưa chạy suggest nhưng muốn backend tự chạy: useAiSuggestion=true
+          useAiSuggestion: suggestion ? false : useAi,
+          aiSuggestedAcuity: suggestion?.suggestedAcuity,
+          aiConfidenceScore: suggestion?.confidence,
+          aiExplanation: suggestion?.explanation,
+          acuitySource: suggestion ? 'AI' : undefined,
           chiefComplaintText: chiefComplaint.trim() || undefined,
           vitals: vitalItems.length ? vitalItems : undefined,
           complaints: complaints.length ? complaints : undefined,

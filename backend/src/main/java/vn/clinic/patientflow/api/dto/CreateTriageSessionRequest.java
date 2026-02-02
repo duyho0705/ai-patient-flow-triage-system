@@ -43,6 +43,8 @@ public class CreateTriageSessionRequest {
 
     private BigDecimal aiConfidenceScore;
 
+    private String aiExplanation;
+
     private String chiefComplaintText;
 
     private String notes;

@@ -87,8 +87,7 @@ export function DoctorConsultation() {
                 </div>
             </header>
 
-            {error && <div className="mx-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>}
-            {success && <div className="mx-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">{success}</div>}
+
 
             <div className="mx-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {/* Cột trái: Thông tin bệnh nhân & Triage */}
@@ -134,6 +133,38 @@ export function DoctorConsultation() {
                             {/* Nếu muốn hiển thị vitals chi tiết, cần fetch thêm TriageSession */}
                         </div>
                     </section>
+
+                    {/* AI Insights */}
+                    {consultation.aiExplanation && (
+                        <section className="rounded-xl border border-purple-200 bg-purple-50 p-5 shadow-sm">
+                            <h3 className="mb-3 flex items-center gap-2 font-bold text-purple-900">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
+                                    🧠
+                                </span>
+                                Phân tích AI
+                            </h3>
+                            <div className="space-y-3 text-sm">
+                                <div>
+                                    <div className="flex justify-between text-purple-700 font-medium mb-1">
+                                        <span>Độ tin cậy</span>
+                                        <span>{consultation.aiConfidenceScore ? (consultation.aiConfidenceScore * 100).toFixed(0) + '%' : '—'}</span>
+                                    </div>
+                                    <div className="w-full bg-purple-200 rounded-full h-2">
+                                        <div
+                                            className="bg-purple-600 h-2 rounded-full transition-all"
+                                            style={{ width: `${(consultation.aiConfidenceScore || 0) * 100}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="block text-purple-700 font-medium mb-1">Lý do đề xuất:</span>
+                                    <p className="text-purple-900 bg-purple-100/50 p-3 rounded-lg border border-purple-200 text-sm leading-relaxed">
+                                        {consultation.aiExplanation}
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                    )}
                 </div>
 
                 {/* Cột phải: Khu vực làm việc của Bác sĩ */}

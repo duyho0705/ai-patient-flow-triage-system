@@ -170,6 +170,7 @@ export interface TriageSuggestionDto {
   confidence: number
   latencyMs: number
   providerKey: string
+  explanation?: string
 }
 
 export interface SuggestAcuityRequest {
@@ -203,6 +204,7 @@ export interface CreateTriageSessionRequest {
   acuitySource?: string
   aiSuggestedAcuity?: string
   aiConfidenceScore?: number
+  aiExplanation?: string
   chiefComplaintText?: string
   notes?: string
   overrideReason?: string
@@ -247,4 +249,29 @@ export interface UpdateQueueEntryRequest {
   calledAt?: string
   completedAt?: string
   position?: number
+}
+
+export interface ConsultationDto {
+  id: string
+  patientId: string
+  doctorUserId?: string
+  doctorName?: string
+  status: string
+  startedAt: string
+  endedAt?: string
+  diagnosisNotes?: string
+  prescriptionNotes?: string
+  queueEntryId?: string
+  triageSessionId?: string
+  acuityLevel?: string
+  chiefComplaintSummary?: string
+  aiExplanation?: string
+  aiConfidenceScore?: number
+}
+
+export interface CreateConsultationRequest {
+  patientId?: string
+  queueEntryId?: string
+  diagnosisNotes?: string
+  prescriptionNotes?: string
 }

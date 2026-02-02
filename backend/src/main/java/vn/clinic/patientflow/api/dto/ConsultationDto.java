@@ -24,6 +24,8 @@ public class ConsultationDto {
     private UUID triageSessionId;
     private String acuityLevel;
     private String chiefComplaintSummary;
+    private String aiExplanation;
+    private Double aiConfidenceScore;
 
     public static ConsultationDto fromEntity(ClinicalConsultation entity) {
         return ConsultationDto.builder()
@@ -33,6 +35,8 @@ public class ConsultationDto {
                 .triageSessionId(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null ? entity.getQueueEntry().getTriageSession().getId() : null)
                 .acuityLevel(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null ? entity.getQueueEntry().getTriageSession().getAcuityLevel() : null)
                 .chiefComplaintSummary(entity.getChiefComplaintSummary())
+                .aiExplanation(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null ? entity.getQueueEntry().getTriageSession().getAiExplanation() : null)
+                .aiConfidenceScore(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null && entity.getQueueEntry().getTriageSession().getAiConfidenceScore() != null ? entity.getQueueEntry().getTriageSession().getAiConfidenceScore().doubleValue() : null)
                 .doctorUserId(entity.getDoctorUser() != null ? entity.getDoctorUser().getId() : null)
                 .doctorName(entity.getDoctorUser() != null ? entity.getDoctorUser().getUsername() : null)
                 .status(entity.getStatus())

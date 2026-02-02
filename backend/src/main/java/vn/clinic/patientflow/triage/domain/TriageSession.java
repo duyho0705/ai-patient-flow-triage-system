@@ -63,6 +63,9 @@ public class TriageSession extends BaseAuditableEntity {
     @Column(name = "ai_confidence_score", precision = 5, scale = 4)
     private BigDecimal aiConfidenceScore;
 
+    @Column(name = "ai_explanation", columnDefinition = "text")
+    private String aiExplanation;
+
     @Column(name = "chief_complaint_text", columnDefinition = "text")
     private String chiefComplaintText;
 

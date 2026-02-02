@@ -92,6 +92,7 @@ public class TriageService {
         String acuitySource = request.getAcuitySource();
         String aiSuggestedAcuity = request.getAiSuggestedAcuity();
         BigDecimal aiConfidenceScore = request.getAiConfidenceScore();
+        String aiExplanation = request.getAiExplanation();
 
         AiTriageService.TriageInput aiInput = null;
         AiTriageService.TriageSuggestionResult aiResult = null;
@@ -103,6 +104,7 @@ public class TriageService {
             acuitySource = "AI";
             aiSuggestedAcuity = aiResult.getSuggestedAcuity();
             aiConfidenceScore = aiResult.getConfidence();
+            aiExplanation = aiResult.getExplanation();
         } else if (request.getAcuityLevel() == null || request.getAcuityLevel().isBlank()) {
             throw new IllegalArgumentException("acuityLevel is required when useAiSuggestion is false");
         }
@@ -118,6 +120,7 @@ public class TriageService {
                 .acuitySource(acuitySource)
                 .aiSuggestedAcuity(aiSuggestedAcuity)
                 .aiConfidenceScore(aiConfidenceScore)
+                .aiExplanation(aiExplanation)
                 .chiefComplaintText(request.getChiefComplaintText())
                 .notes(request.getNotes())
                 .overrideReason(request.getOverrideReason())
