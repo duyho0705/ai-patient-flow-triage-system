@@ -20,6 +20,7 @@ public class ClinicalService {
     private final ClinicalConsultationRepository consultationRepository;
     private final ClinicalVitalRepository vitalRepository;
     private final vn.clinic.patientflow.queue.repository.QueueEntryRepository queueEntryRepository;
+    private final vn.clinic.patientflow.identity.service.IdentityService identityService;
 
     @Transactional(readOnly = true)
     public ClinicalConsultation getById(UUID id) {
@@ -55,12 +56,14 @@ public class ClinicalService {
                 .branch(queueEntry.getBranch())
                 .patient(queueEntry.getPatient())
                 .queueEntry(queueEntry)
-                // .doctorUser(...) // TODO: Load doctor user entity if doctorId is present
+                .doctorUser(doctorId != null ? identityService.getUserById(doctorId) : null)
                 .startedAt(java.time.Instant.now())
                 .status("IN_PROGRESS")
-                .chiefComplaintSummary(queueEntry.getTriageSession() != null ? queueEntry.getTriageSession().getChiefComplaint() : null)
+                .chiefComplaintSummary(
+                        queueEntry.getTriageSession() != null ? queueEntry.getTriageSession().getChiefComplaintText()
+                                : null)
                 .build();
-        
+
         consultation = consultationRepository.save(consultation);
 
         // Update queue entry
@@ -75,7 +78,7 @@ public class ClinicalService {
     public ClinicalConsultation updateConsultation(UUID id, String diagnosis, String prescription) {
         var cons = getById(id);
         if (!"IN_PROGRESS".equals(cons.getStatus())) {
-             // throw new IllegalStateException("Consultation is not in progress"); 
+            // throw new IllegalStateException("Consultation is not in progress");
         }
         cons.setDiagnosisNotes(diagnosis);
         cons.setPrescriptionNotes(prescription);

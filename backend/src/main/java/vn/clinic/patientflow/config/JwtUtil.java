@@ -1,14 +1,5 @@
 package vn.clinic.patientflow.config;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
@@ -16,8 +7,20 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.crypto.SecretKey;
+
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /**
- * Tạo và xác thực JWT – subject = userId, claims: email, tenantId, branchId, roles.
+ * Tạo và xác thực JWT – subject = userId, claims: email, tenantId, branchId,
+ * roles.
  * HS256; secret phải ≥ 256 bit (32 bytes) cho HS256.
  */
 @Component
@@ -62,7 +65,8 @@ public class JwtUtil {
      * Parse và validate JWT; trả về claims hoặc null nếu invalid.
      */
     public Claims validateAndParse(String token) {
-        if (token == null || token.isBlank()) return null;
+        if (token == null || token.isBlank())
+            return null;
         try {
             return Jwts.parser()
                     .verifyWith(signingKey())
@@ -76,9 +80,11 @@ public class JwtUtil {
     }
 
     public UUID getUserId(Claims claims) {
-        if (claims == null) return null;
+        if (claims == null)
+            return null;
         String sub = claims.getSubject();
-        if (sub == null) return null;
+        if (sub == null)
+            return null;
         try {
             return UUID.fromString(sub);
         } catch (IllegalArgumentException e) {
@@ -92,7 +98,8 @@ public class JwtUtil {
 
     public UUID getTenantId(Claims claims) {
         String s = claims == null ? null : claims.get(CLAIM_TENANT_ID, String.class);
-        if (s == null || s.isBlank()) return null;
+        if (s == null || s.isBlank())
+            return null;
         try {
             return UUID.fromString(s);
         } catch (IllegalArgumentException e) {
@@ -102,7 +109,8 @@ public class JwtUtil {
 
     public UUID getBranchId(Claims claims) {
         String s = claims == null ? null : claims.get(CLAIM_BRANCH_ID, String.class);
-        if (s == null || s.isBlank()) return null;
+        if (s == null || s.isBlank())
+            return null;
         try {
             return UUID.fromString(s);
         } catch (IllegalArgumentException e) {
@@ -110,9 +118,9 @@ public class JwtUtil {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public List<String> getRoles(Claims claims) {
-        if (claims == null) return List.of();
+        if (claims == null)
+            return List.of();
         Object r = claims.get(CLAIM_ROLES);
         if (r instanceof List<?> list) {
             return list.stream()

@@ -1,24 +1,26 @@
 package vn.clinic.patientflow.triage.ai;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.clinic.patientflow.aiaudit.domain.AiModelVersion;
 import vn.clinic.patientflow.aiaudit.domain.AiTriageAudit;
 import vn.clinic.patientflow.aiaudit.repository.AiModelVersionRepository;
 import vn.clinic.patientflow.aiaudit.repository.AiTriageAuditRepository;
-import vn.clinic.patientflow.patient.domain.Patient;
-import vn.clinic.patientflow.patient.service.PatientService;
 import vn.clinic.patientflow.triage.domain.TriageSession;
 import vn.clinic.patientflow.triage.repository.TriageSessionRepository;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Điều phối gọi AI phân loại: chọn provider, đo latency, ghi audit.
@@ -46,7 +48,7 @@ public class AiTriageService {
      */
     public TriageSuggestionResult suggest(TriageInput input) {
         AiTriageProvider selectedProvider = ruleBasedProvider; // Default
-        
+
         try {
             // Check Tenant settings
             var tenantIdOpt = vn.clinic.patientflow.common.tenant.TenantContext.getTenantId();
@@ -55,10 +57,10 @@ public class AiTriageService {
                 if (tenant.getSettingsJson() != null) {
                     var node = objectMapper.readTree(tenant.getSettingsJson());
                     if (node.has("enableAi") && node.get("enableAi").asBoolean()) {
-                         String provider = node.has("aiProvider") ? node.get("aiProvider").asText() : "rule-based";
-                         if ("http-endpoint".equalsIgnoreCase(provider)) {
-                             selectedProvider = httpProvider;
-                         }
+                        String provider = node.has("aiProvider") ? node.get("aiProvider").asText() : "rule-based";
+                        if ("http-endpoint".equalsIgnoreCase(provider)) {
+                            selectedProvider = httpProvider;
+                        }
                     }
                 }
             }
@@ -69,18 +71,21 @@ public class AiTriageService {
         long startMs = System.currentTimeMillis();
         TriageSuggestionResult result;
         try {
-             result = selectedProvider.suggest(input);
+            result = selectedProvider.suggest(input);
+            result.setProviderKey(selectedProvider.getProviderKey());
         } catch (Exception e) {
-            log.error("Provider {} failed, fallback to rule-based: {}", selectedProvider.getProviderKey(), e.getMessage());
+            log.error("Provider {} failed, fallback to rule-based: {}", selectedProvider.getProviderKey(),
+                    e.getMessage());
             // Fallback strategy if HTTP fails
             if (selectedProvider != ruleBasedProvider) {
                 result = ruleBasedProvider.suggest(input);
                 result.setExplanation("(Fallback) " + result.getExplanation());
+                result.setProviderKey(ruleBasedProvider.getProviderKey());
             } else {
                 throw e;
             }
         }
-        
+
         int latencyMs = (int) (System.currentTimeMillis() - startMs);
         result.setLatencyMs(latencyMs);
         return result;
@@ -174,5 +179,6 @@ public class AiTriageService {
         private java.math.BigDecimal confidence;
         private Integer latencyMs;
         private String explanation; // Giải thích ngắn gọn lý do AI đề xuất
+        private String providerKey;
     }
 }

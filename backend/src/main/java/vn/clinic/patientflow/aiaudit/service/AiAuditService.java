@@ -1,12 +1,19 @@
 package vn.clinic.patientflow.aiaudit.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
 import vn.clinic.patientflow.aiaudit.domain.AiModelVersion;
 import vn.clinic.patientflow.aiaudit.domain.AiTriageAudit;
 import vn.clinic.patientflow.aiaudit.repository.AiModelVersionRepository;
@@ -17,14 +24,10 @@ import vn.clinic.patientflow.common.exception.ResourceNotFoundException;
 import vn.clinic.patientflow.common.tenant.TenantContext;
 import vn.clinic.patientflow.triage.domain.TriageSession;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 /**
  * AI model version and triage audit – lookup and append-only audit.
- * Enterprise: AI Audit + Explainability (so sánh đề xuất AI vs quyết định thực tế).
+ * Enterprise: AI Audit + Explainability (so sánh đề xuất AI vs quyết định thực
+ * tế).
  */
 @Service
 @RequiredArgsConstructor
@@ -51,13 +54,15 @@ public class AiAuditService {
     }
 
     /**
-     * Danh sách AI audit theo chi nhánh – so sánh suggested vs actual acuity (Explainability).
+     * Danh sách AI audit theo chi nhánh – so sánh suggested vs actual acuity
+     * (Explainability).
      */
     @Transactional(readOnly = true)
     public PagedResponse<AiTriageAuditDto> listAuditsByBranch(UUID branchId, Pageable pageable) {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
-        Page<AiTriageAudit> page = triageAuditRepository.findByTriageSession_Branch_IdAndTriageSession_Tenant_IdOrderByCalledAtDesc(
-                branchId, tenantId, pageable);
+        Page<AiTriageAudit> page = triageAuditRepository
+                .findByTriageSessionBranchIdAndTriageSessionTenantIdOrderByCalledAtDesc(
+                        branchId, tenantId, pageable);
         List<AiTriageAuditDto> content = page.getContent().stream().map(this::toDto).collect(Collectors.toList());
         return PagedResponse.<AiTriageAuditDto>builder()
                 .content(content)
@@ -88,7 +93,8 @@ public class AiAuditService {
     }
 
     private String parseSuggestedAcuity(String outputJson) {
-        if (outputJson == null || outputJson.isBlank()) return null;
+        if (outputJson == null || outputJson.isBlank())
+            return null;
         try {
             JsonNode node = objectMapper.readTree(outputJson);
             return node.has("suggestedAcuity") ? node.get("suggestedAcuity").asText(null) : null;

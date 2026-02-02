@@ -1,7 +1,8 @@
 package vn.clinic.patientflow.triage.ai;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.math.BigDecimal;
+import java.util.Collections;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -9,12 +10,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.clinic.patientflow.triage.ai.AiTriageService.TriageInput;
 import vn.clinic.patientflow.triage.ai.AiTriageService.TriageSuggestionResult;
-
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Gọi AI qua HTTP (Python/FastAPI Service).
@@ -41,12 +41,12 @@ public class HttpAiTriageProvider implements AiTriageProvider {
             HttpEntity<TriageInput> request = new HttpEntity<>(input, headers);
 
             // DTO trả về từ Python service
-            // Giả sử Python trả về: { "acuity": "2", "confidence": 0.95, "explanation": "..." }
+            // Giả sử Python trả về: { "acuity": "2", "confidence": 0.95, "explanation":
+            // "..." }
             ResponseEntity<ExternalAiResponse> response = restTemplate.postForEntity(
                     serviceUrl,
                     request,
-                    ExternalAiResponse.class
-            );
+                    ExternalAiResponse.class);
 
             if (response.getBody() == null) {
                 throw new RuntimeException("Empty response from AI Service");

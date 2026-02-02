@@ -17,7 +17,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Xác thực đăng nhập – kiểm tra mật khẩu, resolve roles theo tenant/branch, phát JWT.
+ * Xác thực đăng nhập – kiểm tra mật khẩu, resolve roles theo tenant/branch,
+ * phát JWT.
  */
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * Đăng nhập: kiểm tra email/password, lấy roles theo tenant (và branch nếu có), phát JWT.
+     * Đăng nhập: kiểm tra email/password, lấy roles theo tenant (và branch nếu có),
+     * phát JWT.
      */
     @Transactional
     public LoginResponse login(LoginRequest request) {

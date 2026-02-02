@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import { getTodaySummary, getWeekSummary } from '@/api/analytics'
-import type { AnalyticsSummary } from '@/api/analytics'
 import { SkeletonAnalyticsSummary } from '@/components/Skeleton'
 
 export function Analytics() {
@@ -9,14 +8,14 @@ export function Analytics() {
 
     const { data: todayData, isLoading: loadingToday } = useQuery({
         queryKey: ['analytics', 'today', branchId],
-        queryFn: () => getTodaySummary(branchId, headers),
+        queryFn: () => getTodaySummary(branchId ?? undefined, headers),
         enabled: !!headers?.tenantId,
         refetchInterval: 30000, // Auto-refresh every 30s
     })
 
     const { data: weekData, isLoading: loadingWeek } = useQuery({
         queryKey: ['analytics', 'week', branchId],
-        queryFn: () => getWeekSummary(branchId, headers),
+        queryFn: () => getWeekSummary(branchId ?? undefined, headers),
         enabled: !!headers?.tenantId,
     })
 

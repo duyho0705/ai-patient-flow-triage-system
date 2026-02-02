@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import vn.clinic.patientflow.api.dto.*;
+import vn.clinic.patientflow.api.dto.PatientInsuranceDto;
 import vn.clinic.patientflow.patient.domain.Patient;
 import vn.clinic.patientflow.patient.service.PatientService;
 
@@ -35,7 +36,8 @@ public class PatientController {
     public PagedResponse<PatientDto> list(
             @PageableDefault(size = 20) Pageable pageable) {
         Page<Patient> page = patientService.listByTenant(pageable);
-        return PagedResponse.of(page, page.getContent().stream().map(PatientDto::fromEntity).collect(Collectors.toList()));
+        return PagedResponse.of(page,
+                page.getContent().stream().map(PatientDto::fromEntity).collect(Collectors.toList()));
     }
 
     @GetMapping("/{id}")
@@ -102,17 +104,16 @@ public class PatientController {
 
     @GetMapping("/{id}/insurances")
     @Operation(summary = "Danh sách bảo hiểm của bệnh nhân")
-    public List<Object> getInsurances(@PathVariable UUID id) {
+    public List<PatientInsuranceDto> getInsurances(@PathVariable UUID id) {
         return patientService.getInsurances(id).stream()
-                .map(i -> new Object() {
-                    public final UUID id = i.getId();
-                    public final String insuranceType = i.getInsuranceType();
-                    public final String insuranceNumber = i.getInsuranceNumber();
-                    public final String holderName = i.getHolderName();
-                    public final java.time.LocalDate validFrom = i.getValidFrom();
-                    public final java.time.LocalDate validTo = i.getValidTo();
-                    public final Boolean isPrimary = i.getIsPrimary();
-                })
+                .map(i -> new PatientInsuranceDto(
+                        i.getId(),
+                        i.getInsuranceType(),
+                        i.getInsuranceNumber(),
+                        i.getHolderName(),
+                        i.getValidFrom(),
+                        i.getValidTo(),
+                        i.getIsPrimary()))
                 .collect(Collectors.toList());
     }
 }

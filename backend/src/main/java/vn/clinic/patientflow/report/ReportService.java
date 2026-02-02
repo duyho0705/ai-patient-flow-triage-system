@@ -1,8 +1,21 @@
 package vn.clinic.patientflow.report;
 
-import lombok.RequiredArgsConstructor;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
 import vn.clinic.patientflow.api.dto.AiEffectivenessDto;
 import vn.clinic.patientflow.api.dto.DailyVolumeDto;
 import vn.clinic.patientflow.api.dto.WaitTimeSummaryDto;
@@ -12,14 +25,9 @@ import vn.clinic.patientflow.tenant.domain.TenantBranch;
 import vn.clinic.patientflow.tenant.repository.TenantBranchRepository;
 import vn.clinic.patientflow.triage.repository.TriageSessionRepository;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.*;
-import java.util.stream.Collectors;
-
 /**
- * Báo cáo cho Clinic Manager: thời gian chờ trung bình, số bệnh nhân/ngày, hiệu quả AI.
+ * Báo cáo cho Clinic Manager: thời gian chờ trung bình, số bệnh nhân/ngày, hiệu
+ * quả AI.
  */
 @Service
 @RequiredArgsConstructor
@@ -42,7 +50,8 @@ public class ReportService {
         Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
 
         long total = queueEntryRepository.countCompletedByBranchAndJoinedAtBetween(branchId, from, to);
-        Double avgMinutes = queueEntryRepository.averageWaitMinutesByBranchAndJoinedAtBetween(branchId, from, to).orElse(null);
+        Double avgMinutes = queueEntryRepository.averageWaitMinutesByBranchAndJoinedAtBetween(branchId, from, to)
+                .orElse(null);
 
         return WaitTimeSummaryDto.builder()
                 .branchId(branch.getId().toString())

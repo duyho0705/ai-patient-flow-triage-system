@@ -1,19 +1,34 @@
 package vn.clinic.patientflow.api;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import vn.clinic.patientflow.api.dto.AppointmentDto;
 import vn.clinic.patientflow.api.dto.CreateAppointmentRequest;
 import vn.clinic.patientflow.api.dto.PagedResponse;
+import vn.clinic.patientflow.api.dto.SlotTemplateDto;
 import vn.clinic.patientflow.common.tenant.TenantContext;
 import vn.clinic.patientflow.identity.domain.IdentityUser;
 import vn.clinic.patientflow.identity.service.IdentityService;
@@ -23,11 +38,6 @@ import vn.clinic.patientflow.scheduling.domain.SchedulingAppointment;
 import vn.clinic.patientflow.scheduling.service.SchedulingService;
 import vn.clinic.patientflow.tenant.domain.TenantBranch;
 import vn.clinic.patientflow.tenant.service.TenantService;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Lịch hẹn – tenant-scoped (X-Tenant-Id bắt buộc).
@@ -50,7 +60,8 @@ public class SchedulingController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<SchedulingAppointment> page = schedulingService.getAppointmentsByBranchAndDate(branchId, date, pageable);
-        return PagedResponse.of(page, page.getContent().stream().map(AppointmentDto::fromEntity).collect(Collectors.toList()));
+        return PagedResponse.of(page,
+                page.getContent().stream().map(AppointmentDto::fromEntity).collect(Collectors.toList()));
     }
 
     @GetMapping("/{id}")
@@ -91,15 +102,14 @@ public class SchedulingController {
 
     @GetMapping("/slots")
     @Operation(summary = "Danh sách mẫu khung giờ theo tenant")
-    public List<Object> getSlotTemplates() {
+    public List<SlotTemplateDto> getSlotTemplates() {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
         return schedulingService.getSlotTemplatesByTenant(tenantId).stream()
-                .map(s -> new Object() {
-                    public final UUID id = s.getId();
-                    public final String code = s.getCode();
-                    public final java.time.LocalTime startTime = s.getStartTime();
-                    public final Integer durationMinutes = s.getDurationMinutes();
-                })
+                .map(s -> new SlotTemplateDto(
+                        s.getId(),
+                        s.getCode(),
+                        s.getStartTime(),
+                        s.getDurationMinutes()))
                 .collect(Collectors.toList());
     }
 }

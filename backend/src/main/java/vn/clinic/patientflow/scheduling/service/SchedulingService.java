@@ -1,14 +1,18 @@
 package vn.clinic.patientflow.scheduling.service;
 
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
 import vn.clinic.patientflow.common.exception.ResourceNotFoundException;
 import vn.clinic.patientflow.common.tenant.TenantContext;
-import vn.clinic.patientflow.identity.domain.IdentityUser;
-import vn.clinic.patientflow.patient.domain.Patient;
 import vn.clinic.patientflow.scheduling.domain.SchedulingAppointment;
 import vn.clinic.patientflow.scheduling.domain.SchedulingCalendarDay;
 import vn.clinic.patientflow.scheduling.domain.SchedulingSlotTemplate;
@@ -18,11 +22,6 @@ import vn.clinic.patientflow.scheduling.repository.SchedulingSlotTemplateReposit
 import vn.clinic.patientflow.tenant.domain.Tenant;
 import vn.clinic.patientflow.tenant.domain.TenantBranch;
 import vn.clinic.patientflow.tenant.service.TenantService;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +51,8 @@ public class SchedulingService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SchedulingAppointment> getAppointmentsByBranchAndDate(UUID branchId, LocalDate date, Pageable pageable) {
+    public Page<SchedulingAppointment> getAppointmentsByBranchAndDate(UUID branchId, LocalDate date,
+            Pageable pageable) {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
         return appointmentRepository.findByTenantIdAndBranchIdAndAppointmentDate(tenantId, branchId, date, pageable);
     }

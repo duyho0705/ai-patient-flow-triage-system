@@ -1,16 +1,20 @@
 package vn.clinic.patientflow.api;
 
+import java.util.UUID;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import vn.clinic.patientflow.aiaudit.service.AiAuditService;
 import vn.clinic.patientflow.api.dto.AiTriageAuditDto;
 import vn.clinic.patientflow.api.dto.PagedResponse;
-import vn.clinic.patientflow.aiaudit.service.AiAuditService;
-
-import java.util.UUID;
 
 /**
  * API AI Audit – so sánh đề xuất AI vs quyết định thực tế (Explainability).

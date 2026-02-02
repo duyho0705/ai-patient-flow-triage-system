@@ -1,29 +1,5 @@
 package vn.clinic.patientflow.api;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
-import vn.clinic.patientflow.api.dto.CreateTriageSessionRequest;
-import vn.clinic.patientflow.api.dto.PagedResponse;
-import vn.clinic.patientflow.api.dto.SuggestAcuityRequest;
-import vn.clinic.patientflow.api.dto.TriageSessionDto;
-import vn.clinic.patientflow.api.dto.TriageSuggestionDto;
-import vn.clinic.patientflow.patient.domain.Patient;
-import vn.clinic.patientflow.patient.service.PatientService;
-import vn.clinic.patientflow.triage.ai.AiTriageService;
-import vn.clinic.patientflow.triage.ai.AiTriageProvider;
-import vn.clinic.patientflow.triage.domain.TriageComplaint;
-import vn.clinic.patientflow.triage.domain.TriageSession;
-import vn.clinic.patientflow.triage.domain.TriageVital;
-import vn.clinic.patientflow.triage.service.TriageService;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -32,6 +8,39 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import vn.clinic.patientflow.api.dto.CreateTriageSessionRequest;
+import vn.clinic.patientflow.api.dto.PagedResponse;
+import vn.clinic.patientflow.api.dto.SuggestAcuityRequest;
+import vn.clinic.patientflow.api.dto.TriageComplaintDto;
+import vn.clinic.patientflow.api.dto.TriageSessionDto;
+import vn.clinic.patientflow.api.dto.TriageSuggestionDto;
+import vn.clinic.patientflow.api.dto.TriageVitalDto;
+import vn.clinic.patientflow.patient.domain.Patient;
+import vn.clinic.patientflow.patient.service.PatientService;
+import vn.clinic.patientflow.triage.ai.AiTriageService;
+import vn.clinic.patientflow.triage.domain.TriageComplaint;
+import vn.clinic.patientflow.triage.domain.TriageSession;
+import vn.clinic.patientflow.triage.domain.TriageVital;
+import vn.clinic.patientflow.triage.service.TriageService;
 
 /**
  * Phân loại ưu tiên – tenant-scoped (X-Tenant-Id bắt buộc).
@@ -44,7 +53,6 @@ public class TriageController {
 
     private final TriageService triageService;
     private final AiTriageService aiTriageService;
-    private final AiTriageProvider aiTriageProvider;
     private final PatientService patientService;
 
     @PostMapping("/suggest")
@@ -56,7 +64,7 @@ public class TriageController {
                 .suggestedAcuity(result.getSuggestedAcuity())
                 .confidence(result.getConfidence())
                 .latencyMs(result.getLatencyMs())
-                .providerKey(aiTriageProvider.getProviderKey())
+                .providerKey(result.getProviderKey())
                 .explanation(result.getExplanation())
                 .build();
     }
@@ -106,12 +114,13 @@ public class TriageController {
             @RequestParam UUID branchId,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<TriageSession> page = triageService.listByBranch(branchId, pageable);
-        return PagedResponse.of(page, page.getContent().stream().map(TriageSessionDto::fromEntity).collect(Collectors.toList()));
+        return PagedResponse.of(page,
+                page.getContent().stream().map(TriageSessionDto::fromEntity).collect(Collectors.toList()));
     }
 
     @GetMapping("/sessions/{id}/complaints")
     @Operation(summary = "Danh sách lý do khám / triệu chứng của phiên")
-    public List<Object> getComplaints(@PathVariable UUID id) {
+    public List<TriageComplaintDto> getComplaints(@PathVariable UUID id) {
         return triageService.getComplaints(id).stream()
                 .map(TriageController::toComplaintDto)
                 .collect(Collectors.toList());
@@ -119,28 +128,26 @@ public class TriageController {
 
     @GetMapping("/sessions/{id}/vitals")
     @Operation(summary = "Danh sách sinh hiệu của phiên")
-    public List<Object> getVitals(@PathVariable UUID id) {
+    public List<TriageVitalDto> getVitals(@PathVariable UUID id) {
         return triageService.getVitals(id).stream()
                 .map(TriageController::toVitalDto)
                 .collect(Collectors.toList());
     }
 
-    private static Object toComplaintDto(TriageComplaint c) {
-        return new Object() {
-            public final UUID id = c.getId();
-            public final String complaintType = c.getComplaintType();
-            public final String complaintText = c.getComplaintText();
-            public final Integer displayOrder = c.getDisplayOrder();
-        };
+    private static TriageComplaintDto toComplaintDto(TriageComplaint c) {
+        return new TriageComplaintDto(
+                c.getId(),
+                c.getComplaintType(),
+                c.getComplaintText(),
+                c.getDisplayOrder());
     }
 
-    private static Object toVitalDto(TriageVital v) {
-        return new Object() {
-            public final UUID id = v.getId();
-            public final String vitalType = v.getVitalType();
-            public final java.math.BigDecimal valueNumeric = v.getValueNumeric();
-            public final String unit = v.getUnit();
-            public final java.time.Instant recordedAt = v.getRecordedAt();
-        };
+    private static TriageVitalDto toVitalDto(TriageVital v) {
+        return new TriageVitalDto(
+                v.getId(),
+                v.getVitalType(),
+                v.getValueNumeric(),
+                v.getUnit(),
+                v.getRecordedAt());
     }
 }

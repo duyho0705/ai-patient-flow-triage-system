@@ -1,11 +1,11 @@
 package vn.clinic.patientflow.api.dto;
 
+import java.time.Instant;
+import java.util.UUID;
+
 import lombok.Builder;
 import lombok.Data;
 import vn.clinic.patientflow.clinical.domain.ClinicalConsultation;
-
-import java.time.Instant;
-import java.util.UUID;
 
 @Data
 @Builder
@@ -32,13 +32,22 @@ public class ConsultationDto {
                 .id(entity.getId())
                 .patientId(entity.getPatient().getId())
                 .queueEntryId(entity.getQueueEntry() != null ? entity.getQueueEntry().getId() : null)
-                .triageSessionId(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null ? entity.getQueueEntry().getTriageSession().getId() : null)
-                .acuityLevel(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null ? entity.getQueueEntry().getTriageSession().getAcuityLevel() : null)
+                .triageSessionId(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null
+                        ? entity.getQueueEntry().getTriageSession().getId()
+                        : null)
+                .acuityLevel(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null
+                        ? entity.getQueueEntry().getTriageSession().getAcuityLevel()
+                        : null)
                 .chiefComplaintSummary(entity.getChiefComplaintSummary())
-                .aiExplanation(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null ? entity.getQueueEntry().getTriageSession().getAiExplanation() : null)
-                .aiConfidenceScore(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null && entity.getQueueEntry().getTriageSession().getAiConfidenceScore() != null ? entity.getQueueEntry().getTriageSession().getAiConfidenceScore().doubleValue() : null)
+                .aiExplanation(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null
+                        ? entity.getQueueEntry().getTriageSession().getAiExplanation()
+                        : null)
+                .aiConfidenceScore(entity.getQueueEntry() != null && entity.getQueueEntry().getTriageSession() != null
+                        && entity.getQueueEntry().getTriageSession().getAiConfidenceScore() != null
+                                ? entity.getQueueEntry().getTriageSession().getAiConfidenceScore().doubleValue()
+                                : null)
                 .doctorUserId(entity.getDoctorUser() != null ? entity.getDoctorUser().getId() : null)
-                .doctorName(entity.getDoctorUser() != null ? entity.getDoctorUser().getUsername() : null)
+                .doctorName(entity.getDoctorUser() != null ? entity.getDoctorUser().getFullNameVi() : null)
                 .status(entity.getStatus())
                 .startedAt(entity.getStartedAt())
                 .endedAt(entity.getEndedAt())

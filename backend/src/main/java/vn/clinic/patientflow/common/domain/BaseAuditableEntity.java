@@ -21,6 +21,14 @@ import java.time.Instant;
 @Setter
 public abstract class BaseAuditableEntity extends BaseEntity {
 
+    public BaseAuditableEntity() {
+        super();
+    }
+
+    public BaseAuditableEntity(java.util.UUID id) {
+        super(id);
+    }
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
