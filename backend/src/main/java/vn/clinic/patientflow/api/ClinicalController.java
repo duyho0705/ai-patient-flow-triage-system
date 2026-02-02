@@ -5,8 +5,9 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
+import vn.clinic.patientflow.auth.AuthPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +29,7 @@ import vn.clinic.patientflow.clinical.service.ClinicalService;
 @RequestMapping(value = "/api/clinical/consultations", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Tag(name = "Clinical", description = "Quản lý khám bệnh")
+@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
 public class ClinicalController {
 
     private final ClinicalService clinicalService;
@@ -51,28 +53,10 @@ public class ClinicalController {
     @Operation(summary = "Bắt đầu phiên khám từ hàng chờ")
     public ConsultationDto startConsultation(
             @RequestBody CreateConsultationRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal AuthPrincipal principal) {
 
-        if (jwt != null) {
-            String userId = jwt.getClaimAsString("uid"); // Adjust based on your JWT claim for user ID
-            if (userId != null) {
-                // If using Keycloak/external ID, you might need lookup.
-                // Assuming 'sub' or specific claim maps to IdentityUser ID or External ID.
-                // For simplicity, let's assume we look up by external ID from 'sub'
-                // But IdentityService.getUserById takes UUID (internal).
-                // Let's assume the current setup passes internal ID or we skip doctor
-                // assignment for now if complex.
-                // Better: Look up user by email or sub.
-                // For this step, I'll omit auto-assigning doctor from token if not critical, or
-                // mock it.
-                // To be robust: implementation depends on how IdentityService maps JWT to User.
-            }
-        }
-        // Simplified: Client can pass doctorId if needed, or we infer from context.
-        // For now, I will pass null for doctorId to avoid Auth complexity bugs, can be
-        // added later.
-
-        return ConsultationDto.fromEntity(clinicalService.startConsultation(request.getQueueEntryId(), null));
+        UUID doctorId = principal != null ? principal.getUserId() : null;
+        return ConsultationDto.fromEntity(clinicalService.startConsultation(request.getQueueEntryId(), doctorId));
     }
 
     @PatchMapping("/{id}")

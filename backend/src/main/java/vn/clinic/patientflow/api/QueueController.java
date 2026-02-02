@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.clinic.patientflow.api.dto.QueueDefinitionDto;
 import vn.clinic.patientflow.api.dto.QueueEntryDto;
@@ -30,6 +31,7 @@ public class QueueController {
     private final QueueService queueService;
 
     @GetMapping("/definitions")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'TRIAGE_NURSE', 'DOCTOR', 'ADMIN', 'CLINIC_MANAGER')")
     @Operation(summary = "Danh sách định nghĩa hàng chờ theo chi nhánh")
     public List<QueueDefinitionDto> getDefinitions(@RequestParam UUID branchId) {
         return queueService.getDefinitionsByBranch(branchId).stream()
@@ -38,6 +40,7 @@ public class QueueController {
     }
 
     @GetMapping("/definitions/{queueId}/entries")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'TRIAGE_NURSE', 'DOCTOR', 'ADMIN', 'CLINIC_MANAGER')")
     @Operation(summary = "Danh sách bệnh nhân đang chờ trong hàng")
     public List<QueueEntryDto> getWaitingEntries(
             @PathVariable UUID queueId,
@@ -55,6 +58,7 @@ public class QueueController {
 
     @PostMapping("/entries")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'TRIAGE_NURSE', 'ADMIN')")
     @Operation(summary = "Thêm bệnh nhân vào hàng chờ")
     public QueueEntryDto createEntry(
             @RequestParam UUID queueDefinitionId,
@@ -68,6 +72,7 @@ public class QueueController {
     }
 
     @PatchMapping("/entries/{id}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'TRIAGE_NURSE', 'DOCTOR', 'ADMIN')")
     @Operation(summary = "Cập nhật trạng thái hàng chờ (gọi bệnh nhân, hoàn thành, v.v.)")
     public QueueEntryDto updateEntry(@PathVariable UUID id, @Valid @RequestBody UpdateQueueEntryRequest request) {
         QueueEntry entry = queueService.updateEntryStatus(
@@ -76,6 +81,7 @@ public class QueueController {
     }
 
     @PatchMapping("/entries/{id}/call")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'TRIAGE_NURSE', 'DOCTOR', 'ADMIN')")
     @Operation(summary = "Gọi bệnh nhân vào phòng (status=CALLED, calledAt=now)")
     public QueueEntryDto callPatient(@PathVariable UUID id) {
         QueueEntry entry = queueService.updateEntryStatus(id, "CALLED", Instant.now(), null, null);

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.clinic.patientflow.api.dto.*;
 import vn.clinic.patientflow.api.dto.PatientInsuranceDto;
@@ -32,6 +33,7 @@ public class PatientController {
     private final PatientService patientService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'TRIAGE_NURSE', 'DOCTOR', 'ADMIN', 'CLINIC_MANAGER')")
     @Operation(summary = "Danh sách bệnh nhân (phân trang)")
     public PagedResponse<PatientDto> list(
             @PageableDefault(size = 20) Pageable pageable) {
@@ -41,6 +43,7 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'TRIAGE_NURSE', 'DOCTOR', 'ADMIN', 'CLINIC_MANAGER')")
     @Operation(summary = "Lấy bệnh nhân theo ID")
     public PatientDto getById(@PathVariable UUID id) {
         return PatientDto.fromEntity(patientService.getById(id));
@@ -60,6 +63,7 @@ public class PatientController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
     @Operation(summary = "Tạo bệnh nhân")
     public PatientDto create(@Valid @RequestBody CreatePatientRequest request) {
         Patient patient = Patient.builder()
@@ -81,6 +85,7 @@ public class PatientController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
     @Operation(summary = "Cập nhật bệnh nhân")
     public PatientDto update(@PathVariable UUID id, @Valid @RequestBody UpdatePatientRequest request) {
         Patient updates = Patient.builder()
