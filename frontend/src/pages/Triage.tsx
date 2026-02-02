@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import { getPatient, findPatientByCccd } from '@/api/patients'
 import { suggestAcuity, createTriageSession } from '@/api/triage'
-import type { PatientDto, VitalItem, ComplaintItem } from '@/types/api'
+import type { VitalItem, ComplaintItem } from '@/types/api'
 import { toastService } from '@/services/toast'
 
 const ACUITY_LEVELS = ['1', '2', '3', '4', '5'] as const
@@ -173,7 +173,7 @@ export function Triage() {
                 checked={useAi}
                 onChange={(e) => setUseAi(e.target.checked)}
               />
-              <span className="text-sm">Dùng gợi ý AI (rule-based)</span>
+              <span className="text-sm">Dùng gợi ý AI (dựa trên quy tắc)</span>
             </label>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button type="button" onClick={runSuggest} className="btn-secondary rounded-lg">
@@ -196,7 +196,7 @@ export function Triage() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-amber-900 text-sm mb-1">AI Reasoning:</p>
+                    <p className="font-semibold text-amber-900 text-sm mb-1">Lập luận của AI:</p>
                     <p className="text-sm text-amber-800">{suggestion.explanation}</p>
                   </div>
                 </div>
@@ -210,7 +210,14 @@ export function Triage() {
             <div className="space-y-2">
               {VITAL_TYPES.map((type) => (
                 <div key={type} className="flex items-center gap-2">
-                  <span className="w-48 text-sm">{type}</span>
+                  <span className="w-48 text-sm">
+                    {type === 'TEMPERATURE' && 'Nhiệt độ'}
+                    {type === 'HEART_RATE' && 'Nhịp tim'}
+                    {type === 'BLOOD_PRESSURE_SYSTOLIC' && 'Huyết áp tâm thu'}
+                    {type === 'BLOOD_PRESSURE_DIASTOLIC' && 'Huyết áp tâm trương'}
+                    {type === 'RESPIRATORY_RATE' && 'Nhịp thở'}
+                    {type === 'SPO2' && 'Chỉ số SpO2'}
+                  </span>
                   <input
                     type="text"
                     placeholder="Giá trị"
@@ -261,7 +268,7 @@ export function Triage() {
                 </select>
               </div>
               <div>
-                <label className="label">Lý do override (khi không chấp nhận gợi ý AI)</label>
+                <label className="label">Lý do điều chỉnh (khi không chấp nhận gợi ý AI)</label>
                 <input
                   type="text"
                   className="input"

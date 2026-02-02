@@ -41,7 +41,7 @@ export function CheckInModal({ patient, onClose, onSuccess }: CheckInModalProps)
             )
         },
         onSuccess: () => {
-            toastService.success(`✅ Đã check-in ${patient.fullNameVi} vào hàng chờ!`)
+            toastService.success(`✅ Đã tiếp đón ${patient.fullNameVi} vào hàng chờ!`)
             queryClient.invalidateQueries({ queryKey: ['queue-entries'] })
             onSuccess()
             onClose()
@@ -67,7 +67,7 @@ export function CheckInModal({ patient, onClose, onSuccess }: CheckInModalProps)
                 {/* Header */}
                 <div className="flex items-start justify-between mb-6">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">Check-in bệnh nhân</h2>
+                        <h2 className="text-xl font-bold text-slate-900">Tiếp đón bệnh nhân</h2>
                         <p className="text-sm text-slate-600 mt-1">Thêm vào hàng chờ phân loại</p>
                     </div>
                     <button
@@ -159,7 +159,7 @@ export function CheckInModal({ patient, onClose, onSuccess }: CheckInModalProps)
                                 Đang xử lý...
                             </span>
                         ) : (
-                            '✅ Check-in ngay'
+                            '✅ Tiếp đón ngay'
                         )}
                     </button>
                 </div>

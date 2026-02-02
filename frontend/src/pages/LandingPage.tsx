@@ -13,7 +13,6 @@ import {
   Heart,
   Stethoscope,
   Microscope,
-  Shield,
   PlayCircle,
   Check,
   Baby,

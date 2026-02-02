@@ -81,10 +81,12 @@ export function CustomSelect<T>({
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute z-50 mt-2 w-full bg-white border border-slate-100 rounded-xl shadow-2xl py-2 max-h-60 overflow-auto outline-none"
+                            className="absolute z-50 mt-2 w-full bg-white/95 backdrop-blur-xl border border-slate-100 rounded-[1.5rem] shadow-2xl shadow-slate-200/50 py-2.5 max-h-60 overflow-auto outline-none custom-scrollbar"
                         >
                             {options.length === 0 ? (
-                                <li className="px-4 py-8 text-center text-slate-400 text-sm italic">Không có dữ liệu</li>
+                                <li className="px-6 py-10 text-center">
+                                    <p className="text-sm font-bold text-slate-300 italic tracking-wide">Không có dữ liệu</p>
+                                </li>
                             ) : (
                                 options.map((opt, i) => (
                                     <li
@@ -93,12 +95,16 @@ export function CustomSelect<T>({
                                             onChange(String(opt[valueKey]))
                                             setIsOpen(false)
                                         }}
-                                        className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between
-                      ${String(opt[valueKey]) === value ? 'bg-[#2b8cee]/5 text-[#2b8cee] font-bold' : 'text-slate-600 hover:bg-slate-50'}
+                                        className={`mx-2 px-4 py-3 text-sm cursor-pointer transition-all duration-200 flex items-center justify-between rounded-xl mb-0.5 last:mb-0
+                      ${String(opt[valueKey]) === value
+                                                ? 'bg-[#2b8cee] text-white font-black shadow-lg shadow-[#2b8cee]/20'
+                                                : 'text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900'}
                     `}
                                     >
-                                        {String(opt[labelKey])}
-                                        {String(opt[valueKey]) === value && <div className="w-1.5 h-1.5 rounded-full bg-[#2b8cee]" />}
+                                        <span className="truncate">{String(opt[labelKey])}</span>
+                                        {String(opt[valueKey]) === value && (
+                                            <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                                        )}
                                     </li>
                                 ))
                             )}

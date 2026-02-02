@@ -4,11 +4,11 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 export type Role = 'admin' | 'receptionist' | 'triage_nurse' | 'doctor' | 'clinic_manager'
 
 const ROLES: { value: Role; label: string }[] = [
-  { value: 'admin', label: 'Admin (Quản trị hệ thống)' },
-  { value: 'receptionist', label: 'Lễ tân (Receptionist)' },
-  { value: 'triage_nurse', label: 'Y tá phân loại (Triage Nurse)' },
-  { value: 'doctor', label: 'Bác sĩ (Doctor)' },
-  { value: 'clinic_manager', label: 'Quản lý vận hành (Clinic Manager)' },
+  { value: 'admin', label: 'Quản trị hệ thống' },
+  { value: 'receptionist', label: 'Lễ tân' },
+  { value: 'triage_nurse', label: 'Y tá phân loại' },
+  { value: 'doctor', label: 'Bác sĩ' },
+  { value: 'clinic_manager', label: 'Quản lý phòng khám' },
 ]
 
 const STORAGE_KEY = 'patient-flow-role'

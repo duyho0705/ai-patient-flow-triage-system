@@ -11,38 +11,38 @@ const ROLE_CONFIG: Record<
     title: 'Admin – Quản trị hệ thống',
     subtitle: 'Quản lý tenant, người dùng, phân quyền, cấu hình, AI audit. Không đụng bệnh nhân.',
     actions: [
-      { to: '/reports', label: 'Báo cáo / Dữ liệu', desc: 'Xem báo cáo tổng hợp (wait time, volume, AI)' },
-      { to: '/triage', label: 'AI Audit', desc: 'Xem lịch sử AI, so sánh đề xuất vs quyết định (sẽ có)' },
-      { to: '/queue', label: 'Cấu hình hàng chờ', desc: 'Quản lý queue theo chi nhánh (sẽ có)' },
+      { to: '/reports', label: 'Báo cáo / Dữ liệu', desc: 'Xem báo cáo tổng hợp (thời gian chờ, lưu lượng, AI)' },
+      { to: '/triage', label: 'Kiểm tra AI', desc: 'Xem lịch sử AI, so sánh đề xuất với quyết định thực tế' },
+      { to: '/queue', label: 'Cấu hình hàng chờ', desc: 'Quản lý hàng chờ theo chi nhánh' },
     ],
   },
   receptionist: {
-    title: 'Lễ tân (Receptionist)',
-    subtitle: 'Tiếp nhận bệnh nhân, đặt lịch / check-in, walk-in. Gửi sang y tá phân loại. Không quyết định ưu tiên.',
+    title: 'Lễ tân',
+    subtitle: 'Tiếp nhận bệnh nhân, đặt lịch / tiếp đón, bệnh nhân vãng lai. Gửi sang y tá phân loại. Không quyết định ưu tiên.',
     actions: [
-      { to: '/patients', label: 'Tiếp nhận bệnh nhân', desc: 'Tìm CCCD/SĐT, tạo mới, đặt lịch, check-in, walk-in' },
+      { to: '/patients', label: 'Tiếp nhận bệnh nhân', desc: 'Tìm CCCD/SĐT, tạo mới, đặt lịch, tiếp đón, bệnh nhân vãng lai' },
       { to: '/queue', label: 'Luồng bệnh nhân', desc: 'Xem trạng thái: đã chờ, đang phân loại, đang khám' },
     ],
   },
   triage_nurse: {
-    title: 'Y tá phân loại (Triage Nurse)',
-    subtitle: 'Thu thập lý do khám + sinh hiệu. AI gợi ý mức nguy cấp. Chấp nhận hoặc override, đưa vào hàng theo ưu tiên.',
+    title: 'Y tá phân loại',
+    subtitle: 'Thu thập lý do khám + sinh hiệu. AI gợi ý mức nguy cấp. Chấp nhận hoặc điều chỉnh, đưa vào hàng theo ưu tiên.',
     actions: [
-      { to: '/triage', label: 'Phân loại', desc: 'Lý do khám, sinh hiệu, AI gợi ý acuity, override, đưa vào hàng' },
+      { to: '/triage', label: 'Phân loại', desc: 'Lý do khám, sinh hiệu, AI gợi ý mức nguy cấp, điều chỉnh, đưa vào hàng' },
       { to: '/patients', label: 'Bệnh nhân', desc: 'Tìm bệnh nhân theo CCCD trước khi phân loại' },
-      { to: '/queue', label: 'Hàng chờ', desc: 'Thêm bệnh nhân vào hàng theo mức ưu tiên (không FIFO)' },
+      { to: '/queue', label: 'Hàng chờ', desc: 'Thêm bệnh nhân vào hàng theo mức ưu tiên (không theo thứ tự đến trước)' },
     ],
   },
   doctor: {
-    title: 'Bác sĩ (Doctor)',
+    title: 'Bác sĩ',
     subtitle: 'Danh sách chờ theo mức nguy cấp + thời gian. Xem trước hồ sơ, khám, ghi chẩn đoán/chỉ định.',
     actions: [
-      { to: '/queue', label: 'Danh sách chờ khám', desc: 'Sắp xếp theo acuity + thời gian chờ, gọi số' },
-      { to: '/patients', label: 'Hồ sơ bệnh nhân', desc: 'Xem lý do khám, sinh hiệu, kết quả AI triage' },
+      { to: '/queue', label: 'Danh sách chờ khám', desc: 'Sắp xếp theo mức nguy cấp + thời gian chờ, gọi số' },
+      { to: '/patients', label: 'Hồ sơ bệnh nhân', desc: 'Xem lý do khám, sinh hiệu, kết quả phân loại AI' },
     ],
   },
   clinic_manager: {
-    title: 'Quản lý vận hành (Clinic Manager)',
+    title: 'Quản lý phòng khám',
     subtitle: 'Báo cáo thời gian chờ, số bệnh nhân/ngày. So sánh trước/sau AI. Đánh giá hiệu quả nhân sự.',
     actions: [
       { to: '/reports', label: 'Báo cáo hoạt động', desc: 'Số bệnh nhân/ngày, thời gian chờ, hiệu quả AI' },
