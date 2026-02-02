@@ -21,23 +21,34 @@ public interface QueueEntryRepository extends JpaRepository<QueueEntry, UUID> {
 
     List<QueueEntry> findByBranch_IdAndStatusOrderByJoinedAtAsc(UUID branchId, String status);
 
-    /** Số bản ghi đã gọi (called_at not null) trong kỳ – dùng cho báo cáo thời gian chờ. */
+    /**
+     * Số bản ghi đã gọi (called_at not null) trong kỳ – dùng cho báo cáo thời gian
+     * chờ.
+     */
     @Query("SELECT COUNT(e) FROM QueueEntry e WHERE e.branch.id = :branchId AND e.calledAt IS NOT NULL AND e.joinedAt >= :from AND e.joinedAt <= :to")
-    long countCompletedByBranchAndJoinedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from, @Param("to") Instant to);
+    long countCompletedByBranchAndJoinedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from,
+            @Param("to") Instant to);
 
     /** Thời gian chờ trung bình (phút) – chỉ entries đã có called_at. */
-    @Query("SELECT AVG(EXTRACT(EPOCH FROM (e.calledAt - e.joinedAt)) / 60.0) FROM QueueEntry e WHERE e.branch.id = :branchId AND e.calledAt IS NOT NULL AND e.joinedAt >= :from AND e.joinedAt <= :to")
-    Optional<Double> averageWaitMinutesByBranchAndJoinedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from, @Param("to") Instant to);
+    @Query(value = "SELECT AVG(EXTRACT(EPOCH FROM (qe.called_at - qe.joined_at)) / 60.0) FROM queue_entry qe WHERE qe.branch_id = :branchId AND qe.called_at IS NOT NULL AND qe.joined_at >= :from AND qe.joined_at <= :to", nativeQuery = true)
+    Optional<Double> averageWaitMinutesByBranchAndJoinedAtBetween(@Param("branchId") UUID branchId,
+            @Param("from") Instant from, @Param("to") Instant to);
 
-    /** Số lượt hàng chờ đã gọi theo từng ngày (date, count) – native để GROUP BY date. */
+    /**
+     * Số lượt hàng chờ đã gọi theo từng ngày (date, count) – native để GROUP BY
+     * date.
+     */
     @Query(value = "SELECT (qe.called_at AT TIME ZONE 'UTC')::date AS d, COUNT(*) FROM queue_entry qe WHERE qe.branch_id = :branchId AND qe.called_at IS NOT NULL AND qe.called_at >= :from AND qe.called_at <= :to GROUP BY (qe.called_at AT TIME ZONE 'UTC')::date ORDER BY d", nativeQuery = true)
-    List<Object[]> countCompletedQueueByDay(@Param("branchId") UUID branchId, @Param("from") Instant from, @Param("to") Instant to);
+    List<Object[]> countCompletedQueueByDay(@Param("branchId") UUID branchId, @Param("from") Instant from,
+            @Param("to") Instant to);
 
     /** Count completed entries by branch. */
     @Query("SELECT COUNT(e) FROM QueueEntry e WHERE e.branch.id = :branchId AND e.status = :status AND e.completedAt >= :from AND e.completedAt <= :to")
-    long countByBranchIdAndStatusAndCompletedAtBetween(@Param("branchId") UUID branchId, @Param("status") String status, @Param("from") Instant from, @Param("to") Instant to);
+    long countByBranchIdAndStatusAndCompletedAtBetween(@Param("branchId") UUID branchId, @Param("status") String status,
+            @Param("from") Instant from, @Param("to") Instant to);
 
     /** Count completed entries by tenant (all branches). */
     @Query("SELECT COUNT(e) FROM QueueEntry e WHERE e.tenant.id = :tenantId AND e.status = :status AND e.completedAt >= :from AND e.completedAt <= :to")
-    long countByTenantIdAndStatusAndCompletedAtBetween(@Param("tenantId") UUID tenantId, @Param("status") String status, @Param("from") Instant from, @Param("to") Instant to);
+    long countByTenantIdAndStatusAndCompletedAtBetween(@Param("tenantId") UUID tenantId, @Param("status") String status,
+            @Param("from") Instant from, @Param("to") Instant to);
 }
