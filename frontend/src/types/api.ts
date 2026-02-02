@@ -82,6 +82,7 @@ export interface TenantDto {
   taxCode?: string
   locale?: string
   timezone?: string
+  settingsJson?: string
 }
 
 export interface TenantBranchDto {
@@ -94,6 +95,31 @@ export interface TenantBranchDto {
   district?: string
   ward?: string
   phone?: string
+}
+
+
+export interface CreateTenantRequest {
+  code: string
+  nameVi: string
+  nameEn?: string
+  taxCode?: string
+  locale?: string
+  timezone?: string
+}
+
+export interface CreateBranchRequest {
+  tenantId: string
+  code: string
+  nameVi: string
+  addressLine?: string
+  city?: string
+  district?: string
+  ward?: string
+  phone?: string
+}
+
+export interface UpdateTenantSettingsRequest {
+  settingsJson: string
 }
 
 export interface PatientDto {

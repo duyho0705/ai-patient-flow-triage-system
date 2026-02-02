@@ -22,6 +22,7 @@ public class TenantDto {
     private String taxCode;
     private String locale;
     private String timezone;
+    private String settingsJson;
     private Boolean isActive;
     private Instant createdAt;
     private Instant updatedAt;
@@ -37,6 +38,7 @@ public class TenantDto {
                 .locale(e.getLocale())
                 .timezone(e.getTimezone())
                 .isActive(e.getIsActive())
+                .settingsJson(e.getSettingsJson())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();

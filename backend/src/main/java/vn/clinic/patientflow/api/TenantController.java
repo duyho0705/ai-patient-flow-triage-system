@@ -96,4 +96,10 @@ public class TenantController {
     public TenantBranchDto getBranchById(@PathVariable UUID branchId) {
         return TenantBranchDto.fromEntity(tenantService.getBranchById(branchId));
     }
+
+    @PutMapping("/{tenantId}/settings")
+    @Operation(summary = "Cập nhật cấu hình tenant (Admin)")
+    public TenantDto updateSettings(@PathVariable UUID tenantId, @RequestBody vn.clinic.patientflow.api.dto.UpdateTenantSettingsRequest request) {
+        return TenantDto.fromEntity(tenantService.updateSettings(tenantId, request.getSettingsJson()));
+    }
 }

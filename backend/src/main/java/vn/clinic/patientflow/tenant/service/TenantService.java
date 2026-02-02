@@ -75,4 +75,11 @@ public class TenantService {
         branch.setTenant(tenant);
         return tenantBranchRepository.save(branch);
     }
+
+    @Transactional
+    public Tenant updateSettings(UUID tenantId, String settingsJson) {
+        Tenant tenant = getById(tenantId);
+        tenant.setSettingsJson(settingsJson);
+        return tenantRepository.save(tenant);
+    }
 }
