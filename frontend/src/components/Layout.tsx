@@ -142,7 +142,13 @@ export function Layout() {
           <div className="flex flex-1 items-center justify-end gap-4">
             <RoleSelect />
             <div className="h-4 w-px bg-slate-200"></div>
-            <TenantSelect />
+            <div className="flex items-center gap-2 px-2 py-1 bg-slate-50 border border-slate-200 rounded-full h-8 shrink-0">
+              <svg viewBox="0 0 512 512" className="w-4 h-4 rounded-full shadow-sm">
+                <path fill="#da251d" d="M0 0h512v512H0z" />
+                <path fill="#ffff00" d="m256 94.4l36.5 112.4h118.2l-95.6 69.5l36.5 112.4l-95.6-69.5l-95.6 69.5l36.5-112.4l-95.6-69.5h118.2z" />
+              </svg>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">VN</span>
+            </div>
             <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-600 font-medium text-xs">
               {user?.fullNameVi?.charAt(0) || 'U'}
             </div>
