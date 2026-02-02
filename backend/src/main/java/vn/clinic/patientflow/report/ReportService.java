@@ -39,10 +39,7 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public WaitTimeSummaryDto getWaitTimeSummary(UUID branchId, LocalDate fromDate, LocalDate toDate) {
-        UUID tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context required");
-        }
+        UUID tenantId = TenantContext.getTenantIdOrThrow();
         TenantBranch branch = tenantBranchRepository.findById(branchId)
                 .filter(b -> b.getTenant().getId().equals(tenantId))
                 .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
@@ -65,10 +62,7 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public List<DailyVolumeDto> getDailyVolume(UUID branchId, LocalDate fromDate, LocalDate toDate) {
-        UUID tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context required");
-        }
+        UUID tenantId = TenantContext.getTenantIdOrThrow();
         TenantBranch branch = tenantBranchRepository.findById(branchId)
                 .filter(b -> b.getTenant().getId().equals(tenantId))
                 .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
@@ -100,10 +94,7 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public AiEffectivenessDto getAiEffectiveness(UUID branchId, LocalDate fromDate, LocalDate toDate) {
-        UUID tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context required");
-        }
+        UUID tenantId = TenantContext.getTenantIdOrThrow();
         TenantBranch branch = tenantBranchRepository.findById(branchId)
                 .filter(b -> b.getTenant().getId().equals(tenantId))
                 .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
