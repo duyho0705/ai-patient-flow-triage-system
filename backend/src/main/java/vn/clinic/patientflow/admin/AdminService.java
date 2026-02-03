@@ -36,6 +36,7 @@ public class AdminService {
     private final TenantService tenantService;
     private final PasswordEncoder passwordEncoder;
     private final vn.clinic.patientflow.common.repository.AuditLogRepository auditLogRepository;
+    private final vn.clinic.patientflow.common.service.AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public PagedResponse<AdminUserDto> listUsers(UUID tenantId, Pageable pageable) {
@@ -83,6 +84,8 @@ public class AdminService {
                 .build();
         identityUserRoleRepository.save(userRole);
 
+        auditLogService.log("CREATE", "USER", user.getId().toString(), "Tạo mới người dùng: " + user.getEmail());
+
         return toAdminUserDto(identityUserRepository.findById(user.getId()).orElse(user));
     }
 
@@ -123,6 +126,8 @@ public class AdminService {
             }
         }
 
+        auditLogService.log("UPDATE", "USER", userId.toString(), "Cập nhật thông tin người dùng: " + user.getEmail());
+
         return toAdminUserDto(identityUserRepository.findById(userId).orElse(user));
     }
 
@@ -132,6 +137,8 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("IdentityUser", userId));
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         identityUserRepository.save(user);
+        auditLogService.log("SET_PASSWORD", "USER", userId.toString(),
+                "Đặt lại mật khẩu cho người dùng: " + user.getEmail());
     }
 
     @Transactional(readOnly = true)

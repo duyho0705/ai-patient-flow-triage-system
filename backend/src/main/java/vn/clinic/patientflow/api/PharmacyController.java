@@ -31,6 +31,7 @@ public class PharmacyController {
     private final vn.clinic.patientflow.pharmacy.repository.InventoryTransactionRepository transactionRepository;
     private final PharmacyService pharmacyService;
     private final vn.clinic.patientflow.identity.service.IdentityService identityService;
+    private final vn.clinic.patientflow.common.service.AuditLogService auditLogService;
 
     @GetMapping("/products")
     @Operation(summary = "Lấy danh mục thuốc")
@@ -54,7 +55,10 @@ public class PharmacyController {
                 .standardPrice(dto.getStandardPrice())
                 .active(true)
                 .build();
-        return ResponseEntity.ok(mapToProductDto(productRepository.save(product)));
+        product = productRepository.save(product);
+        auditLogService.log("CREATE", "PHARMACY_PRODUCT", product.getId().toString(),
+                "Thêm thuốc mới: " + product.getNameVi());
+        return ResponseEntity.ok(mapToProductDto(product));
     }
 
     @PutMapping("/products/{id}")
@@ -73,7 +77,9 @@ public class PharmacyController {
         product.setStandardPrice(dto.getStandardPrice());
         product.setActive(dto.isActive());
 
-        return ResponseEntity.ok(mapToProductDto(productRepository.save(product)));
+        product = productRepository.save(product);
+        auditLogService.log("UPDATE", "PHARMACY_PRODUCT", id.toString(), "Cập nhật thuốc: " + product.getNameVi());
+        return ResponseEntity.ok(mapToProductDto(product));
     }
 
     @GetMapping("/inventory")

@@ -22,9 +22,9 @@ public class AuditLogService {
         UUID tenantId = TenantContext.getTenantId().orElse(null);
 
         AuthPrincipal principal = null;
-        Object p = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (p instanceof AuthPrincipal) {
-            principal = (AuthPrincipal) p;
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof AuthPrincipal) {
+            principal = (AuthPrincipal) auth.getPrincipal();
         }
 
         AuditLog log = AuditLog.builder()

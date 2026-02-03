@@ -18,6 +18,7 @@ public class MasterDataService {
 
     private final MedicalServiceRepository serviceRepository;
     private final TenantRepository tenantRepository;
+    private final vn.clinic.patientflow.common.service.AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public List<MedicalService> listMedicalServices(boolean onlyActive) {
@@ -34,7 +35,9 @@ public class MasterDataService {
         var tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant", tenantId));
         svc.setTenant(tenant);
-        return serviceRepository.save(svc);
+        MedicalService saved = serviceRepository.save(svc);
+        auditLogService.log("CREATE", "MEDICAL_SERVICE", saved.getId().toString(), "Tạo dịch vụ: " + saved.getNameVi());
+        return saved;
     }
 
     @Transactional
@@ -49,6 +52,8 @@ public class MasterDataService {
         svc.setUnitPrice(details.getUnitPrice());
         svc.setActive(details.isActive());
 
-        return serviceRepository.save(svc);
+        MedicalService saved = serviceRepository.save(svc);
+        auditLogService.log("UPDATE", "MEDICAL_SERVICE", id.toString(), "Cập nhật dịch vụ: " + saved.getNameVi());
+        return saved;
     }
 }
