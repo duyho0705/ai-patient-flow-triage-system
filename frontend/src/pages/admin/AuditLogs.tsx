@@ -4,7 +4,7 @@ import { getAuditLogs } from '@/api/admin'
 import { listTenants } from '@/api/tenants'
 import { CustomSelect } from '@/components/CustomSelect'
 import {
-    History, Filter, Search,
+    History,
     ChevronLeft, ChevronRight,
     User, Activity, Database, Clock
 } from 'lucide-react'
@@ -106,9 +106,9 @@ export function AuditLogs() {
                                             </td>
                                             <td className="px-8 py-5">
                                                 <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${log.action === 'CREATE' ? 'bg-emerald-50 text-emerald-600' :
-                                                        log.action === 'UPDATE' ? 'bg-amber-50 text-amber-600' :
-                                                            log.action === 'DELETE' ? 'bg-rose-50 text-rose-600' :
-                                                                'bg-blue-50 text-blue-600'
+                                                    log.action === 'UPDATE' ? 'bg-amber-50 text-amber-600' :
+                                                        log.action === 'DELETE' ? 'bg-rose-50 text-rose-600' :
+                                                            'bg-blue-50 text-blue-600'
                                                     }`}>
                                                     {log.action}
                                                 </span>

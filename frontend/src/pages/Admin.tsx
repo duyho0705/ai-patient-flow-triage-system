@@ -63,6 +63,15 @@ export function Admin() {
           <Settings className={`h-4 w-4 ${activeTab === 'ai' ? 'text-purple-600' : 'text-slate-300 group-hover:text-purple-600'}`} />
           Cấu hình AI
         </button>
+
+        <button
+          onClick={() => setActiveTab('audit')}
+          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-slate-900 ${activeTab === 'audit' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400'
+            }`}
+        >
+          <History className={`h-4 w-4 ${activeTab === 'audit' ? 'text-slate-900' : 'text-slate-300 group-hover:text-slate-900'}`} />
+          Nhật ký (Audit)
+        </button>
       </div>
 
       <div className="min-h-[500px]">
@@ -70,6 +79,7 @@ export function Admin() {
         {activeTab === 'branches' && <BranchManagement />}
         {activeTab === 'services' && <MasterData />}
         {activeTab === 'ai' && <AiConfig />}
+        {activeTab === 'audit' && <AuditLogs />}
       </div>
     </div>
   )

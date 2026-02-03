@@ -1,0 +1,73 @@
+package vn.clinic.patientflow.clinical.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import vn.clinic.patientflow.api.dto.CreatePrescriptionTemplateRequest;
+import vn.clinic.patientflow.api.dto.PrescriptionTemplateDto;
+import vn.clinic.patientflow.clinical.domain.PrescriptionTemplate;
+import vn.clinic.patientflow.clinical.domain.PrescriptionTemplateItem;
+import vn.clinic.patientflow.clinical.repository.PrescriptionTemplateRepository;
+import vn.clinic.patientflow.common.tenant.TenantContext;
+import vn.clinic.patientflow.tenant.domain.Tenant;
+import vn.clinic.patientflow.tenant.repository.TenantRepository;
+import vn.clinic.patientflow.pharmacy.repository.PharmacyProductRepository;
+import vn.clinic.patientflow.auth.AuthPrincipal;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class PrescriptionTemplateService {
+
+    private final PrescriptionTemplateRepository templateRepository;
+    private final TenantRepository tenantRepository;
+    private final PharmacyProductRepository productRepository;
+
+    @Transactional
+    public PrescriptionTemplate createTemplate(CreatePrescriptionTemplateRequest request, UUID creatorId) {
+        UUID tenantId = vn.clinic.patientflow.common.tenant.TenantContext.getTenantIdOrThrow();
+        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
+
+        PrescriptionTemplate template = PrescriptionTemplate.builder()
+                .tenant(tenant)
+                .nameVi(request.getNameVi())
+                .description(request.getDescription())
+                .createdBy(creatorId)
+                .build();
+
+        List<PrescriptionTemplateItem> items = request.getItems().stream().map(i -> PrescriptionTemplateItem.builder()
+                .template(template)
+                .product(productRepository.findById(i.getProductId()).orElse(null))
+                .quantity(i.getQuantity())
+                .dosageInstruction(i.getDosageInstruction())
+                .build()).collect(Collectors.toList());
+
+        template.setItems(items);
+        return templateRepository.save(template);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PrescriptionTemplateDto> getTemplates() {
+        UUID tenantId = vn.clinic.patientflow.common.tenant.TenantContext.getTenantIdOrThrow();
+        return templateRepository.findByTenantId(tenantId).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    private PrescriptionTemplateDto mapToDto(PrescriptionTemplate t) {
+        return PrescriptionTemplateDto.builder()
+                .id(t.getId())
+                .nameVi(t.getNameVi())
+                .description(t.getDescription())
+                .items(t.getItems().stream().map(i -> PrescriptionTemplateDto.Item.builder()
+                        .productId(i.getProduct() != null ? i.getProduct().getId() : null)
+                        .productName(i.getProduct() != null ? i.getProduct().getNameVi() : i.getProductNameCustom())
+                        .quantity(i.getQuantity())
+                        .dosageInstruction(i.getDosageInstruction())
+                        .build()).collect(Collectors.toList()))
+                .build();
+    }
+}
