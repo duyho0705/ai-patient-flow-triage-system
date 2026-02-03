@@ -142,6 +142,9 @@ export function PharmacyDispensing() {
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-sm font-black text-slate-900">x{item.quantity}</p>
+                                                    <p className={`text-[9px] font-black uppercase tracking-widest ${item.availableStock >= item.quantity ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                        Kho: {item.availableStock || 0}
+                                                    </p>
                                                 </div>
                                             </div>
                                         ))}
@@ -152,15 +155,15 @@ export function PharmacyDispensing() {
                                 <div className="p-8 border-t border-slate-100">
                                     <button
                                         onClick={() => dispenseMutation.mutate(p.id)}
-                                        disabled={dispenseMutation.isPending}
-                                        className="w-full group/btn relative overflow-hidden bg-slate-900 text-white py-4 rounded-2xl font-black text-sm tracking-tight transition-all hover:bg-[#2b8cee] hover:shadow-2xl hover:shadow-[#2b8cee]/20 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                                        disabled={dispenseMutation.isPending || p.invoiceStatus !== 'PAID'}
+                                        className="w-full group/btn relative overflow-hidden bg-slate-900 text-white py-4 rounded-2xl font-black text-sm tracking-tight transition-all hover:bg-[#2b8cee] hover:shadow-2xl hover:shadow-[#2b8cee]/20 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed active:scale-95"
                                     >
                                         <div className="relative z-10 flex items-center justify-center gap-2">
                                             {dispenseMutation.isPending ? (
                                                 <Loader2 className="h-5 w-5 animate-spin" />
                                             ) : (
                                                 <>
-                                                    Xác nhận Cấp phát ngay
+                                                    {p.invoiceStatus === 'PAID' ? 'Xác nhận Cấp phát ngay' : 'Chưa thể cấp phát'}
                                                     <CheckCircle2 className="h-4 w-4 opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all" />
                                                 </>
                                             )}

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -21,10 +22,15 @@ import vn.clinic.patientflow.common.tenant.TenantContext;
 public class BillingService {
 
     private final InvoiceRepository invoiceRepository;
+    private final vn.clinic.patientflow.tenant.repository.TenantRepository tenantRepository;
 
     @Transactional
     public Invoice createInvoice(Invoice invoice) {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
+        var tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant", tenantId));
+        invoice.setTenant(tenant);
+
         // Generate invoice number if not present
         if (invoice.getInvoiceNumber() == null) {
             String prefix = "INV-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmm"));

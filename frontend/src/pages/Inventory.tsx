@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
-import { getPharmacyInventory, restockInventory, createPharmacyProduct } from '@/api/pharmacy'
+import { getPharmacyInventory, restockInventory, createPharmacyProduct, getInventoryTransactions } from '@/api/pharmacy'
 import { toastService } from '@/services/toast'
-import { Package, Search, ArrowUpRight, AlertTriangle, Plus, X, Boxes, Tag, ShieldCheck, DollarSign } from 'lucide-react'
+import {
+    Package, Search, ArrowUpRight, AlertTriangle, Plus, X, Boxes,
+    Tag, ShieldCheck, DollarSign, History, BarChart3, ArrowDownLeft
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export function Inventory() {
     const { headers, branchId } = useTenant()
     const queryClient = useQueryClient()
     const [searchTerm, setSearchTerm] = useState('')
+    const [activeTab, setActiveTab] = useState<'STOCK' | 'HISTORY'>('STOCK')
     const [selectedProductForRestock, setSelectedProductForRestock] = useState<string | null>(null)
     const [restockQty, setRestockQty] = useState(0)
     const [isProductModalOpen, setIsProductModalOpen] = useState(false)
@@ -21,10 +25,16 @@ export function Inventory() {
         standardPrice: 0
     })
 
-    const { data: inventory, isLoading } = useQuery({
+    const { data: inventory, isLoading: isInvLoading } = useQuery({
         queryKey: ['pharmacy-inventory', branchId],
         queryFn: () => getPharmacyInventory(branchId!, headers),
         enabled: !!branchId && !!headers?.tenantId,
+    })
+
+    const { data: transactions, isLoading: isTransLoading } = useQuery({
+        queryKey: ['inventory-transactions', branchId],
+        queryFn: () => getInventoryTransactions(branchId!, headers),
+        enabled: activeTab === 'HISTORY' && !!branchId && !!headers?.tenantId,
     })
 
     const addStock = useMutation({
@@ -35,6 +45,7 @@ export function Inventory() {
             setSelectedProductForRestock(null)
             setRestockQty(0)
             queryClient.invalidateQueries({ queryKey: ['pharmacy-inventory'] })
+            queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] })
         },
         onError: (e: Error) => toastService.error(e.message),
     })
@@ -59,7 +70,7 @@ export function Inventory() {
     const lowStockCount = inventory?.filter(i => i.currentStock <= i.minStockLevel).length || 0
 
     return (
-        <div className="mx-auto max-w-7xl space-y-10 animate-in fade-in duration-700">
+        <div className="mx-auto max-w-7xl space-y-10 animate-in fade-in duration-700 pb-20">
             {/* Header with Stats Section */}
             <div className="space-y-8">
                 <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-100">
@@ -67,16 +78,33 @@ export function Inventory() {
                         <h1 className="text-4xl font-black text-slate-900 tracking-tight">Kho dược phẩm</h1>
                         <p className="text-slate-500 mt-2 font-medium">Hệ thống kiểm soát thuốc, vật tư y tế và định mức tồn kho.</p>
                     </div>
-                    <button
-                        onClick={() => setIsProductModalOpen(true)}
-                        className="group flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm tracking-tight hover:bg-[#2b8cee] hover:shadow-2xl hover:shadow-[#2b8cee]/20 transition-all active:scale-95"
-                    >
-                        <Plus className="h-5 w-5 transition-transform group-hover:rotate-90" />
-                        Đăng ký Thuốc mới
-                    </button>
+                    <div className="flex gap-4">
+                        <div className="flex bg-slate-100 p-1.5 rounded-[1.5rem] gap-1 self-end">
+                            {[
+                                { id: 'STOCK', label: 'Tồn kho hiện tại', icon: Boxes },
+                                { id: 'HISTORY', label: 'Lịch sử biến động', icon: History }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as any)}
+                                    className={`flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${activeTab === tab.id ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    <tab.icon className="w-3.5 h-3.5" />
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            onClick={() => setIsProductModalOpen(true)}
+                            className="group flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm tracking-tight hover:bg-[#2b8cee] hover:shadow-2xl hover:shadow-[#2b8cee]/20 transition-all active:scale-95"
+                        >
+                            <Plus className="h-5 w-5 transition-transform group-hover:rotate-90" />
+                            Đăng ký Thuốc
+                        </button>
+                    </div>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
                         <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
                             <Boxes className="w-7 h-7" />
@@ -97,8 +125,14 @@ export function Inventory() {
                     </div>
                     <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
                         <div className="w-14 h-14 bg-slate-50 text-slate-600 rounded-2xl flex items-center justify-center">
-                            <Plus className="w-7 h-7" />
+                            <BarChart3 className="w-7 h-7" />
                         </div>
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng thuốc đã kê</p>
+                            <h4 className="text-2xl font-black text-slate-900">{transactions?.filter(t => t.type === 'DISPENSE').length || 0}</h4>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
                         <div className="flex-1">
                             <div className="relative group">
                                 <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
@@ -115,75 +149,138 @@ export function Inventory() {
                 </div>
             </div>
 
-            {/* Inventory List Section */}
-            <section className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead>
-                            <tr className="border-b border-slate-50">
-                                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Thông tin dược phẩm</th>
-                                <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Đơn vị</th>
-                                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Giá niêm yết</th>
-                                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Tình trạng kho</th>
-                                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {isLoading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td colSpan={5} className="px-8 py-6 h-20 bg-slate-50/10" />
+            <AnimatePresence mode="wait">
+                {activeTab === 'STOCK' ? (
+                    <motion.section
+                        key="stock"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden"
+                    >
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full">
+                                <thead>
+                                    <tr className="border-b border-slate-50">
+                                        <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Thông tin dược phẩm</th>
+                                        <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Đơn vị</th>
+                                        <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Giá niêm yết</th>
+                                        <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Tình trạng kho</th>
+                                        <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Thao tác</th>
                                     </tr>
-                                ))
-                            ) : filteredInventory?.map((item) => (
-                                <tr key={item.id} className="group hover:bg- slate-50/40 transition-all duration-300">
-                                    <td className="px-8 py-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white text-[10px] font-black">
-                                                {item.product.code.slice(0, 3)}
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {(isInvLoading) ? (
+                                        Array.from({ length: 5 }).map((_, i) => (
+                                            <tr key={i} className="animate-pulse">
+                                                <td colSpan={5} className="px-8 py-6 h-20 bg-slate-50/10" />
+                                            </tr>
+                                        ))
+                                    ) : filteredInventory?.map((item) => (
+                                        <tr key={item.id} className="group hover:bg-slate-50/40 transition-all duration-300">
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white text-[10px] font-black shadow-lg shadow-slate-200">
+                                                        {item.product.code.slice(0, 3)}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-black text-slate-900 tracking-tight leading-none mb-1">{item.product.nameVi}</div>
+                                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">#{item.product.code} · {item.product.genericName || 'Biệt dược'}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-center">
+                                                <span className="inline-flex items-center px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200/50">
+                                                    {item.product.unit}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="font-black text-slate-900">{(item.product.standardPrice || 0).toLocaleString('vi-VN')} đ</div>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <div className={`text-xl font-black ${item.currentStock <= item.minStockLevel ? 'text-red-500' : 'text-slate-900'}`}>
+                                                        {item.currentStock}
+                                                    </div>
+                                                    {item.currentStock <= item.minStockLevel && (
+                                                        <div className="flex items-center gap-1 text-[9px] font-black text-red-400 uppercase tracking-widest">
+                                                            <AlertTriangle className="w-3 h-3" />
+                                                            Dưới mức an toàn
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <button
+                                                    onClick={() => setSelectedProductForRestock(item.product.id)}
+                                                    className="inline-flex items-center gap-2 bg-white border border-slate-200 p-3 rounded-2xl text-slate-400 hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 transition-all shadow-sm group-hover:shadow-md active:scale-95"
+                                                >
+                                                    <ArrowUpRight className="h-4 w-4" />
+                                                    <span className="text-xs font-black uppercase tracking-widest pr-1">Nhập hàng</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </motion.section>
+                ) : (
+                    <motion.section
+                        key="history"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-4"
+                    >
+                        {isTransLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-24 bg-white rounded-[2rem] animate-pulse" />)
+                        ) : transactions?.length === 0 ? (
+                            <div className="bg-white rounded-[3rem] py-24 text-center border border-slate-100">
+                                <History className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Chưa có lịch sử biến động</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4">
+                                {transactions?.map(t => (
+                                    <div key={t.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-50 shadow-sm flex items-center justify-between group hover:border-blue-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
+                                        <div className="flex items-center gap-6">
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${t.type === 'PURCHASE' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                {t.type === 'PURCHASE' ? <ArrowDownLeft className="w-7 h-7" /> : <ArrowUpRight className="w-7 h-7" />}
                                             </div>
                                             <div>
-                                                <div className="font-black text-slate-900 tracking-tight leading-none mb-1">{item.product.nameVi}</div>
-                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">#{item.product.code} · {item.product.genericName || 'Biệt dược'}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-6 text-center">
-                                        <span className="inline-flex items-center px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200/50">
-                                            {item.product.unit}
-                                        </span>
-                                    </td>
-                                    <td className="px-8 py-6 text-right">
-                                        <div className="font-black text-slate-900">{(item.product.standardPrice || 0).toLocaleString('vi-VN')} đ</div>
-                                    </td>
-                                    <td className="px-8 py-6 text-right">
-                                        <div className="flex flex-col items-end gap-1">
-                                            <div className={`text-xl font-black ${item.currentStock <= item.minStockLevel ? 'text-red-500' : 'text-slate-900'}`}>
-                                                {item.currentStock}
-                                            </div>
-                                            {item.currentStock <= item.minStockLevel && (
-                                                <div className="flex items-center gap-1 text-[9px] font-black text-red-400 uppercase tracking-widest">
-                                                    <AlertTriangle className="w-3 h-3" />
-                                                    Dưới mức an toàn
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${t.type === 'PURCHASE' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                        {t.type === 'PURCHASE' ? 'Nhập kho' : 'Cấp phát'}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-slate-300">
+                                                        {new Date(t.createdAt).toLocaleString('vi-VN')}
+                                                    </span>
                                                 </div>
-                                            )}
+                                                <h4 className="font-black text-slate-900 leading-tight">
+                                                    {t.product.nameVi}
+                                                </h4>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase italic">{t.notes || 'Không có ghi chú'}</p>
+                                                    {t.performedByUserName && (
+                                                        <span className="text-[10px] text-slate-300 font-medium">· Thực hiện bởi: {t.performedByUserName}</span>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </td>
-                                    <td className="px-8 py-6 text-right">
-                                        <button
-                                            onClick={() => setSelectedProductForRestock(item.product.id)}
-                                            className="inline-flex items-center gap-2 bg-white border border-slate-200 p-3 rounded-2xl text-slate-400 hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 transition-all shadow-sm group-hover:shadow-md active :scale-95"
-                                        >
-                                            <ArrowUpRight className="h-4 w-4" />
-                                            <span className="text-xs font-black uppercase tracking-widest pr-1">Nhập hàng</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+                                        <div className="text-right">
+                                            <div className={`text-2xl font-black ${t.quantity > 0 ? 'text-emerald-500' : 'text-blue-600'}`}>
+                                                {t.quantity > 0 ? '+' : ''}{t.quantity}
+                                            </div>
+                                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.product.unit}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </motion.section>
+                )}
+            </AnimatePresence>
 
             {/* Restock Modal */}
             <AnimatePresence>

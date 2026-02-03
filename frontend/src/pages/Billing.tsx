@@ -1,9 +1,16 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
-import { getInvoice, payInvoice, listInvoices } from '@/api/billing'
+import { getInvoice, payInvoice, listInvoices, createInvoice } from '@/api/billing'
+import { listMedicalServices } from '@/api/masterData'
+import { findPatientByPhone, findPatientByCccd } from '@/api/patients'
 import { toastService } from '@/services/toast'
-import { CreditCard, Receipt, Clock, CheckCircle, Search, ArrowRight, User } from 'lucide-react'
+import {
+    CreditCard, Receipt, Clock, CheckCircle, Search, ArrowRight, User,
+    Plus, X, Trash2, ShoppingCart, Calculator, Hash, ShieldCheck
+} from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import type { InvoiceDto, MedicalServiceDto, PatientDto, CreateInvoiceRequest } from '@/types/api'
 
 export function Billing() {
     const { headers, branchId } = useTenant()
@@ -11,6 +18,13 @@ export function Billing() {
     const [searchId, setSearchId] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('PENDING')
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null)
+
+    // Create Invoice Modal State
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const [patientSearch, setPatientSearch] = useState('')
+    const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null)
+    const [invoiceItems, setInvoiceItems] = useState<{ serviceId: string, name: string, code: string, price: number, qty: number }[]>([])
+    const [discount, setDiscount] = useState(0)
 
     // List Invoices
     const { data: invoices, isLoading: isListLoading } = useQuery({
@@ -26,6 +40,13 @@ export function Billing() {
         enabled: !!selectedInvoiceId && !!headers?.tenantId,
     })
 
+    // Medical Services for Catalog
+    const { data: services } = useQuery({
+        queryKey: ['medical-services-active'],
+        queryFn: () => listMedicalServices({ onlyActive: true }, headers),
+        enabled: isCreateModalOpen && !!headers?.tenantId,
+    })
+
     const pay = useMutation({
         mutationFn: (paymentMethod: string) => payInvoice(selectedInvoiceId!, paymentMethod, headers),
         onSuccess: () => {
@@ -36,6 +57,78 @@ export function Billing() {
         onError: (e: Error) => toastService.error(e.message),
     })
 
+    const createInvoiceMutation = useMutation({
+        mutationFn: (data: CreateInvoiceRequest) => createInvoice(data, headers),
+        onSuccess: (newInv) => {
+            toastService.success('📄 Đã khởi tạo hóa đơn thành công')
+            setIsCreateModalOpen(false)
+            resetCreateForm()
+            setSelectedInvoiceId(newInv.id)
+            queryClient.invalidateQueries({ queryKey: ['invoices'] })
+        },
+        onError: (e: Error) => toastService.error(e.message)
+    })
+
+    const searchPatient = async () => {
+        if (!patientSearch) return
+        let p = await findPatientByPhone(patientSearch, headers)
+        if (!p) p = await findPatientByCccd(patientSearch, headers)
+
+        if (p) {
+            setSelectedPatient(p)
+            toastService.success(`👋 Đã tìm thấy: ${p.fullNameVi}`)
+        } else {
+            toastService.error('Không tìm thấy bệnh nhân với SĐT/CCCD này')
+        }
+    }
+
+    const resetCreateForm = () => {
+        setSelectedPatient(null)
+        setPatientSearch('')
+        setInvoiceItems([])
+        setDiscount(0)
+    }
+
+    const addServiceToInvoice = (s: MedicalServiceDto) => {
+        const existing = invoiceItems.find(item => item.serviceId === s.id)
+        if (existing) {
+            setInvoiceItems(invoiceItems.map(item =>
+                item.serviceId === s.id ? { ...item, qty: item.qty + 1 } : item
+            ))
+        } else {
+            setInvoiceItems([...invoiceItems, {
+                serviceId: s.id,
+                name: s.nameVi,
+                code: s.code,
+                price: s.unitPrice,
+                qty: 1
+            }])
+        }
+    }
+
+    const removeService = (id: string) => {
+        setInvoiceItems(invoiceItems.filter(i => i.serviceId !== id))
+    }
+
+    const totalBeforeDiscount = invoiceItems.reduce((acc, curr) => acc + (curr.price * curr.qty), 0)
+    const finalAmount = Math.max(0, totalBeforeDiscount - discount)
+
+    const handleCreateInvoice = () => {
+        if (!selectedPatient) return
+        const req: CreateInvoiceRequest = {
+            patientId: selectedPatient.id,
+            branchId: branchId!,
+            discountAmount: discount,
+            items: invoiceItems.map(i => ({
+                itemCode: i.code,
+                itemName: i.name,
+                quantity: i.qty,
+                unitPrice: i.price
+            }))
+        }
+        createInvoiceMutation.mutate(req)
+    }
+
     const filteredInvoices = invoices?.filter(inv =>
         !searchId ||
         inv.invoiceNumber.toLowerCase().includes(searchId.toLowerCase()) ||
@@ -43,229 +136,204 @@ export function Billing() {
     )
 
     return (
-        <div className="mx-auto max-w-7xl space-y-8">
-            <header className="page-header">
+        <div className="mx-auto max-w-7xl space-y-8 animate-in fade-in duration-700 pb-20">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-100">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Quản lý Viện phí</h1>
-                    <p className="text-slate-500 mt-2">Theo dõi, thu phí và quản lý hóa đơn bệnh nhân.</p>
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">Quản lý Viện phí</h1>
+                    <p className="text-slate-500 mt-2 font-medium">Theo dõi, thu phí và quản lý hóa đơn của toàn hệ thống.</p>
                 </div>
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm tracking-tight hover:bg-[#2b8cee] hover:shadow-2xl hover:shadow-[#2b8cee]/20 transition-all active:scale-95"
+                >
+                    <Plus className="w-5 h-5" />
+                    Tạo Hóa đơn mới
+                </button>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 {/* Left Side: Search & List */}
                 <div className="lg:col-span-1 space-y-6">
-                    <section className="card p-4">
-                        <div className="space-y-4">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <section className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40">
+                        <div className="space-y-6">
+                            <div className="relative group">
+                                <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
                                 <input
                                     type="text"
                                     placeholder="Mã hóa đơn / Tên bệnh nhân..."
                                     value={searchId}
                                     onChange={(e) => setSearchId(e.target.value)}
-                                    className="input pl-10 w-full"
+                                    className="w-full bg-transparent border-none focus:ring-0 text-lg font-bold placeholder:text-slate-200 pl-8"
                                 />
                             </div>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setStatusFilter('PENDING')}
-                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${statusFilter === 'PENDING' ? 'bg-amber-100 text-amber-700 ring-1 ring-amber-200' : 'bg-slate-50 text-slate-500'}`}
-                                >
-                                    Chờ thu
-                                </button>
-                                <button
-                                    onClick={() => setStatusFilter('PAID')}
-                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${statusFilter === 'PAID' ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200' : 'bg-slate-50 text-slate-500'}`}
-                                >
-                                    Đã thu
-                                </button>
-                                <button
-                                    onClick={() => setStatusFilter('')}
-                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${statusFilter === '' ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-500'}`}
-                                >
-                                    Tất cả
-                                </button>
+                            <div className="flex bg-slate-50 p-1.5 rounded-2xl gap-1">
+                                {[
+                                    { id: 'PENDING', label: 'Chờ thu' },
+                                    { id: 'PAID', label: 'Đã thu' },
+                                    { id: '', label: 'Tất cả' }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setStatusFilter(tab.id)}
+                                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${statusFilter === tab.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </section>
 
-                    <section className="space-y-3">
+                    <section className="space-y-4">
                         {isListLoading ? (
-                            <div className="space-y-3">
-                                {[1, 2, 3].map(i => <div key={i} className="h-24 bg-white border border-slate-100 rounded-xl animate-pulse" />)}
-                            </div>
+                            Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 bg-white border border-slate-100 rounded-[2rem] animate-pulse" />)
                         ) : filteredInvoices?.length === 0 ? (
-                            <div className="text-center py-10 bg-white rounded-xl border border-dashed border-slate-200">
-                                <p className="text-sm text-slate-400">Không tìm thấy hóa đơn nào</p>
+                            <div className="text-center py-20 bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
+                                <Receipt className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                                <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">Trống danh sách</p>
                             </div>
-                        ) : (
-                            filteredInvoices?.map((inv) => (
-                                <button
-                                    key={inv.id}
-                                    onClick={() => setSelectedInvoiceId(inv.id)}
-                                    className={`w-full text-left p-4 rounded-xl border transition-all hover:shadow-md ${selectedInvoiceId === inv.id ? 'bg-white border-blue-500 ring-4 ring-blue-50 shadow-lg' : 'bg-white border-slate-100'}`}
-                                >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">#{inv.invoiceNumber}</span>
-                                        <StatusBadge status={inv.status} />
-                                    </div>
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-                                            <User className="w-4 h-4 text-slate-400" />
+                        ) : filteredInvoices?.map((inv) => (
+                            <motion.button
+                                layout
+                                key={inv.id}
+                                onClick={() => setSelectedInvoiceId(inv.id)}
+                                className={`w-full text-left p-6 rounded-[2rem] border transition-all ${selectedInvoiceId === inv.id ? 'bg-slate-900 text-white border-slate-900 shadow-2xl shadow-slate-900/20' : 'bg-white text-slate-900 border-slate-100 hover:border-slate-300 shadow-sm'}`}
+                            >
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <Hash className={`w-3 h-3 ${selectedInvoiceId === inv.id ? 'text-blue-400' : 'text-slate-300'}`} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{inv.invoiceNumber}</span>
                                         </div>
-                                        <div>
-                                            <div className="font-bold text-slate-900 leading-none">{inv.patientName}</div>
-                                            <div className="text-[10px] text-slate-400 mt-1">{new Date(inv.createdAt).toLocaleString('vi-VN')}</div>
-                                        </div>
+                                        <h4 className="font-black text-lg tracking-tight leading-none">{inv.patientName}</h4>
                                     </div>
-                                    <div className="flex justify-between items-end pt-2 border-t border-slate-50">
-                                        <span className="text-xs text-slate-500">Tổng cộng</span>
-                                        <span className="font-black text-blue-600">{(inv.finalAmount || 0).toLocaleString('vi-VN')} đ</span>
+                                    <StatusBadge status={inv.status} />
+                                </div>
+                                <div className="flex justify-between items-end">
+                                    <div className="text-[10px] font-bold opacity-50 flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {new Date(inv.createdAt).toLocaleDateString('vi-VN')}
                                     </div>
-                                </button>
-                            ))
-                        )}
+                                    <div className="text-xl font-black">{inv.finalAmount.toLocaleString('vi-VN')} đ</div>
+                                </div>
+                            </motion.button>
+                        ))}
                     </section>
                 </div>
 
-                {/* Right Side: Invoice Detail */}
+                {/* Right Side: Detail */}
                 <div className="lg:col-span-2">
-                    {selectedInvoiceId ? (
+                    {invoiceDetail ? (
                         isDetailLoading ? (
-                            <div className="card h-[600px] flex items-center justify-center">
-                                <div className="text-center space-y-4">
-                                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                                    <p className="text-slate-500">Đang tải chi tiết hóa đơn...</p>
-                                </div>
-                            </div>
-                        ) : invoiceDetail && (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                                <div className="card space-y-8 relative overflow-hidden">
-                                    {/* Watermark/Decorator */}
-                                    <div className="absolute top-0 right-0 p-8 opacity-5">
-                                        <Receipt className="w-64 h-64 -mr-16 -mt-16" />
+                            <div className="card h-[600px] animate-pulse bg-slate-50/20" />
+                        ) : (
+                            <div className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden flex flex-col h-full sticky top-8">
+                                <div className="p-10 border-b border-slate-50 bg-slate-50/10">
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-slate-200">
+                                                <User className="w-8 h-8" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">{invoiceDetail.patientName}</h3>
+                                                <div className="flex items-center gap-3">
+                                                    <StatusBadge status={invoiceDetail.status} size="lg" />
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50">#{invoiceDetail.invoiceNumber}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ngày lập phiếu</p>
+                                            <p className="font-black text-slate-900">{new Date(invoiceDetail.createdAt).toLocaleString('vi-VN')}</p>
+                                        </div>
                                     </div>
 
-                                    <div className="flex justify-between items-start relative pb-6 border-b border-slate-100">
+                                    <div className="bg-slate-900 rounded-[2rem] p-8 text-white flex justify-between items-center shadow-2xl shadow-slate-900/20">
                                         <div>
-                                            <h3 className="text-2xl font-black text-slate-900">Chi tiết hóa đơn</h3>
-                                            <p className="text-slate-400 font-mono tracking-tighter uppercase text-sm">#{invoiceDetail.invoiceNumber}</p>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tổng số tiền cần thu</p>
+                                            <div className="text-5xl font-black">{invoiceDetail.finalAmount.toLocaleString('vi-VN')} <span className="text-2xl text-slate-500">đ</span></div>
                                         </div>
-                                        <StatusBadge status={invoiceDetail.status} size="lg" />
+                                        {invoiceDetail.status === 'PAID' && (
+                                            <div className="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center animate-in zoom-in-50">
+                                                <ShieldCheck className="w-10 h-10" />
+                                            </div>
+                                        )}
                                     </div>
+                                </div>
 
-                                    <div className="grid grid-cols-2 gap-8 relative">
-                                        <div className="space-y-1">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bệnh nhân</span>
-                                            <p className="font-bold text-slate-900 text-lg">{invoiceDetail.patientName}</p>
-                                            <p className="text-xs text-slate-500">ID: {invoiceDetail.patientId}</p>
+                                <div className="p-10 flex-1 space-y-10">
+                                    <section>
+                                        <h4 className="font-black text-slate-900 uppercase tracking-widest text-[10px] mb-6 flex items-center gap-2 text-slate-400">
+                                            Chi tiết các dịch vụ đã sử dụng
+                                        </h4>
+                                        <div className="space-y-4">
+                                            {invoiceDetail.items.map((item, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-5 bg-slate-50/50 rounded-2xl border border-slate-100/50 group hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 hover:border-blue-100 transition-all duration-300">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 bg-white rounded-xl border border-slate-100 flex items-center justify-center text-[10px] font-black group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                            {idx + 1}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-black text-slate-900 tracking-tight leading-none mb-1 group-hover:text-blue-600 transition-colors">{item.itemName}</p>
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">SL: {item.quantity} · Đơn giá: {item.unitPrice.toLocaleString('vi-VN')} đ</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-lg font-black text-slate-900">
+                                                        {item.lineTotal.toLocaleString('vi-VN')} đ
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <div className="space-y-1 text-right">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ngày lập</span>
-                                            <p className="font-bold text-slate-900">{new Date(invoiceDetail.createdAt).toLocaleString('vi-VN')}</p>
-                                            <p className="text-xs text-slate-500">Tại: Phòng khám PatientFlow</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="relative">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b-2 border-slate-900 text-slate-900">
-                                                    <th className="text-left py-4 font-black uppercase tracking-widest text-xs">Mô tả dịch vụ / Thuốc</th>
-                                                    <th className="text-center py-4 font-black uppercase tracking-widest text-xs">SL</th>
-                                                    <th className="text-right py-4 font-black uppercase tracking-widest text-xs">Đơn giá</th>
-                                                    <th className="text-right py-4 font-black uppercase tracking-widest text-xs">Thành tiền</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {invoiceDetail.items.map((item) => (
-                                                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                                                        <td className="py-4 font-bold text-slate-800">{item.itemName}</td>
-                                                        <td className="py-4 text-center text-slate-600">{item.quantity}</td>
-                                                        <td className="py-4 text-right text-slate-600">{item.unitPrice.toLocaleString('vi-VN')} đ</td>
-                                                        <td className="py-4 text-right font-black text-slate-900">{item.lineTotal.toLocaleString('vi-VN')} đ</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
-                                        <div className="flex justify-between text-sm text-slate-500">
-                                            <span>Tạm tính</span>
-                                            <span className="font-bold">{invoiceDetail.totalAmount.toLocaleString('vi-VN')} đ</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm text-red-600">
-                                            <span>Giảm giá / Miễn giảm</span>
-                                            <span className="font-bold">-{invoiceDetail.discountAmount.toLocaleString('vi-VN')} đ</span>
-                                        </div>
-                                        <div className="flex justify-between items-center pt-4 border-t border-slate-200">
-                                            <span className="text-lg font-black text-slate-900 uppercase">Tổng cộng hồ sơ</span>
-                                            <span className="text-3xl font-black text-blue-600">{invoiceDetail.finalAmount.toLocaleString('vi-VN')} đ</span>
-                                        </div>
-                                    </div>
+                                    </section>
 
                                     {invoiceDetail.status === 'PENDING' ? (
-                                        <div className="space-y-4">
-                                            <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
-                                                <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
-                                                Phương thức thanh toán
+                                        <div className="space-y-6 pt-10 border-t border-slate-100">
+                                            <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs flex items-center gap-2">
+                                                <CreditCard className="w-4 h-4 text-blue-600" />
+                                                Lựa chọn phương thức thu phí
                                             </h4>
-                                            <div className="grid grid-cols-3 gap-4">
-                                                <button
-                                                    onClick={() => pay.mutate('CASH')}
-                                                    disabled={pay.isPending}
-                                                    className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition-all group"
-                                                >
-                                                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                                                        <CreditCard className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
-                                                    </div>
-                                                    <span className="font-bold text-slate-900">Tiền mặt</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => pay.mutate('BANK_TRANSFER')}
-                                                    disabled={pay.isPending}
-                                                    className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition-all group"
-                                                >
-                                                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                                                        <ArrowRight className="w-6 h-6 text-slate-600 group-hover:text-blue-600 rotate-45" />
-                                                    </div>
-                                                    <span className="font-bold text-slate-900">Chuyển khoản</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => pay.mutate('E_WALLET')}
-                                                    disabled={pay.isPending}
-                                                    className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition-all group"
-                                                >
-                                                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                                                        <CheckCircle className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
-                                                    </div>
-                                                    <span className="font-bold text-slate-900">Ví điện tử</span>
-                                                </button>
+                                            <div className="grid grid-cols-3 gap-6">
+                                                {[
+                                                    { id: 'CASH', label: 'Tiền mặt', icon: CreditCard },
+                                                    { id: 'BANK_TRANSFER', label: 'Chuyển khoản', icon: ArrowRight, rotate: 45 },
+                                                    { id: 'E_WALLET', label: 'Ví điện tử', icon: CheckCircle }
+                                                ].map(m => (
+                                                    <button
+                                                        key={m.id}
+                                                        onClick={() => pay.mutate(m.id)}
+                                                        disabled={pay.isPending}
+                                                        className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-50 hover:border-blue-600 hover:bg-blue-50/40 transition-all group active:scale-95"
+                                                    >
+                                                        <div className="w-16 h-16 rounded-[1.2rem] bg-slate-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors shadow-sm group-hover:shadow-blue-200/50 group-hover:shadow-lg">
+                                                            <m.icon className={`w-8 h-8 text-slate-400 group-hover:text-blue-600 transition-all ${m.rotate ? 'rotate-45' : ''}`} />
+                                                        </div>
+                                                        <span className="font-black text-slate-900 text-xs uppercase tracking-widest">{m.label}</span>
+                                                    </button>
+                                                ))}
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="bg-emerald-50 border-2 border-emerald-100 rounded-2xl p-6 flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                                                    <CheckCircle className="w-6 h-6 text-emerald-600" />
+                                        <div className="bg-indigo-50/50 border-2 border-indigo-100 rounded-[2.5rem] p-8 flex items-center justify-between mt-10 shadow-lg shadow-indigo-500/5">
+                                            <div className="flex items-center gap-6">
+                                                <div className="w-16 h-16 rounded-2xl bg-white border border-indigo-100 flex items-center justify-center shadow-xl shadow-indigo-200/20">
+                                                    <CheckCircle className="w-9 h-9 text-indigo-600" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-black text-emerald-900 uppercase">Thanh toán hoàn tất</p>
-                                                    <p className="text-sm text-emerald-700 font-medium">
-                                                        {invoiceDetail.paymentMethod === 'CASH' && 'Tiền mặt'}
-                                                        {invoiceDetail.paymentMethod === 'BANK_TRANSFER' && 'Chuyển khoản'}
-                                                        {invoiceDetail.paymentMethod === 'E_WALLET' && 'Ví điện tử'}
+                                                    <p className="font-black text-indigo-900 uppercase tracking-widest text-sm mb-1">Thanh toán hoàn tất</p>
+                                                    <p className="text-xs text-indigo-700/60 font-black uppercase tracking-widest">
+                                                        {invoiceDetail.paymentMethod === 'CASH' && 'Giao dịch tiền mặt'}
+                                                        {invoiceDetail.paymentMethod === 'BANK_TRANSFER' && 'Chuyển khoản liên ngân hàng'}
+                                                        {invoiceDetail.paymentMethod === 'E_WALLET' && 'Ví điện tử liên kết'}
                                                         {' • '}
-                                                        {invoiceDetail.paidAt && new Date(invoiceDetail.paidAt).toLocaleString('vi-VN')}
+                                                        {invoiceDetail.paidAt && new Date(invoiceDetail.paidAt).toLocaleDateString('vi-VN')}
                                                     </p>
                                                 </div>
                                             </div>
                                             <button
                                                 onClick={() => window.print()}
-                                                className="btn-secondary flex items-center gap-2"
+                                                className="bg-white text-slate-900 border border-slate-200 px-8 py-4 rounded-[1.2rem] font-black text-xs uppercase tracking-widest hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all flex items-center gap-3 shadow-sm hover:shadow-xl active:scale-95"
                                             >
-                                                <Receipt className="w-4 h-4" />
+                                                <Receipt className="w-5 h-5" />
                                                 In biên lai
                                             </button>
                                         </div>
@@ -274,16 +342,175 @@ export function Billing() {
                             </div>
                         )
                     ) : (
-                        <div className="card h-full flex flex-col items-center justify-center py-24 text-center space-y-4">
-                            <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mb-4">
-                                <Receipt className="w-10 h-10 text-slate-200" />
+                        <div className="bg-white h-full min-h-[600px] flex flex-col items-center justify-center py-24 text-center space-y-6 rounded-[3rem] border border-slate-100">
+                            <div className="w-24 h-24 rounded-full bg-slate-50 flex items-center justify-center mb-4 border border-slate-100 shadow-inner">
+                                <Receipt className="w-12 h-12 text-slate-200" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900">Chưa chọn hóa đơn</h3>
-                            <p className="text-slate-400 max-w-xs mx-auto">Chọn một hóa đơn từ danh sách bên trái để xem chi tiết và xử lý thanh toán.</p>
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Vui lòng chọn Hóa đơn</h3>
+                                <p className="text-slate-400 font-medium max-w-xs mx-auto mt-2">Chọn một hồ sơ từ danh sách bên trái để tiến hành kiểm tra chi tiết và thanh toán.</p>
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Create Invoice Modal */}
+            <AnimatePresence>
+                {isCreateModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/70 backdrop-blur-xl" onClick={() => setIsCreateModalOpen(false)} />
+                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#f8fafc] rounded-[4rem] w-full max-w-6xl shadow-2xl overflow-hidden flex h-[85vh]">
+                            {/* Modal Left: Selection */}
+                            <div className="w-2/3 flex flex-col bg-white">
+                                <div className="p-10 border-b border-slate-50">
+                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-8">Khởi tạo Hóa đơn mới</h2>
+
+                                    {/* Patient Search */}
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Bước 1: Tìm kiếm bệnh nhân</label>
+                                        <div className="flex gap-4">
+                                            <div className="relative flex-1">
+                                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                                                <input
+                                                    placeholder="Gõ Số điện thoại hoặc CCCD..."
+                                                    value={patientSearch}
+                                                    onChange={e => setPatientSearch(e.target.value)}
+                                                    onKeyDown={e => e.key === 'Enter' && searchPatient()}
+                                                    className="w-full bg-slate-50 border border-slate-100 pl-14 pr-6 py-5 rounded-[1.5rem] font-black text-lg focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                                                />
+                                            </div>
+                                            <button onClick={searchPatient} className="bg-slate-900 text-white px-8 rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-[#2b8cee] transition-colors">Tìm bệnh nhân</button>
+                                        </div>
+                                        {selectedPatient && (
+                                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-blue-50 border border-blue-100 p-6 rounded-[1.5rem] flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                                                        <User className="w-7 h-7" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-black text-blue-900 text-lg">{selectedPatient.fullNameVi}</p>
+                                                        <p className="text-xs font-black text-blue-600/60 uppercase tracking-widest">SĐT: {selectedPatient.phone} · NS: {new Date(selectedPatient.dateOfBirth).toLocaleDateString('vi-VN')}</p>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => setSelectedPatient(null)} className="text-blue-400 hover:text-red-500 transition-colors">
+                                                    <X className="w-6 h-6" />
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Service Catalog Selection */}
+                                <div className="p-10 flex-1 flex flex-col min-h-0">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-6">Bước 2: Chọn dịch vụ từ danh mục</label>
+                                    <div className="grid grid-cols-2 gap-4 overflow-y-auto pr-4 scrollbar-hide">
+                                        {services?.map(s => (
+                                            <button
+                                                key={s.id}
+                                                onClick={() => addServiceToInvoice(s)}
+                                                className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] text-left hover:border-blue-500 hover:bg-white hover:shadow-xl hover:shadow-blue-500/10 transition-all flex flex-col justify-between group h-40"
+                                            >
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">#{s.code}</span>
+                                                    </div>
+                                                    <p className="font-black text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{s.nameVi}</p>
+                                                </div>
+                                                <div className="flex justify-between items-end">
+                                                    <span className="text-lg font-black text-slate-900">{s.unitPrice.toLocaleString('vi-VN')} đ</span>
+                                                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
+                                                        <Plus className="w-5 h-5" />
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Modal Right: Checkout Preview */}
+                            <div className="w-1/3 bg-slate-50 border-l border-slate-100 p-10 flex flex-col">
+                                <div className="flex items-center gap-3 mb-10">
+                                    <div className="w-10 h-10 bg-slate-900 rounded-2xl flex items-center justify-center text-white">
+                                        <ShoppingCart className="w-5 h-5" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Giỏ hàng chờ</h3>
+                                </div>
+
+                                <div className="flex-1 space-y-4 overflow-y-auto pr-2 scrollbar-hide">
+                                    {invoiceItems.length === 0 ? (
+                                        <div className="text-center py-20">
+                                            <ShoppingCart className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                                            <p className="text-xs font-black text-slate-300 uppercase tracking-widest">Chưa có dịch vụ nào</p>
+                                        </div>
+                                    ) : (
+                                        invoiceItems.map((item) => (
+                                            <motion.div layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} key={item.serviceId} className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-white">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <p className="font-black text-slate-900 text-sm leading-tight pr-4">{item.name}</p>
+                                                    <button onClick={() => removeService(item.serviceId)} className="text-slate-300 hover:text-red-500 transition-colors">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1">
+                                                        <button
+                                                            onClick={() => setInvoiceItems(invoiceItems.map(i => i.serviceId === item.serviceId ? { ...i, qty: Math.max(1, i.qty - 1) } : i))}
+                                                            className="w-6 h-6 flex items-center justify-center font-bold text-slate-400 hover:text-slate-900 transition-colors"
+                                                        >-</button>
+                                                        <span className="text-xs font-black w-6 text-center">{item.qty}</span>
+                                                        <button
+                                                            onClick={() => setInvoiceItems(invoiceItems.map(i => i.serviceId === item.serviceId ? { ...i, qty: i.qty + 1 } : i))}
+                                                            className="w-6 h-6 flex items-center justify-center font-bold text-slate-400 hover:text-slate-900 transition-colors"
+                                                        >+</button>
+                                                    </div>
+                                                    <p className="font-black text-slate-900 text-sm">{(item.price * item.qty).toLocaleString('vi-VN')} đ</p>
+                                                </div>
+                                            </motion.div>
+                                        ))
+                                    )}
+                                </div>
+
+                                <div className="pt-8 space-y-4 border-t border-slate-200 mt-6">
+                                    <div className="flex justify-between items-center text-sm font-bold text-slate-500">
+                                        <span>Tạm tính</span>
+                                        <span>{totalBeforeDiscount.toLocaleString('vi-VN')} đ</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-bold text-slate-500">
+                                        <span>Giảm giá</span>
+                                        <div className="relative w-32">
+                                            <input
+                                                type="number"
+                                                value={discount || ''}
+                                                onChange={e => setDiscount(Number(e.target.value))}
+                                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-right font-black text-slate-900 outline-none"
+                                            />
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-slate-300">VNĐ</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+                                        <span className="text-lg font-black text-slate-900 uppercase tracking-widest">Thanh toán</span>
+                                        <span className="text-3xl font-black text-blue-600 leading-none">{finalAmount.toLocaleString('vi-VN')} đ</span>
+                                    </div>
+
+                                    <button
+                                        disabled={!selectedPatient || invoiceItems.length === 0 || createInvoiceMutation.isPending}
+                                        onClick={handleCreateInvoice}
+                                        className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-[#2b8cee] transition-all disabled:opacity-30 disabled:grayscale mt-4 active:scale-95 shadow-2xl shadow-slate-900/20"
+                                    >
+                                        {createInvoiceMutation.isPending ? 'Đang khởi tạo...' : 'Xác nhận & Xuất phiếu'}
+                                    </button>
+                                    <button onClick={() => setIsCreateModalOpen(false)} className="w-full py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">
+                                        Hủy thao tác
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
@@ -294,9 +521,9 @@ function StatusBadge({ status, size = 'sm' }: { status: string; size?: 'sm' | 'l
         <span className={`inline-flex items-center gap-1.5 font-black uppercase tracking-widest rounded-full ring-1 ring-inset ${isPaid
             ? 'bg-emerald-100 text-emerald-700 ring-emerald-200'
             : 'bg-amber-100 text-amber-700 ring-amber-200'
-            } ${size === 'lg' ? 'px-4 py-2 text-xs' : 'px-2 py-1 text-[9px]'}`}>
-            {isPaid ? <CheckCircle className={size === 'lg' ? 'w-4 h-4' : 'w-3 h-3'} /> : <Clock className={size === 'lg' ? 'w-4 h-4' : 'w-3 h-3'} />}
-            {isPaid ? 'Đã thanh toán' : 'Chờ thu phí'}
+            } ${size === 'lg' ? 'px-4 py-2 text-[10px]' : 'px-2 py-0.5 text-[8px]'}`}>
+            {isPaid ? <CheckCircle className={size === 'lg' ? 'w-4 h-4' : 'w-2.5 h-2.5'} /> : <Clock className={size === 'lg' ? 'w-4 h-4' : 'w-2.5 h-2.5'} />}
+            {isPaid ? 'Đã thu tiền' : 'Chờ thu phí'}
         </span>
     )
 }

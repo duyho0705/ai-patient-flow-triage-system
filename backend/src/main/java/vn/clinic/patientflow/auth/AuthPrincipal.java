@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Principal lưu trong SecurityContext sau khi xác thực JWT – userId, email, tenant, branch, roles.
+ * Principal lưu trong SecurityContext sau khi xác thực JWT – userId, email,
+ * tenant, branch, roles.
  */
 @Getter
 @Builder
@@ -18,4 +19,12 @@ public class AuthPrincipal {
     private final UUID tenantId;
     private final UUID branchId;
     private final List<String> roles;
+
+    public static UUID getCurrentUserId() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof AuthPrincipal principal) {
+            return principal.getUserId();
+        }
+        return null;
+    }
 }

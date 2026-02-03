@@ -23,6 +23,7 @@ public class PrescriptionController {
 
     private final ClinicalService clinicalService;
     private final vn.clinic.patientflow.billing.service.BillingService billingService;
+    private final vn.clinic.patientflow.pharmacy.repository.PharmacyInventoryRepository inventoryRepository;
 
     @PostMapping
     @PreAuthorize("hasRole('DOCTOR')")
@@ -44,8 +45,7 @@ public class PrescriptionController {
     @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Xác nhận đã cấp phát thuốc (Trừ kho)")
     public ResponseEntity<Void> dispensePrescription(@PathVariable UUID id) {
-        // In real app, get user ID from security context
-        clinicalService.dispensePrescription(id, null);
+        clinicalService.dispensePrescription(id, vn.clinic.patientflow.auth.AuthPrincipal.getCurrentUserId());
         return ResponseEntity.ok().build();
     }
 
@@ -63,15 +63,28 @@ public class PrescriptionController {
                 .status(p.getStatus().name())
                 .notes(p.getNotes())
                 .invoiceStatus(invoiceStatus)
-                .items(p.getItems().stream().map(item -> PrescriptionItemDto.builder()
-                        .id(item.getId())
-                        .productId(item.getProduct() != null ? item.getProduct().getId() : null)
-                        .productName(
-                                item.getProduct() != null ? item.getProduct().getNameVi() : item.getProductNameCustom())
-                        .quantity(item.getQuantity())
-                        .dosageInstruction(item.getDosageInstruction())
-                        .unitPrice(item.getUnitPrice())
-                        .build()).collect(Collectors.toList()))
+                .items(p.getItems().stream().map(item -> {
+                    java.math.BigDecimal stock = java.math.BigDecimal.ZERO;
+                    if (item.getProduct() != null) {
+                        stock = inventoryRepository
+                                .findByBranchIdAndProductId(p.getConsultation().getBranch().getId(),
+                                        item.getProduct().getId())
+                                .map(vn.clinic.patientflow.pharmacy.domain.PharmacyInventory::getCurrentStock)
+                                .orElse(java.math.BigDecimal.ZERO);
+                    }
+
+                    return PrescriptionItemDto.builder()
+                            .id(item.getId())
+                            .productId(item.getProduct() != null ? item.getProduct().getId() : null)
+                            .productName(
+                                    item.getProduct() != null ? item.getProduct().getNameVi()
+                                            : item.getProductNameCustom())
+                            .quantity(item.getQuantity())
+                            .dosageInstruction(item.getDosageInstruction())
+                            .unitPrice(item.getUnitPrice())
+                            .availableStock(stock)
+                            .build();
+                }).collect(Collectors.toList()))
                 .build();
     }
 }

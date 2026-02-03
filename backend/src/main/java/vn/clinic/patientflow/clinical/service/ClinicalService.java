@@ -189,6 +189,15 @@ public class ClinicalService {
             throw new IllegalStateException("Prescription already dispensed");
         }
 
+        // Check if invoice is paid
+        boolean isPaid = billingService.getInvoiceByConsultation(prescription.getConsultation().getId())
+                .map(inv -> "PAID".equalsIgnoreCase(inv.getStatus()))
+                .orElse(false);
+
+        if (!isPaid) {
+            throw new IllegalStateException("Invoice for this prescription has not been paid yet");
+        }
+
         for (var item : prescription.getItems()) {
             if (item.getProduct() != null) {
                 pharmacyService.dispenseStock(

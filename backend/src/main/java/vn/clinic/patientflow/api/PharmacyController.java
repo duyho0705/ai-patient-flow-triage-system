@@ -28,7 +28,9 @@ public class PharmacyController {
 
     private final PharmacyProductRepository productRepository;
     private final PharmacyInventoryRepository inventoryRepository;
+    private final vn.clinic.patientflow.pharmacy.repository.InventoryTransactionRepository transactionRepository;
     private final PharmacyService pharmacyService;
+    private final vn.clinic.patientflow.identity.service.IdentityService identityService;
 
     @GetMapping("/products")
     @Operation(summary = "Lấy danh mục thuốc")
@@ -69,9 +71,42 @@ public class PharmacyController {
             @RequestParam UUID productId,
             @RequestParam BigDecimal quantity,
             @RequestParam(required = false) String notes) {
-        // In real app, get user ID from security context
-        pharmacyService.addStock(branchId, productId, quantity, null, notes);
+        pharmacyService.addStock(branchId, productId, quantity,
+                vn.clinic.patientflow.auth.AuthPrincipal.getCurrentUserId(), notes);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/inventory/transactions")
+    @Operation(summary = "Xem lịch sử nhập xuất kho")
+    public ResponseEntity<List<vn.clinic.patientflow.api.dto.InventoryTransactionDto>> getTransactions(
+            @RequestParam UUID branchId) {
+        return ResponseEntity.ok(transactionRepository.findByBranchIdOrderByCreatedAtDesc(branchId)
+                .stream().map(this::mapToTransactionDto).collect(Collectors.toList()));
+    }
+
+    private vn.clinic.patientflow.api.dto.InventoryTransactionDto mapToTransactionDto(
+            vn.clinic.patientflow.pharmacy.domain.InventoryTransaction t) {
+        String userName = null;
+        if (t.getPerformedByUserId() != null) {
+            try {
+                userName = identityService.getUserById(t.getPerformedByUserId()).getFullNameVi();
+            } catch (Exception e) {
+                userName = "Hệ thống";
+            }
+        }
+
+        return vn.clinic.patientflow.api.dto.InventoryTransactionDto.builder()
+                .id(t.getId())
+                .branchId(t.getBranchId())
+                .product(mapToProductDto(t.getProduct()))
+                .type(t.getType().name())
+                .quantity(t.getQuantity())
+                .referenceId(t.getReferenceId())
+                .performedByUserId(t.getPerformedByUserId())
+                .performedByUserName(userName)
+                .notes(t.getNotes())
+                .createdAt(t.getCreatedAt())
+                .build();
     }
 
     private PharmacyProductDto mapToProductDto(PharmacyProduct p) {

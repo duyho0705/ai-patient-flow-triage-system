@@ -19,4 +19,5 @@ public class PrescriptionItemDto {
     private BigDecimal quantity;
     private String dosageInstruction;
     private BigDecimal unitPrice;
+    private BigDecimal availableStock;
 }

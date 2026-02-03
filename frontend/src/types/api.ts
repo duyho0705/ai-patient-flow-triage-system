@@ -412,6 +412,19 @@ export interface PharmacyInventoryDto {
   updatedAt: string
 }
 
+export interface InventoryTransactionDto {
+  id: string
+  branchId: string
+  product: PharmacyProductDto
+  type: 'PURCHASE' | 'DISPENSE' | 'ADJUSTMENT' | 'TRANSFER'
+  quantity: number
+  referenceId?: string
+  performedByUserId?: string
+  performedByUserName?: string
+  notes?: string
+  createdAt: string
+}
+
 export interface PrescriptionItemDto {
   id?: string
   productId?: string
@@ -419,6 +432,7 @@ export interface PrescriptionItemDto {
   quantity: number
   dosageInstruction: string
   unitPrice?: number
+  availableStock?: number
 }
 
 export interface PrescriptionDto {
