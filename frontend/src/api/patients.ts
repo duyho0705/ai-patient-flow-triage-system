@@ -3,12 +3,13 @@ import type { TenantHeaders } from './client'
 import type { PatientDto, PagedResponse, CreatePatientRequest } from '@/types/api'
 
 export async function listPatients(
-  params: { page?: number; size?: number },
+  params: { page?: number; size?: number; query?: string },
   tenant: TenantHeaders | null
 ): Promise<PagedResponse<PatientDto>> {
   const sp = new URLSearchParams()
   if (params.page != null) sp.set('page', String(params.page))
   if (params.size != null) sp.set('size', String(params.size))
+  if (params.query) sp.set('query', params.query)
   const q = sp.toString()
   return get<PagedResponse<PatientDto>>(`/patients${q ? `?${q}` : ''}`, tenant)
 }

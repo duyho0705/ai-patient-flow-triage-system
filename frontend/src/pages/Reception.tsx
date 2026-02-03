@@ -1,14 +1,14 @@
-import { useState, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import { listPatients, createPatient } from '@/api/patients'
 import { toastService } from '@/services/toast'
 import { CheckInModal } from '@/components/CheckInModal'
 import {
     Search, UserPlus, Calendar, Clock,
-    ArrowRight, CheckCircle2, AlertCircle,
+    ArrowRight, CheckCircle2,
     User, Smartphone, CreditCard, ChevronRight,
-    SearchX, Loader2, Sparkles, Filter
+    SearchX, Loader2, Sparkles, Filter, X
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { PatientDto, CreatePatientRequest } from '@/types/api'

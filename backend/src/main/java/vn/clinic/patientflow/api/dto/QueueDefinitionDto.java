@@ -33,7 +33,7 @@ public class QueueDefinitionDto {
                 .id(e.getId())
                 .branchId(e.getBranch() != null ? e.getBranch().getId() : null)
                 .code(e.getCode())
-                .nameVi(e.nameVi)
+                .nameVi(e.getNameVi())
                 .acuityFilter(e.getAcuityFilter())
                 .roomOrStation(e.getRoomOrStation())
                 .displayOrder(e.getDisplayOrder())

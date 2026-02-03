@@ -1,23 +1,22 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-    getAdminUsers,
     createUser,
-    updateUser,
-    setPassword,
+    getAdminUsers,
     getRoles,
+    setPassword,
+    updateUser,
 } from '@/api/admin'
-import { listTenants, listBranches } from '@/api/tenants'
+import { listBranches, listTenants } from '@/api/tenants'
+import { CustomSelect } from '@/components/CustomSelect'
+import { toastService } from '@/services/toast'
 import type {
     AdminUserDto,
     CreateUserRequest,
     UpdateUserRequest,
-    SetPasswordRequest,
 } from '@/types/api'
-import { toastService } from '@/services/toast'
-import { CustomSelect } from '@/components/CustomSelect'
-import { Search, UserPlus, Filter, Shield, Building2, KeyRound, Pencil, RefreshCw, ChevronLeft, ChevronRight as ChevronRightIcon, X, Plus } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
+import { ChevronLeft, Filter, KeyRound, Pencil, Plus, Shield, UserPlus, X } from 'lucide-react'
+import { useState } from 'react'
 
 const PAGE_SIZE = 10
 

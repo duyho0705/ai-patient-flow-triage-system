@@ -23,7 +23,6 @@ import vn.clinic.patientflow.tenant.domain.Tenant;
 import vn.clinic.patientflow.tenant.domain.TenantBranch;
 import vn.clinic.patientflow.tenant.service.TenantService;
 import vn.clinic.patientflow.api.dto.SlotAvailabilityDto;
-import java.time.LocalTime;
 import java.util.stream.Collectors;
 
 @Service

@@ -21,6 +21,12 @@ public class ResourceNotFoundException extends RuntimeException {
         this(resourceName, id != null ? id.toString() : null);
     }
 
+    public ResourceNotFoundException(String message) {
+        super(message);
+        this.resourceName = "Resource";
+        this.identifier = null;
+    }
+
     public String getResourceName() {
         return resourceName;
     }
