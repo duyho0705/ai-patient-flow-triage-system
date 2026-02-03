@@ -7,10 +7,10 @@ import { findPatientByPhone, findPatientByCccd } from '@/api/patients'
 import { toastService } from '@/services/toast'
 import {
     CreditCard, Receipt, Clock, CheckCircle, Search, ArrowRight, User,
-    Plus, X, Trash2, ShoppingCart, Calculator, Hash, ShieldCheck
+    Plus, X, Trash2, ShoppingCart, Hash, ShieldCheck
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { InvoiceDto, MedicalServiceDto, PatientDto, CreateInvoiceRequest } from '@/types/api'
+import type { MedicalServiceDto, PatientDto, CreateInvoiceRequest } from '@/types/api'
 
 export function Billing() {
     const { headers, branchId } = useTenant()

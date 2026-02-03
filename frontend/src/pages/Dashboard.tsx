@@ -2,6 +2,15 @@ import { Link } from 'react-router-dom'
 import { useRole } from '@/context/RoleContext'
 import type { Role } from '@/context/RoleContext'
 
+const fallbackConfig = {
+  title: 'Trải nghiệm người dùng',
+  subtitle: 'Chào mừng bạn quay trở lại hệ thống.',
+  actions: [
+    { to: '/patients', label: 'Tìm bệnh nhân', desc: 'Tìm kiếm thông tin bệnh nhân' },
+    { to: '/queue', label: 'Xem hàng chờ', desc: 'Kiểm tra trạng thái hàng chờ' },
+  ],
+}
+
 /** Cấu hình dashboard theo role — khớp spec thực tế phòng khám VN */
 const ROLE_CONFIG: Record<
   Role,
@@ -49,20 +58,28 @@ const ROLE_CONFIG: Record<
       { to: '/reports?tab=wait-time', label: 'Thời gian chờ', desc: 'Chi tiết thời gian chờ trung bình' },
     ],
   },
+  pharmacist: {
+    title: 'Dược sĩ',
+    subtitle: 'Quản lý kho thuốc, cấp phát theo đơn bác sĩ. Kiểm soát tồn kho và lịch sử nhập xuất.',
+    actions: [
+      { to: '/dispensing', label: 'Cấp phát thuốc', desc: 'Xem danh sách đơn thuốc chờ cấp phát' },
+      { to: '/inventory', label: 'Kho thuốc', desc: 'Quản lý tồn kho, nhập thuốc, xem lịch sử' },
+    ],
+  },
 }
 
 export function Dashboard() {
   const { role } = useRole()
-  const config = ROLE_CONFIG[role]
+  const config = ROLE_CONFIG[role] || fallbackConfig
 
   return (
     <div className="mx-auto max-w-4xl">
       <header className="mb-10">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          {config.title}
+          {config?.title || 'Trải nghiệm người dùng'}
         </h1>
         <p className="mt-2 text-slate-600">
-          {config.subtitle}
+          {config?.subtitle || 'Chào mừng bạn quay trở lại hệ thống.'}
         </p>
       </header>
 
@@ -71,7 +88,7 @@ export function Dashboard() {
           Thao tác nhanh
         </h2>
         <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {config.actions.map((a) => (
+          {config?.actions.map((a) => (
             <li key={a.to}>
               <Link
                 to={a.to}

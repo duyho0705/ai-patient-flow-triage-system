@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { listBranches, createBranch, updateBranch } from '@/api/tenants'
 import { useTenant } from '@/context/TenantContext'
 import { toastService } from '@/services/toast'
-import { Building2, Plus, Pencil, Save, X, Phone, MapPin, Globe } from 'lucide-react'
+import { Building2, Plus, Pencil, Save, X, Phone, MapPin } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { TenantBranchDto, CreateBranchRequest } from '@/types/api'
 
 export function BranchManagement() {
-    const { headers, tenantId } = useTenant()
+    const { tenantId } = useTenant()
     const queryClient = useQueryClient()
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingBranch, setEditingBranch] = useState<TenantBranchDto | null>(null)
