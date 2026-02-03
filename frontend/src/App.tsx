@@ -23,6 +23,11 @@ import { PatientPortal } from '@/pages/patient/PatientPortal'
 import { PatientEhr } from '@/pages/admin/PatientEhr'
 import { Reception } from '@/pages/Reception'
 import { Consultation } from '@/pages/Consultation'
+import { PatientLayout } from '@/components/PatientLayout'
+import PatientDashboard from '@/pages/patient/Dashboard'
+import PatientHistory from '@/pages/patient/History'
+import PatientHistoryDetail from '@/pages/patient/HistoryDetail'
+import { Outlet } from 'react-router-dom'
 
 function App() {
   return (

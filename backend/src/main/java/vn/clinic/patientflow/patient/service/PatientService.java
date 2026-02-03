@@ -78,20 +78,39 @@ public class PatientService {
     @Transactional
     public Patient update(UUID id, Patient updates) {
         Patient existing = getById(id);
-        if (updates.getFullNameVi() != null) existing.setFullNameVi(updates.getFullNameVi());
-        if (updates.getDateOfBirth() != null) existing.setDateOfBirth(updates.getDateOfBirth());
-        if (updates.getGender() != null) existing.setGender(updates.getGender());
-        if (updates.getPhone() != null) existing.setPhone(updates.getPhone());
-        if (updates.getEmail() != null) existing.setEmail(updates.getEmail());
-        if (updates.getAddressLine() != null) existing.setAddressLine(updates.getAddressLine());
-        if (updates.getCity() != null) existing.setCity(updates.getCity());
-        if (updates.getDistrict() != null) existing.setDistrict(updates.getDistrict());
-        if (updates.getWard() != null) existing.setWard(updates.getWard());
-        if (updates.getNationality() != null) existing.setNationality(updates.getNationality());
-        if (updates.getEthnicity() != null) existing.setEthnicity(updates.getEthnicity());
-        if (updates.getExternalId() != null) existing.setExternalId(updates.getExternalId());
-        if (updates.getCccd() != null) existing.setCccd(updates.getCccd());
-        if (updates.getIsActive() != null) existing.setIsActive(updates.getIsActive());
+        if (updates.getFullNameVi() != null)
+            existing.setFullNameVi(updates.getFullNameVi());
+        if (updates.getDateOfBirth() != null)
+            existing.setDateOfBirth(updates.getDateOfBirth());
+        if (updates.getGender() != null)
+            existing.setGender(updates.getGender());
+        if (updates.getPhone() != null)
+            existing.setPhone(updates.getPhone());
+        if (updates.getEmail() != null)
+            existing.setEmail(updates.getEmail());
+        if (updates.getAddressLine() != null)
+            existing.setAddressLine(updates.getAddressLine());
+        if (updates.getCity() != null)
+            existing.setCity(updates.getCity());
+        if (updates.getDistrict() != null)
+            existing.setDistrict(updates.getDistrict());
+        if (updates.getWard() != null)
+            existing.setWard(updates.getWard());
+        if (updates.getNationality() != null)
+            existing.setNationality(updates.getNationality());
+        if (updates.getEthnicity() != null)
+            existing.setEthnicity(updates.getEthnicity());
+        if (updates.getExternalId() != null)
+            existing.setExternalId(updates.getExternalId());
+        if (updates.getCccd() != null)
+            existing.setCccd(updates.getCccd());
+        if (updates.getIsActive() != null)
+            existing.setIsActive(updates.getIsActive());
         return patientRepository.save(existing);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Patient> getByIdentityUserId(UUID identityUserId) {
+        return patientRepository.findByIdentityUserId(identityUserId);
     }
 }

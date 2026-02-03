@@ -26,6 +26,7 @@ public class ClinicalService {
     private final vn.clinic.patientflow.clinical.repository.PrescriptionRepository prescriptionRepository;
     private final vn.clinic.patientflow.pharmacy.repository.PharmacyProductRepository productRepository;
     private final vn.clinic.patientflow.pharmacy.service.PharmacyService pharmacyService;
+    private final vn.clinic.patientflow.pharmacy.repository.PharmacyInventoryRepository inventoryRepository;
 
     @Transactional(readOnly = true)
     public ClinicalConsultation getById(UUID id) {
@@ -218,5 +219,62 @@ public class ClinicalService {
     public List<vn.clinic.patientflow.clinical.domain.Prescription> getPendingPrescriptions(UUID branchId) {
         return prescriptionRepository.findByStatusAndConsultationBranchIdOrderByCreatedAtDesc(
                 vn.clinic.patientflow.clinical.domain.Prescription.PrescriptionStatus.ISSUED, branchId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClinicalConsultation> getRecentConsultationsByPatient(UUID patientId, int limit) {
+        return consultationRepository.findByPatientIdOrderByStartedAtDesc(patientId)
+                .stream().limit(limit).collect(java.util.stream.Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClinicalConsultation> getConsultationsByPatient(UUID patientId) {
+        return consultationRepository.findByPatientIdOrderByStartedAtDesc(patientId);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Optional<vn.clinic.patientflow.clinical.domain.Prescription> getPrescriptionByConsultation(
+            UUID consultationId) {
+        return prescriptionRepository.findByConsultationId(consultationId);
+    }
+
+    public vn.clinic.patientflow.api.dto.PrescriptionDto mapPrescriptionToDto(
+            vn.clinic.patientflow.clinical.domain.Prescription p) {
+        String invoiceStatus = billingService.getInvoiceByConsultation(p.getConsultation().getId())
+                .map(vn.clinic.patientflow.billing.domain.Invoice::getStatus)
+                .orElse("UNKNOWN");
+
+        return vn.clinic.patientflow.api.dto.PrescriptionDto.builder()
+                .id(p.getId())
+                .consultationId(p.getConsultation().getId())
+                .patientId(p.getPatient().getId())
+                .patientName(p.getPatient().getFullNameVi())
+                .doctorUserId(p.getDoctorUserId())
+                .status(p.getStatus().name())
+                .notes(p.getNotes())
+                .invoiceStatus(invoiceStatus)
+                .items(p.getItems().stream().map(item -> {
+                    java.math.BigDecimal stock = java.math.BigDecimal.ZERO;
+                    if (item.getProduct() != null) {
+                        stock = inventoryRepository
+                                .findByBranchIdAndProductId(p.getConsultation().getBranch().getId(),
+                                        item.getProduct().getId())
+                                .map(vn.clinic.patientflow.pharmacy.domain.PharmacyInventory::getCurrentStock)
+                                .orElse(java.math.BigDecimal.ZERO);
+                    }
+
+                    return vn.clinic.patientflow.api.dto.PrescriptionItemDto.builder()
+                            .id(item.getId())
+                            .productId(item.getProduct() != null ? item.getProduct().getId() : null)
+                            .productName(
+                                    item.getProduct() != null ? item.getProduct().getNameVi()
+                                            : item.getProductNameCustom())
+                            .quantity(item.getQuantity())
+                            .dosageInstruction(item.getDosageInstruction())
+                            .unitPrice(item.getUnitPrice())
+                            .availableStock(stock)
+                            .build();
+                }).collect(java.util.stream.Collectors.toList()))
+                .build();
     }
 }

@@ -21,4 +21,6 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
     boolean existsByTenantIdAndCccd(UUID tenantId, String cccd);
 
     boolean existsByTenantIdAndExternalId(UUID tenantId, String externalId);
+
+    Optional<Patient> findByIdentityUserId(UUID identityUserId);
 }

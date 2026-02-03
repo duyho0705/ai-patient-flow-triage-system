@@ -283,8 +283,10 @@ export interface QueueEntryDto {
   appointmentId?: string
   medicalServiceId?: string
   medicalServiceName?: string
+  queueName?: string
   notes?: string
   position?: number
+  peopleAhead?: number
   status: string
   /** Mức ưu tiên từ phiên phân loại (1–5). */
   acuityLevel?: string | null
@@ -376,6 +378,34 @@ export interface RevenueReportDto {
     amount: number
     count: number
   }[]
+}
+
+export interface AppointmentDto {
+  id: string
+  branchId: string
+  branchName: string
+  patientId: string
+  patientName: string
+  appointmentDate: string
+  startTime: string
+  endTime: string
+  status: string
+  appointmentType?: string
+  notes?: string
+}
+
+export interface PatientDashboardDto {
+  patientName: string
+  activeQueues: number
+  nextAppointment?: AppointmentDto
+  recentVisits: ConsultationDto[]
+}
+
+export interface ConsultationDetailDto {
+  consultation: ConsultationDto
+  prescription?: PrescriptionDto
+  invoice?: InvoiceDto
+  vitals: TriageVitalDto[]
 }
 
 export interface InvoiceItemDto {

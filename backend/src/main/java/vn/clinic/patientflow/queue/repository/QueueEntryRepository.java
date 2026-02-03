@@ -16,6 +16,10 @@ public interface QueueEntryRepository extends JpaRepository<QueueEntry, UUID> {
 
         Optional<QueueEntry> findFirstByPatientIdAndStatusInOrderByJoinedAtDesc(UUID patientId, List<String> statuses);
 
+        long countByPatientIdAndStatusIn(UUID patientId, List<String> statuses);
+
+        List<QueueEntry> findByPatientIdAndStatusInOrderByJoinedAtDesc(UUID patientId, List<String> statuses);
+
         @Query("SELECT COUNT(e) FROM QueueEntry e WHERE e.queueDefinition.id = :queueId AND (e.status = 'WAITING' OR e.status = 'CALLING') AND e.joinedAt < :joinedAt")
         long countPeopleAhead(@Param("queueId") UUID queueId, @Param("joinedAt") Instant joinedAt);
 

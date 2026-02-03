@@ -122,4 +122,20 @@ public class QueueService {
 
                 return saved;
         }
+
+        @Transactional(readOnly = true)
+        public long countActiveEntriesByPatient(UUID patientId) {
+                return queueEntryRepository.countByPatientIdAndStatusIn(patientId, List.of("WAITING", "CALLED"));
+        }
+
+        @Transactional(readOnly = true)
+        public List<QueueEntry> getActiveEntriesByPatient(UUID patientId) {
+                return queueEntryRepository.findByPatientIdAndStatusInOrderByJoinedAtDesc(patientId,
+                                List.of("WAITING", "CALLED"));
+        }
+
+        @Transactional(readOnly = true)
+        public long countPeopleAhead(UUID queueDefinitionId, Instant joinedAt) {
+                return queueEntryRepository.countPeopleAhead(queueDefinitionId, joinedAt);
+        }
 }

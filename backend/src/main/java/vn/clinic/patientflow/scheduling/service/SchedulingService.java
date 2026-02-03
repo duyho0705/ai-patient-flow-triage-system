@@ -101,4 +101,16 @@ public class SchedulingService {
 
         return saved;
     }
+
+    @Transactional(readOnly = true)
+    public List<SchedulingAppointment> getAppointmentsByPatient(UUID patientId) {
+        return appointmentRepository.findByPatientIdOrderByAppointmentDateDesc(patientId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SchedulingAppointment> getUpcomingAppointmentsByPatient(UUID patientId) {
+        return appointmentRepository
+                .findByPatientIdAndStatusInAndAppointmentDateGreaterThanEqualOrderByAppointmentDateAsc(
+                        patientId, List.of("SCHEDULED", "CONFIRMED"), LocalDate.now());
+    }
 }
