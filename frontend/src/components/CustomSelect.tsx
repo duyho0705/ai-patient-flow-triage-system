@@ -81,7 +81,7 @@ export function CustomSelect<T>({
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute z-50 mt-2 w-full bg-white/95 backdrop-blur-xl border border-slate-100 rounded-[1.5rem] shadow-2xl shadow-slate-200/50 py-2.5 max-h-60 overflow-auto outline-none custom-scrollbar"
+                            className="absolute z-50 mt-2 min-w-full w-max max-w-[320px] bg-white/95 backdrop-blur-xl border border-slate-100 rounded-[1.5rem] shadow-2xl shadow-slate-200/50 py-2.5 max-h-60 overflow-auto outline-none custom-scrollbar right-0"
                         >
                             {options.length === 0 ? (
                                 <li className="px-6 py-10 text-center">
@@ -101,7 +101,7 @@ export function CustomSelect<T>({
                                                 : 'text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900'}
                     `}
                                     >
-                                        <span className="truncate">{String(opt[labelKey])}</span>
+                                        <span className="whitespace-nowrap pr-4">{String(opt[labelKey])}</span>
                                         {String(opt[valueKey]) === value && (
                                             <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
                                         )}

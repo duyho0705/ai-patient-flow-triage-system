@@ -16,7 +16,7 @@ export function RoleSelect() {
         valueKey="value"
         placeholder="Chọn vai trò"
         size="sm"
-        className="w-48"
+        className="w-56"
         icon={<Shield className="w-3.5 h-3.5" />}
       />
     </div>

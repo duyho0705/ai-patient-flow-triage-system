@@ -21,5 +21,6 @@ public class PrescriptionDto {
     private String doctorName;
     private String status;
     private String notes;
+    private String invoiceStatus; // ADDED
     private List<PrescriptionItemDto> items;
 }

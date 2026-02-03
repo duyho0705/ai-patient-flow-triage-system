@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Tenant and branch management. No tenant context required for admin-level operations.
+ * Tenant and branch management. No tenant context required for admin-level
+ * operations.
  */
 @Service
 @RequiredArgsConstructor
@@ -73,6 +74,19 @@ public class TenantService {
             throw new IllegalArgumentException("Branch code already exists for tenant: " + branch.getCode());
         }
         branch.setTenant(tenant);
+        return tenantBranchRepository.save(branch);
+    }
+
+    @Transactional
+    public TenantBranch updateBranch(UUID id, TenantBranch details) {
+        TenantBranch branch = getBranchById(id);
+        branch.setNameVi(details.getNameVi());
+        branch.setAddressLine(details.getAddressLine());
+        branch.setCity(details.getCity());
+        branch.setDistrict(details.getDistrict());
+        branch.setWard(details.getWard());
+        branch.setPhone(details.getPhone());
+        branch.setIsActive(details.getIsActive());
         return tenantBranchRepository.save(branch);
     }
 

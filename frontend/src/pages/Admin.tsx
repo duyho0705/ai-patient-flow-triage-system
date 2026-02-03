@@ -2,46 +2,73 @@ import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { UserManagement } from './admin/UserManagement'
 import { AiConfig } from './admin/AiConfig'
-import { Settings, Users } from 'lucide-react'
+import { BranchManagement } from './admin/BranchManagement'
+import { ServiceCatalog } from './admin/ServiceCatalog'
+import { Settings, Users, Building2, Layers } from 'lucide-react'
+
+type AdminTab = 'users' | 'ai' | 'branches' | 'services'
 
 export function Admin() {
   const { user: authUser } = useAuth()
-  const [activeTab, setActiveTab] = useState<'users' | 'ai'>('users')
+  const [activeTab, setActiveTab] = useState<AdminTab>('users')
 
-  const isAdmin = authUser?.roles?.includes('admin')
+  const userRoles = authUser?.roles || []
+  const isAdmin = userRoles.includes('ADMIN') || userRoles.includes('CLINIC_MANAGER')
+
   if (!isAdmin) {
     return (
       <div className="card max-w-md mx-auto text-center mt-10">
-        <p className="text-slate-600 font-medium">⛔ Bạn không có quyền Admin.</p>
-        <p className="text-sm text-slate-500 mt-2">Vui lòng đăng nhập tài khoản Quản trị viên.</p>
+        <p className="text-slate-600 font-medium">⛔ Bạn không có quyền Quản trị.</p>
+        <p className="text-sm text-slate-500 mt-2">Vui lòng đăng nhập tài khoản Quản trị viên hoặc Quản lý phòng khám.</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-7xl pb-20 space-y-6">
-      <div className="flex items-center gap-6 border-b border-slate-200">
+    <div className="mx-auto max-w-7xl pb-20 space-y-10 animate-in fade duration-700">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100">
         <button
           onClick={() => setActiveTab('users')}
-          className={`group flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-medium transition-colors hover:text-blue-600 ${activeTab === 'users' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'
+          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-blue-600 ${activeTab === 'users' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'
             }`}
         >
-          <Users className={`h-4 w-4 ${activeTab === 'users' ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-600'}`} />
-          User Management
+          <Users className={`h-4 w-4 ${activeTab === 'users' ? 'text-blue-600' : 'text-slate-300 group-hover:text-blue-600'}`} />
+          Nhân sự
+        </button>
+
+        <button
+          onClick={() => setActiveTab('branches')}
+          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-emerald-600 ${activeTab === 'branches' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-400'
+            }`}
+        >
+          <Building2 className={`h-4 w-4 ${activeTab === 'branches' ? 'text-emerald-600' : 'text-slate-300 group-hover:text-emerald-600'}`} />
+          Chi nhánh
+        </button>
+
+        <button
+          onClick={() => setActiveTab('services')}
+          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-amber-600 ${activeTab === 'services' ? 'border-amber-600 text-amber-600' : 'border-transparent text-slate-400'
+            }`}
+        >
+          <Layers className={`h-4 w-4 ${activeTab === 'services' ? 'text-amber-600' : 'text-slate-300 group-hover:text-amber-600'}`} />
+          Dịch vụ & Gói khám
         </button>
 
         <button
           onClick={() => setActiveTab('ai')}
-          className={`group flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-medium transition-colors hover:text-purple-600 ${activeTab === 'ai' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-500'
+          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-purple-600 ${activeTab === 'ai' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-400'
             }`}
         >
-          <Settings className={`h-4 w-4 ${activeTab === 'ai' ? 'text-purple-600' : 'text-slate-400 group-hover:text-purple-600'}`} />
-          AI & System Config
+          <Settings className={`h-4 w-4 ${activeTab === 'ai' ? 'text-purple-600' : 'text-slate-300 group-hover:text-purple-600'}`} />
+          Cấu hình AI
         </button>
       </div>
 
       <div className="min-h-[500px]">
-        {activeTab === 'users' ? <UserManagement /> : <AiConfig />}
+        {activeTab === 'users' && <UserManagement />}
+        {activeTab === 'branches' && <BranchManagement />}
+        {activeTab === 'services' && <ServiceCatalog />}
+        {activeTab === 'ai' && <AiConfig />}
       </div>
     </div>
   )

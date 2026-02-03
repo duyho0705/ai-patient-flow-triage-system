@@ -63,4 +63,18 @@ public class BillingService {
         return invoiceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
     }
+
+    @Transactional(readOnly = true)
+    public java.util.List<Invoice> getInvoices(UUID branchId, String status) {
+        UUID tenantId = TenantContext.getTenantIdOrThrow();
+        if (status != null && !status.isEmpty()) {
+            return invoiceRepository.findByTenantIdAndBranchIdAndStatusOrderByCreatedAtDesc(tenantId, branchId, status);
+        }
+        return invoiceRepository.findByTenantIdAndBranchIdOrderByCreatedAtDesc(tenantId, branchId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Invoice> getInvoiceByConsultation(UUID consultationId) {
+        return invoiceRepository.findByConsultationId(consultationId);
+    }
 }

@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class PrescriptionController {
 
     private final ClinicalService clinicalService;
+    private final vn.clinic.patientflow.billing.service.BillingService billingService;
 
     @PostMapping
     @PreAuthorize("hasRole('DOCTOR')")
@@ -49,6 +50,10 @@ public class PrescriptionController {
     }
 
     private PrescriptionDto mapToDto(Prescription p) {
+        String invoiceStatus = billingService.getInvoiceByConsultation(p.getConsultation().getId())
+                .map(vn.clinic.patientflow.billing.domain.Invoice::getStatus)
+                .orElse("UNKNOWN");
+
         return PrescriptionDto.builder()
                 .id(p.getId())
                 .consultationId(p.getConsultation().getId())
@@ -57,6 +62,7 @@ public class PrescriptionController {
                 .doctorUserId(p.getDoctorUserId())
                 .status(p.getStatus().name())
                 .notes(p.getNotes())
+                .invoiceStatus(invoiceStatus)
                 .items(p.getItems().stream().map(item -> PrescriptionItemDto.builder()
                         .id(item.getId())
                         .productId(item.getProduct() != null ? item.getProduct().getId() : null)

@@ -25,6 +25,14 @@ export async function createBranch(data: CreateBranchRequest): Promise<TenantBra
   return post<TenantBranchDto>('/tenants/branches', data, null)
 }
 
+export async function getBranch(id: string): Promise<TenantBranchDto> {
+  return get<TenantBranchDto>(`/tenants/branches/${id}`, null)
+}
+
+export async function updateBranch(id: string, data: Partial<TenantBranchDto>): Promise<TenantBranchDto> {
+  return put<TenantBranchDto>(`/tenants/branches/${id}`, data, null)
+}
+
 // System/Global Admin Settings
 export async function updateTenantSettings(
   tenantId: string,

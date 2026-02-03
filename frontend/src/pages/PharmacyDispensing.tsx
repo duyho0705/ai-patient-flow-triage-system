@@ -93,8 +93,20 @@ export function PharmacyDispensing() {
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã BN: {p.patientId.slice(0, 8)}</p>
                                             </div>
                                         </div>
-                                        <div className="bg-amber-100 text-amber-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-amber-200/50">
-                                            Chờ cấp phát
+                                        <div className="flex flex-col items-end gap-2">
+                                            <div className="bg-amber-100 text-amber-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-amber-200/50">
+                                                Chờ cấp phát
+                                            </div>
+                                            {p.invoiceStatus === 'PAID' ? (
+                                                <div className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-200/50 flex items-center gap-1">
+                                                    <CheckCircle2 className="w-3 h-3" />
+                                                    Đã thu tiền
+                                                </div>
+                                            ) : (
+                                                <div className="bg-red-100 text-red-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-red-200/50">
+                                                    CHƯA THANH TOÁN
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 

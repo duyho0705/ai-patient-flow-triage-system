@@ -97,9 +97,25 @@ public class TenantController {
         return TenantBranchDto.fromEntity(tenantService.getBranchById(branchId));
     }
 
+    @PutMapping("/branches/{branchId}")
+    @Operation(summary = "Cập nhật chi nhánh")
+    public TenantBranchDto updateBranch(@PathVariable UUID branchId, @RequestBody TenantBranchDto dto) {
+        TenantBranch details = TenantBranch.builder()
+                .nameVi(dto.getNameVi())
+                .addressLine(dto.getAddressLine())
+                .city(dto.getCity())
+                .district(dto.getDistrict())
+                .ward(dto.getWard())
+                .phone(dto.getPhone())
+                .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
+                .build();
+        return TenantBranchDto.fromEntity(tenantService.updateBranch(branchId, details));
+    }
+
     @PutMapping("/{tenantId}/settings")
     @Operation(summary = "Cập nhật cấu hình tenant (Admin)")
-    public TenantDto updateSettings(@PathVariable UUID tenantId, @RequestBody vn.clinic.patientflow.api.dto.UpdateTenantSettingsRequest request) {
+    public TenantDto updateSettings(@PathVariable UUID tenantId,
+            @RequestBody vn.clinic.patientflow.api.dto.UpdateTenantSettingsRequest request) {
         return TenantDto.fromEntity(tenantService.updateSettings(tenantId, request.getSettingsJson()));
     }
 }

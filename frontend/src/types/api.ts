@@ -103,6 +103,17 @@ export interface TenantBranchDto {
   district?: string
   ward?: string
   phone?: string
+  isActive?: boolean
+}
+
+export interface MedicalServiceDto {
+  id: string
+  code: string
+  nameVi: string
+  description?: string
+  category?: string
+  unitPrice: number
+  isActive: boolean
 }
 
 
@@ -419,6 +430,7 @@ export interface PrescriptionDto {
   doctorName?: string
   status: string
   notes?: string
+  invoiceStatus?: string
   items: PrescriptionItemDto[]
 }
 

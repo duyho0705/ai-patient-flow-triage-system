@@ -56,10 +56,20 @@ public class BillingController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'CLINIC_MANAGER')")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'CLINIC_MANAGER', 'DOCTOR')")
     @Operation(summary = "Lấy chi tiết hóa đơn")
     public InvoiceDto getById(@PathVariable UUID id) {
         return InvoiceDto.fromEntity(billingService.getById(id));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'CLINIC_MANAGER')")
+    @Operation(summary = "Danh sách hóa đơn")
+    public java.util.List<InvoiceDto> list(@RequestParam UUID branchId,
+            @RequestParam(required = false) String status) {
+        return billingService.getInvoices(branchId, status).stream()
+                .map(InvoiceDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @PostMapping("/{id}/pay")
