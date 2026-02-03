@@ -1,6 +1,9 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { useTenant } from '@/context/TenantContext'
+import { requestForToken } from '@/firebase'
+import { registerPortalFcmToken } from '@/api/portal'
 import {
     Home,
     Calendar,
@@ -18,6 +21,25 @@ export function PatientLayout({ children }: PatientLayoutProps) {
     const { logout, user } = useAuth()
     const location = useLocation()
     const navigate = useNavigate()
+    const { headers } = useTenant()
+
+    useEffect(() => {
+        const setupNotifications = async () => {
+            if (!headers?.tenantId || !user) return
+
+            try {
+                // In production, we should handle permission request more gracefully
+                const token = await requestForToken()
+                if (token) {
+                    await registerPortalFcmToken(token, 'web', headers)
+                }
+            } catch (err) {
+                console.warn('FCM registration failed:', err)
+            }
+        }
+
+        setupNotifications()
+    }, [headers, user])
 
     const navItems = [
         { path: '/patient', label: 'Trang chủ', icon: Home },
