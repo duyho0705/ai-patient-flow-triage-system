@@ -1,6 +1,17 @@
 import { get, downloadFile } from './client'
 import type { TenantHeaders } from './client'
-import type { WaitTimeSummaryDto, DailyVolumeDto, AiEffectivenessDto } from '@/types/api'
+import type { WaitTimeSummaryDto, DailyVolumeDto, AiEffectivenessDto, RevenueReportDto } from '@/types/api'
+
+export async function getRevenueReport(
+    params: { branchId: string; fromDate?: string; toDate?: string },
+    tenant: TenantHeaders | null
+): Promise<RevenueReportDto> {
+    const sp = new URLSearchParams()
+    sp.set('branchId', params.branchId)
+    if (params.fromDate) sp.set('fromDate', params.fromDate)
+    if (params.toDate) sp.set('toDate', params.toDate)
+    return get<RevenueReportDto>(`/reports/revenue?${sp}`, tenant)
+}
 
 export async function getWaitTimeSummary(
     params: { branchId: string; fromDate?: string; toDate?: string },

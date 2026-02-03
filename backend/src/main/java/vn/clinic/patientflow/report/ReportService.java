@@ -33,107 +33,158 @@ import vn.clinic.patientflow.triage.repository.TriageSessionRepository;
 @RequiredArgsConstructor
 public class ReportService {
 
-    private final QueueEntryRepository queueEntryRepository;
-    private final TriageSessionRepository triageSessionRepository;
-    private final TenantBranchRepository tenantBranchRepository;
+        private final QueueEntryRepository queueEntryRepository;
+        private final TriageSessionRepository triageSessionRepository;
+        private final TenantBranchRepository tenantBranchRepository;
+        private final vn.clinic.patientflow.billing.repository.InvoiceRepository invoiceRepository;
 
-    @Transactional(readOnly = true)
-    public WaitTimeSummaryDto getWaitTimeSummary(UUID branchId, LocalDate fromDate, LocalDate toDate) {
-        UUID tenantId = TenantContext.getTenantIdOrThrow();
-        TenantBranch branch = tenantBranchRepository.findById(branchId)
-                .filter(b -> b.getTenant().getId().equals(tenantId))
-                .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
-        Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        @Transactional(readOnly = true)
+        public vn.clinic.patientflow.api.dto.RevenueReportDto getRevenueReport(UUID branchId, LocalDate fromDate,
+                        LocalDate toDate) {
+                UUID tenantId = TenantContext.getTenantIdOrThrow();
+                TenantBranch branch = tenantBranchRepository.findById(branchId)
+                                .filter(b -> b.getTenant().getId().equals(tenantId))
+                                .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
 
-        long total = queueEntryRepository.countCompletedByBranchAndJoinedAtBetween(branchId, from, to);
-        Double avgMinutes = queueEntryRepository.averageWaitMinutesByBranchAndJoinedAtBetween(branchId, from, to)
-                .orElse(null);
+                Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+                Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
 
-        return WaitTimeSummaryDto.builder()
-                .branchId(branch.getId().toString())
-                .branchName(branch.getNameVi())
-                .fromDate(fromDate)
-                .toDate(toDate)
-                .averageWaitMinutes(avgMinutes != null ? Math.round(avgMinutes * 100.0) / 100.0 : null)
-                .totalCompletedEntries(total)
-                .build();
-    }
+                java.math.BigDecimal total = invoiceRepository.sumTotalAmountPaidByBranchAndCreatedAtBetween(branchId,
+                                from, to);
+                if (total == null)
+                        total = java.math.BigDecimal.ZERO;
 
-    @Transactional(readOnly = true)
-    public List<DailyVolumeDto> getDailyVolume(UUID branchId, LocalDate fromDate, LocalDate toDate) {
-        UUID tenantId = TenantContext.getTenantIdOrThrow();
-        TenantBranch branch = tenantBranchRepository.findById(branchId)
-                .filter(b -> b.getTenant().getId().equals(tenantId))
-                .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
-        Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+                List<Object[]> revenueByDay = invoiceRepository.sumRevenueByDay(branchId, from, to);
+                Map<LocalDate, java.math.BigDecimal> revMap = new HashMap<>();
+                for (Object[] row : revenueByDay) {
+                        LocalDate d = row[0] instanceof java.sql.Date
+                                        ? ((java.sql.Date) row[0]).toLocalDate()
+                                        : (LocalDate) row[0];
+                        java.math.BigDecimal amt = row[1] instanceof java.math.BigDecimal
+                                        ? (java.math.BigDecimal) row[1]
+                                        : java.math.BigDecimal.ZERO;
+                        revMap.put(d, amt);
+                }
 
-        List<Object[]> triageByDay = triageSessionRepository.countTriageByDay(branchId, from, to);
-        List<Object[]> queueByDay = queueEntryRepository.countCompletedQueueByDay(branchId, from, to);
+                List<vn.clinic.patientflow.api.dto.RevenueByDayDto> dailyData = new java.util.ArrayList<>();
+                for (LocalDate d = fromDate; !d.isAfter(toDate); d = d.plusDays(1)) {
+                        dailyData.add(vn.clinic.patientflow.api.dto.RevenueByDayDto.builder()
+                                        .date(d)
+                                        .amount(revMap.getOrDefault(d, java.math.BigDecimal.ZERO))
+                                        .build());
+                }
 
-        Map<LocalDate, Long> triageMap = toDateCountMap(triageByDay);
-        Map<LocalDate, Long> queueMap = toDateCountMap(queueByDay);
-
-        Set<LocalDate> allDays = new HashSet<>(triageMap.keySet());
-        allDays.addAll(queueMap.keySet());
-        for (LocalDate d = fromDate; !d.isAfter(toDate); d = d.plusDays(1)) {
-            allDays.add(d);
+                return vn.clinic.patientflow.api.dto.RevenueReportDto.builder()
+                                .branchId(branch.getId().toString())
+                                .branchName(branch.getNameVi())
+                                .fromDate(fromDate)
+                                .toDate(toDate)
+                                .totalRevenue(total)
+                                .dailyRevenue(dailyData)
+                                .build();
         }
-        return allDays.stream()
-                .sorted()
-                .map(d -> DailyVolumeDto.builder()
-                        .date(d)
-                        .branchId(branch.getId().toString())
-                        .branchName(branch.getNameVi())
-                        .triageCount(triageMap.getOrDefault(d, 0L))
-                        .completedQueueEntries(queueMap.getOrDefault(d, 0L))
-                        .build())
-                .collect(Collectors.toList());
-    }
 
-    @Transactional(readOnly = true)
-    public AiEffectivenessDto getAiEffectiveness(UUID branchId, LocalDate fromDate, LocalDate toDate) {
-        UUID tenantId = TenantContext.getTenantIdOrThrow();
-        TenantBranch branch = tenantBranchRepository.findById(branchId)
-                .filter(b -> b.getTenant().getId().equals(tenantId))
-                .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
-        Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        @Transactional(readOnly = true)
+        public WaitTimeSummaryDto getWaitTimeSummary(UUID branchId, LocalDate fromDate, LocalDate toDate) {
+                UUID tenantId = TenantContext.getTenantIdOrThrow();
+                TenantBranch branch = tenantBranchRepository.findById(branchId)
+                                .filter(b -> b.getTenant().getId().equals(tenantId))
+                                .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
+                Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+                Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
 
-        long totalSessions = triageSessionRepository.countByBranchIdAndStartedAtBetween(branchId, from, to);
-        long aiSessions = triageSessionRepository.countAiSessionsByBranchAndStartedAtBetween(branchId, from, to);
-        long humanSessions = totalSessions - aiSessions;
-        long matchCount = triageSessionRepository.countMatchByBranchAndStartedAtBetween(branchId, from, to);
-        long overrideCount = triageSessionRepository.countOverrideByBranchAndStartedAtBetween(branchId, from, to);
+                long total = queueEntryRepository.countCompletedByBranchAndJoinedAtBetween(branchId, from, to);
+                Double avgMinutes = queueEntryRepository
+                                .averageWaitMinutesByBranchAndJoinedAtBetween(branchId, from, to)
+                                .orElse(null);
 
-        Double matchRate = aiSessions > 0 ? Math.round((matchCount * 10000.0 / aiSessions)) / 10000.0 : null;
-        Double overrideRate = aiSessions > 0 ? Math.round((overrideCount * 10000.0 / aiSessions)) / 10000.0 : null;
-
-        return AiEffectivenessDto.builder()
-                .branchId(branch.getId().toString())
-                .branchName(branch.getNameVi())
-                .fromDate(fromDate)
-                .toDate(toDate)
-                .totalSessions(totalSessions)
-                .aiSessions(aiSessions)
-                .humanSessions(humanSessions)
-                .matchCount(matchCount)
-                .overrideCount(overrideCount)
-                .matchRate(matchRate)
-                .overrideRate(overrideRate)
-                .build();
-    }
-
-    private static Map<LocalDate, Long> toDateCountMap(List<Object[]> rows) {
-        Map<LocalDate, Long> map = new HashMap<>();
-        for (Object[] row : rows) {
-            LocalDate d = row[0] instanceof java.sql.Date
-                    ? ((java.sql.Date) row[0]).toLocalDate()
-                    : (LocalDate) row[0];
-            long count = row[1] instanceof Number ? ((Number) row[1]).longValue() : 0L;
-            map.put(d, count);
+                return WaitTimeSummaryDto.builder()
+                                .branchId(branch.getId().toString())
+                                .branchName(branch.getNameVi())
+                                .fromDate(fromDate)
+                                .toDate(toDate)
+                                .averageWaitMinutes(avgMinutes != null ? Math.round(avgMinutes * 100.0) / 100.0 : null)
+                                .totalCompletedEntries(total)
+                                .build();
         }
-        return map;
-    }
+
+        @Transactional(readOnly = true)
+        public List<DailyVolumeDto> getDailyVolume(UUID branchId, LocalDate fromDate, LocalDate toDate) {
+                UUID tenantId = TenantContext.getTenantIdOrThrow();
+                TenantBranch branch = tenantBranchRepository.findById(branchId)
+                                .filter(b -> b.getTenant().getId().equals(tenantId))
+                                .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
+                Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+                Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+
+                List<Object[]> triageByDay = triageSessionRepository.countTriageByDay(branchId, from, to);
+                List<Object[]> queueByDay = queueEntryRepository.countCompletedQueueByDay(branchId, from, to);
+
+                Map<LocalDate, Long> triageMap = toDateCountMap(triageByDay);
+                Map<LocalDate, Long> queueMap = toDateCountMap(queueByDay);
+
+                Set<LocalDate> allDays = new HashSet<>(triageMap.keySet());
+                allDays.addAll(queueMap.keySet());
+                for (LocalDate d = fromDate; !d.isAfter(toDate); d = d.plusDays(1)) {
+                        allDays.add(d);
+                }
+                return allDays.stream()
+                                .sorted()
+                                .map(d -> DailyVolumeDto.builder()
+                                                .date(d)
+                                                .branchId(branch.getId().toString())
+                                                .branchName(branch.getNameVi())
+                                                .triageCount(triageMap.getOrDefault(d, 0L))
+                                                .completedQueueEntries(queueMap.getOrDefault(d, 0L))
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
+        @Transactional(readOnly = true)
+        public AiEffectivenessDto getAiEffectiveness(UUID branchId, LocalDate fromDate, LocalDate toDate) {
+                UUID tenantId = TenantContext.getTenantIdOrThrow();
+                TenantBranch branch = tenantBranchRepository.findById(branchId)
+                                .filter(b -> b.getTenant().getId().equals(tenantId))
+                                .orElseThrow(() -> new NoSuchElementException("Branch not found: " + branchId));
+                Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+                Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+
+                long totalSessions = triageSessionRepository.countByBranchIdAndStartedAtBetween(branchId, from, to);
+                long aiSessions = triageSessionRepository.countAiSessionsByBranchAndStartedAtBetween(branchId, from,
+                                to);
+                long humanSessions = totalSessions - aiSessions;
+                long matchCount = triageSessionRepository.countMatchByBranchAndStartedAtBetween(branchId, from, to);
+                long overrideCount = triageSessionRepository.countOverrideByBranchAndStartedAtBetween(branchId, from,
+                                to);
+
+                Double matchRate = aiSessions > 0 ? Math.round((matchCount * 10000.0 / aiSessions)) / 10000.0 : null;
+                Double overrideRate = aiSessions > 0 ? Math.round((overrideCount * 10000.0 / aiSessions)) / 10000.0
+                                : null;
+
+                return AiEffectivenessDto.builder()
+                                .branchId(branch.getId().toString())
+                                .branchName(branch.getNameVi())
+                                .fromDate(fromDate)
+                                .toDate(toDate)
+                                .totalSessions(totalSessions)
+                                .aiSessions(aiSessions)
+                                .humanSessions(humanSessions)
+                                .matchCount(matchCount)
+                                .overrideCount(overrideCount)
+                                .matchRate(matchRate)
+                                .overrideRate(overrideRate)
+                                .build();
+        }
+
+        private static Map<LocalDate, Long> toDateCountMap(List<Object[]> rows) {
+                Map<LocalDate, Long> map = new HashMap<>();
+                for (Object[] row : rows) {
+                        LocalDate d = row[0] instanceof java.sql.Date
+                                        ? ((java.sql.Date) row[0]).toLocalDate()
+                                        : (LocalDate) row[0];
+                        long count = row[1] instanceof Number ? ((Number) row[1]).longValue() : 0L;
+                        map.put(d, count);
+                }
+                return map;
+        }
 }

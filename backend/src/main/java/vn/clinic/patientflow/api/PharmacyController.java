@@ -57,6 +57,25 @@ public class PharmacyController {
         return ResponseEntity.ok(mapToProductDto(productRepository.save(product)));
     }
 
+    @PutMapping("/products/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLINIC_MANAGER')")
+    @Operation(summary = "Cập nhật thông tin thuốc")
+    public ResponseEntity<PharmacyProductDto> updateProduct(@PathVariable UUID id,
+            @RequestBody PharmacyProductDto dto) {
+        PharmacyProduct product = productRepository.findById(id)
+                .orElseThrow(() -> new vn.clinic.patientflow.common.exception.ResourceNotFoundException(
+                        "PharmacyProduct", id));
+
+        product.setCode(dto.getCode());
+        product.setNameVi(dto.getNameVi());
+        product.setGenericName(dto.getGenericName());
+        product.setUnit(dto.getUnit());
+        product.setStandardPrice(dto.getStandardPrice());
+        product.setActive(dto.isActive());
+
+        return ResponseEntity.ok(mapToProductDto(productRepository.save(product)));
+    }
+
     @GetMapping("/inventory")
     @Operation(summary = "Xem tồn kho của chi nhánh")
     public ResponseEntity<List<PharmacyInventoryDto>> getInventory(@RequestParam UUID branchId) {

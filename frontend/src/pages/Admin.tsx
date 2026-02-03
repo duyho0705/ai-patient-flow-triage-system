@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { UserManagement } from './admin/UserManagement'
 import { AiConfig } from './admin/AiConfig'
 import { BranchManagement } from './admin/BranchManagement'
-import { ServiceCatalog } from './admin/ServiceCatalog'
+import { MasterData } from './admin/MasterData'
 import { Settings, Users, Building2, Layers } from 'lucide-react'
 
 type AdminTab = 'users' | 'ai' | 'branches' | 'services'
@@ -67,7 +67,7 @@ export function Admin() {
       <div className="min-h-[500px]">
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'branches' && <BranchManagement />}
-        {activeTab === 'services' && <ServiceCatalog />}
+        {activeTab === 'services' && <MasterData />}
         {activeTab === 'ai' && <AiConfig />}
       </div>
     </div>

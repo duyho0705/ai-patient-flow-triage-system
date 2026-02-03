@@ -1,4 +1,4 @@
-import { get, post } from './client'
+import { get, post, put } from './client'
 import type { TenantHeaders } from './client'
 import type { PharmacyProductDto, PharmacyInventoryDto, InventoryTransactionDto } from '@/types/api'
 
@@ -8,6 +8,10 @@ export async function getPharmacyProducts(tenant: TenantHeaders | null): Promise
 
 export async function createPharmacyProduct(body: Partial<PharmacyProductDto>, tenant: TenantHeaders | null): Promise<PharmacyProductDto> {
     return post<PharmacyProductDto>('/pharmacy/products', body, tenant)
+}
+
+export async function updatePharmacyProduct(id: string, body: Partial<PharmacyProductDto>, tenant: TenantHeaders | null): Promise<PharmacyProductDto> {
+    return put<PharmacyProductDto>(`/pharmacy/products/${id}`, body, tenant)
 }
 
 export async function getPharmacyInventory(branchId: string, tenant: TenantHeaders | null): Promise<PharmacyInventoryDto[]> {

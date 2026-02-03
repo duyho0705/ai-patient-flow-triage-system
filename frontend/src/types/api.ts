@@ -353,6 +353,20 @@ export interface AiEffectivenessDto {
   overrideRate: number | null
 }
 
+export interface RevenueByDayDto {
+  date: string
+  amount: number
+}
+
+export interface RevenueReportDto {
+  branchId: string
+  branchName: string
+  fromDate: string
+  toDate: string
+  totalRevenue: number
+  dailyRevenue: RevenueByDayDto[]
+}
+
 export interface InvoiceItemDto {
   id: string
   itemCode?: string
