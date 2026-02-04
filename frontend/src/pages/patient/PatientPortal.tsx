@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getPatientPortalStatus } from '@/api/portal'
 import { getMedicalTimeline } from '@/api/ehr'
 import { useTenant } from '@/context/TenantContext'
@@ -9,19 +9,22 @@ import {
     ArrowRight, ChevronRight, RefreshCw,
     Activity, Calendar, CheckCircle2
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { WebSocketService } from '@/services/websocket'
+import toast from 'react-hot-toast'
 
 export function PatientPortal() {
     const { patientId } = useParams()
     const { headers } = useTenant()
+    const queryClient = useQueryClient()
     const [refreshKey, setRefreshKey] = useState(0)
 
     const { data: status, isLoading: isLoadingStatus, refetch } = useQuery({
         queryKey: ['portal-status', patientId, refreshKey],
         queryFn: () => getPatientPortalStatus(patientId!, headers),
         enabled: !!patientId && !!headers?.tenantId,
-        refetchInterval: 15000 // Tự động làm mới mỗi 15 giây
+        refetchInterval: 30000 // Polling backup
     })
 
     const { data: timeline, isLoading: isLoadingTimeline } = useQuery({
@@ -29,6 +32,28 @@ export function PatientPortal() {
         queryFn: () => getMedicalTimeline(patientId!, headers),
         enabled: !!patientId && !!headers?.tenantId
     })
+
+    useEffect(() => {
+        if (!patientId) return
+
+        const ws = new WebSocketService((msg) => {
+            queryClient.invalidateQueries({ queryKey: ['portal-status', patientId] })
+            queryClient.invalidateQueries({ queryKey: ['portal-timeline', patientId] })
+
+            toast.success(msg.body || msg.title || 'Cập nhật mới!', {
+                icon: '🔔',
+                position: 'top-center',
+                style: {
+                    borderRadius: '1rem',
+                    background: '#1e293b',
+                    color: '#fff',
+                }
+            })
+        }, `/topic/patient/${patientId}`)
+
+        ws.connect()
+        return () => ws.disconnect()
+    }, [patientId, queryClient])
 
     const handleRefresh = () => {
         setRefreshKey(prev => prev + 1)
@@ -47,12 +72,18 @@ export function PatientPortal() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">Chào mừng trở lại</p>
                         <h1 className="text-3xl font-black tracking-tight">{status?.patientName || 'Bệnh nhân'}</h1>
                     </div>
-                    <button
-                        onClick={handleRefresh}
-                        className="p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition-all active:scale-90"
-                    >
-                        <RefreshCw className={`w-5 h-5 ${isLoadingStatus ? 'animate-spin' : ''}`} />
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 rounded-full border border-blue-500/30">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Trực tiếp</span>
+                        </div>
+                        <button
+                            onClick={handleRefresh}
+                            className="p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition-all active:scale-90"
+                        >
+                            <RefreshCw className={`w-5 h-5 ${isLoadingStatus ? 'animate-spin' : ''}`} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Status Card Overlay */}
@@ -145,9 +176,9 @@ export function PatientPortal() {
                             >
                                 <div className="flex items-center gap-6">
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${item.type === 'TRIAGE' ? 'bg-blue-50 text-blue-600' :
-                                            item.type === 'CONSULTATION' ? 'bg-emerald-50 text-emerald-600' :
-                                                item.type === 'INVOICE' ? 'bg-rose-50 text-rose-600' :
-                                                    'bg-slate-50 text-slate-600'
+                                        item.type === 'CONSULTATION' ? 'bg-emerald-50 text-emerald-600' :
+                                            item.type === 'INVOICE' ? 'bg-rose-50 text-rose-600' :
+                                                'bg-slate-50 text-slate-600'
                                         }`}>
                                         {item.type === 'TRIAGE' ? <Activity className="w-5 h-5" /> :
                                             item.type === 'CONSULTATION' ? <CheckCircle2 className="w-5 h-5" /> :

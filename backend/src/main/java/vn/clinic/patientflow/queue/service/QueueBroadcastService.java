@@ -21,6 +21,8 @@ public class QueueBroadcastService {
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationService notificationService;
     private final PatientDeviceTokenRepository deviceTokenRepository;
+    private final vn.clinic.patientflow.patient.repository.PatientNotificationRepository patientNotificationRepository;
+    private final vn.clinic.patientflow.patient.repository.PatientRepository patientRepository;
 
     /**
      * Thông báo cho tất cả client trong một chi nhánh rằng hàng chờ đã thay đổi.
@@ -29,31 +31,79 @@ public class QueueBroadcastService {
     public void broadcastQueueUpdate(UUID branchId) {
         String destination = "/topic/queue/" + branchId;
         log.debug("Broadcasting queue update to {}", destination);
-
-        // Gửi một thông điệp đơn giản để báo hiệu frontend cần refetch data
-        // Hoặc có thể gửi luôn danh sách hàng chờ mới nếu muốn tối ưu hơn
         messagingTemplate.convertAndSend(destination, "REFRESH_QUEUE");
     }
 
     /**
-     * Thông báo riêng cho một bệnh nhân (ví dụ: "Đã đến lượt bạn").
-     * Topic format: /topic/patient/{patientId}
+     * Thông báo riêng cho một bệnh nhân.
      */
     public void notifyPatient(UUID patientId, String message) {
-        // 1. Gửi qua WebSocket (cho các app đang mở)
-        String destination = "/topic/patient/" + patientId;
-        log.debug("Notifying patient {} at destination {}", patientId, destination);
-        messagingTemplate.convertAndSend(destination, message);
+        createAndSendNotification(patientId, "Thông báo hàng chờ", message, "QUEUE", null);
+    }
 
-        // 2. Gửi qua Push Notification (FCM) cho các thiết bị đã đăng ký
+    /**
+     * Thông báo cho bệnh nhân rằng hóa đơn đã sẵn sàng để thanh toán.
+     */
+    public void notifyBillingReady(UUID patientId, UUID invoiceId, String amount) {
+        String message = String
+                .format("Hóa đơn của bạn đã sẵn sàng. Số tiền: %s VNĐ. Vui lòng thanh toán tại quầy thu ngân.", amount);
+        createAndSendNotification(patientId, "Hóa đơn mới", message, "BILLING", invoiceId.toString());
+    }
+
+    /**
+     * Thông báo cho bệnh nhân rằng thuốc đã được cấp phát.
+     */
+    public void notifyPharmacyReady(UUID patientId, UUID prescriptionId) {
+        String message = "Thuốc của bạn đã được chuẩn bị xong. Vui lòng nhận tại quầy Dược.";
+        createAndSendNotification(patientId, "Nhận thuốc", message, "PHARMACY", prescriptionId.toString());
+    }
+
+    /**
+     * Phương thức chung để tạo, lưu và gửi thông báo đa kênh.
+     */
+    private void createAndSendNotification(UUID patientId, String title, String body, String type, String resourceId) {
+        var patient = patientRepository.findById(patientId).orElse(null);
+        if (patient == null)
+            return;
+
+        // 1. Lưu vào Database
+        vn.clinic.patientflow.patient.domain.PatientNotification persistentNotif = vn.clinic.patientflow.patient.domain.PatientNotification
+                .builder()
+                .tenant(patient.getTenant())
+                .patient(patient)
+                .title(title)
+                .content(body)
+                .type(type)
+                .relatedResourceId(resourceId)
+                .createdAt(java.time.Instant.now())
+                .isRead(false)
+                .build();
+        patientNotificationRepository.save(persistentNotif);
+
+        // 2. Gửi qua WebSocket (cho các app đang mở)
+        String destination = "/topic/patient/" + patientId;
+        log.debug("Broadcasting to WebSocket: {} - {}", destination, body);
+        messagingTemplate.convertAndSend(destination, Map.of(
+                "id", persistentNotif.getId(),
+                "title", title,
+                "body", body,
+                "type", type,
+                "resourceId", resourceId != null ? resourceId : "",
+                "createdAt", persistentNotif.getCreatedAt().toString()));
+
+        // 3. Gửi qua Push Notification (FCM)
         List<PatientDeviceToken> tokens = deviceTokenRepository.findByPatientId(patientId);
         if (!tokens.isEmpty()) {
             for (PatientDeviceToken t : tokens) {
                 notificationService.sendPushNotification(
                         t.getFcmToken(),
-                        "Thông báo từ Phòng khám",
-                        message,
-                        Map.of("patientId", patientId.toString(), "type", "QUEUE_CALL"));
+                        title,
+                        body,
+                        Map.of(
+                                "patientId", patientId.toString(),
+                                "notifId", persistentNotif.getId().toString(),
+                                "type", type,
+                                "resourceId", resourceId != null ? resourceId : ""));
             }
         }
     }

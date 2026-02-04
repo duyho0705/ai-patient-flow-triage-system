@@ -10,8 +10,16 @@ import {
     History,
     User,
     LogOut,
-    Bell
+    Bell,
+    X,
+    Circle
 } from 'lucide-react'
+import { getPortalNotifications, markPortalNotificationAsRead } from '@/api/portal'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
+import { WebSocketService } from '@/services/websocket'
+import toast from 'react-hot-toast'
 
 interface PatientLayoutProps {
     children: ReactNode
@@ -23,12 +31,36 @@ export function PatientLayout({ children }: PatientLayoutProps) {
     const navigate = useNavigate()
     const { headers } = useTenant()
 
-    useEffect(() => {
-        const setupNotifications = async () => {
-            if (!headers?.tenantId || !user) return
+    const queryClient = useQueryClient()
+    const [isNotifOpen, setIsNotifOpen] = useState(false)
 
+    const { data: notifications = [] } = useQuery({
+        queryKey: ['patient-notifications', user?.id],
+        queryFn: () => getPortalNotifications(headers),
+        enabled: !!user && !!headers?.tenantId,
+        refetchInterval: 60000 // Poll every minute as backup
+    })
+
+    const unreadCount = notifications.filter(n => !n.isRead).length
+
+    useEffect(() => {
+        if (!user || !headers?.tenantId) return
+
+        // WebSocket for live notifications
+        const ws = new WebSocketService((msg) => {
+            // Success alert
+            toast.success(msg.body || msg.title || 'Thông báo mới!', {
+                icon: '🔔',
+                position: 'top-center'
+            })
+            // Refresh notification list
+            queryClient.invalidateQueries({ queryKey: ['patient-notifications', user.id] })
+        }, `/topic/patient/${user.id}`)
+
+        ws.connect()
+
+        const setupNotifications = async () => {
             try {
-                // In production, we should handle permission request more gracefully
                 const token = await requestForToken()
                 if (token) {
                     await registerPortalFcmToken(token, 'web', headers)
@@ -39,7 +71,17 @@ export function PatientLayout({ children }: PatientLayoutProps) {
         }
 
         setupNotifications()
-    }, [headers, user])
+        return () => ws.disconnect()
+    }, [headers, user, queryClient])
+
+    const handleMarkAsRead = async (id: string) => {
+        try {
+            await markPortalNotificationAsRead(id, headers)
+            queryClient.invalidateQueries({ queryKey: ['patient-notifications', user?.id] })
+        } catch (err) {
+            console.error('Failed to mark notification as read:', err)
+        }
+    }
 
     const navItems = [
         { path: '/patient', label: 'Trang chủ', icon: Home },
@@ -116,15 +158,102 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                     </div>
                     <span className="font-black text-slate-900 tracking-tight">Patient Portal</span>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-black text-[10px]">
+                <button
+                    onClick={() => setIsNotifOpen(true)}
+                    className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-black text-[10px] relative"
+                >
                     {user?.fullNameVi?.slice(0, 1) || 'P'}
-                </div>
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                            {unreadCount}
+                        </span>
+                    )}
+                </button>
             </header>
 
             {/* Main Content */}
             <main className="p-4 sm:p-8 md:p-12 animate-in fade-in duration-500">
                 {children}
             </main>
+
+            {/* Notification Pane overlay */}
+            <AnimatePresence>
+                {isNotifOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsNotifOpen(false)}
+                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60]"
+                        />
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-white shadow-2xl z-[70] flex flex-col"
+                        >
+                            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                        <Bell className="w-6 h-6" />
+                                    </div>
+                                    <h2 className="text-xl font-black text-slate-900">Thông báo</h2>
+                                </div>
+                                <button
+                                    onClick={() => setIsNotifOpen(false)}
+                                    className="p-2 hover:bg-slate-100 rounded-xl transition-all"
+                                >
+                                    <X className="w-6 h-6 text-slate-400" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                {notifications.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-center p-10">
+                                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                                            <Bell className="w-10 h-10 text-slate-200" />
+                                        </div>
+                                        <p className="text-slate-400 text-sm font-bold">Không có thông báo nào</p>
+                                    </div>
+                                ) : (
+                                    notifications.map((notif) => (
+                                        <div
+                                            key={notif.id}
+                                            onClick={() => !notif.isRead && handleMarkAsRead(notif.id)}
+                                            className={`p-5 rounded-[2rem] border transition-all cursor-pointer group hover:scale-[1.02] active:scale-95 ${notif.isRead
+                                                ? 'bg-white border-slate-100 text-slate-500'
+                                                : 'bg-blue-50/50 border-blue-100 text-slate-900 shadow-sm'
+                                                }`}
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    {!notif.isRead && <Circle className="w-2 h-2 fill-blue-600 text-blue-600" />}
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${notif.isRead ? 'text-slate-300' : 'text-blue-600'}`}>
+                                                        {notif.type}
+                                                    </span>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-slate-300">
+                                                    {new Date(notif.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <h3 className={`font-black tracking-tight mb-1 group-hover:text-blue-600 transition-colors ${notif.isRead ? 'text-slate-700' : 'text-slate-900'}`}>
+                                                {notif.title}
+                                            </h3>
+                                            <p className="text-xs leading-relaxed opacity-80">{notif.content}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            <div className="p-6 border-t border-slate-100 italic text-[10px] text-slate-400 text-center uppercase tracking-widest font-black">
+                                Hệ thống thông báo tự động
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* Bottom Nav for Mobile */}
             <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-2 py-3 flex items-center justify-around z-40">
@@ -144,6 +273,21 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                         </Link>
                     )
                 })}
+                {/* Mobile Notification Toggle */}
+                <button
+                    onClick={() => setIsNotifOpen(true)}
+                    className="flex flex-col items-center gap-1 text-slate-400 relative"
+                >
+                    <div className="p-2">
+                        <Bell className="w-5 h-5" />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
+                    </div>
+                    <span className="text-[10px] font-bold">Thông báo</span>
+                </button>
             </nav>
         </div>
     )

@@ -10,7 +10,8 @@ import type {
     QueueEntryDto,
     TenantBranchDto,
     SlotAvailabilityDto,
-    CreateAppointmentRequest
+    CreateAppointmentRequest,
+    PatientNotificationDto
 } from '@/types/api'
 
 export async function getPortalProfile(tenant: TenantHeaders | null): Promise<PatientDto> {
@@ -55,4 +56,12 @@ export async function createPortalAppointment(data: CreateAppointmentRequest, te
 
 export async function registerPortalFcmToken(token: string, deviceType: string, tenant: TenantHeaders | null): Promise<void> {
     return post<void>('/portal/register-token', { token, deviceType }, tenant)
+}
+
+export async function getPortalNotifications(tenant: TenantHeaders | null): Promise<PatientNotificationDto[]> {
+    return get<PatientNotificationDto[]>('/portal/notifications', tenant)
+}
+
+export async function markPortalNotificationAsRead(id: string, tenant: TenantHeaders | null): Promise<void> {
+    return post<void>(`/portal/notifications/${id}/read`, {}, tenant)
 }

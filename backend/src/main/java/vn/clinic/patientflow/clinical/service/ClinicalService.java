@@ -27,6 +27,7 @@ public class ClinicalService {
     private final vn.clinic.patientflow.pharmacy.repository.PharmacyProductRepository productRepository;
     private final vn.clinic.patientflow.pharmacy.service.PharmacyService pharmacyService;
     private final vn.clinic.patientflow.pharmacy.repository.PharmacyInventoryRepository inventoryRepository;
+    private final vn.clinic.patientflow.queue.service.QueueBroadcastService queueBroadcastService;
 
     @Transactional(readOnly = true)
     public ClinicalConsultation getById(UUID id) {
@@ -137,7 +138,13 @@ public class ClinicalService {
             }
         });
 
-        billingService.createInvoice(invoice);
+        vn.clinic.patientflow.billing.domain.Invoice savedInvoice = billingService.createInvoice(invoice);
+
+        // Notify patient
+        queueBroadcastService.notifyBillingReady(
+                cons.getPatient().getId(),
+                savedInvoice.getId(),
+                savedInvoice.getFinalAmount().stripTrailingZeros().toPlainString());
 
         return cons;
     }
@@ -213,6 +220,11 @@ public class ClinicalService {
 
         prescription.setStatus(vn.clinic.patientflow.clinical.domain.Prescription.PrescriptionStatus.DISPENSED);
         prescriptionRepository.save(prescription);
+
+        // Notify patient
+        queueBroadcastService.notifyPharmacyReady(
+                prescription.getPatient().getId(),
+                prescription.getId());
     }
 
     @Transactional(readOnly = true)

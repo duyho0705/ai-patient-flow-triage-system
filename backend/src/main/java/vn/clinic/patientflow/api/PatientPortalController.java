@@ -38,6 +38,7 @@ public class PatientPortalController {
     private final QueueService queueService;
     private final TenantService tenantService;
     private final PatientNotificationService patientNotificationService;
+    private final vn.clinic.patientflow.patient.repository.PatientNotificationRepository patientNotificationRepository;
 
     @GetMapping("/profile")
     @Operation(summary = "Lấy hồ sơ bệnh nhân của user hiện tại")
@@ -173,6 +174,27 @@ public class PatientPortalController {
     public void registerToken(@RequestBody RegisterFcmTokenRequest request) {
         Patient p = getAuthenticatedPatient();
         patientNotificationService.registerToken(p, request.getToken(), request.getDeviceType());
+    }
+
+    @GetMapping("/notifications")
+    @Operation(summary = "Lấy danh sách thông báo của bệnh nhân")
+    public List<PatientNotificationDto> getNotifications() {
+        Patient p = getAuthenticatedPatient();
+        return patientNotificationRepository.findByPatientIdOrderByCreatedAtDesc(p.getId())
+                .stream().map(PatientNotificationDto::fromEntity).collect(Collectors.toList());
+    }
+
+    @PostMapping("/notifications/{id}/read")
+    @Operation(summary = "Đánh dấu thông báo đã đọc")
+    public void markAsRead(@PathVariable UUID id) {
+        Patient p = getAuthenticatedPatient();
+        var notif = patientNotificationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification", id));
+        if (!notif.getPatient().getId().equals(p.getId())) {
+            throw new ResourceNotFoundException("Notification", id);
+        }
+        notif.setRead(true);
+        patientNotificationRepository.save(notif);
     }
 
     private Patient getAuthenticatedPatient() {

@@ -587,3 +587,13 @@ export interface CreateAppointmentRequest {
   appointmentType?: string
   notes?: string
 }
+
+export interface PatientNotificationDto {
+  id: string
+  title: string
+  content: string
+  type: string
+  relatedResourceId?: string
+  isRead: boolean
+  createdAt: string
+}
