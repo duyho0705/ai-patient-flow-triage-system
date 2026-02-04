@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
 import { TenantProvider } from '@/context/TenantContext'
 import { RoleProvider } from '@/context/RoleContext'
+import { WebSocketProvider } from '@/context/WebSocketContext'
 import App from './App'
 import './index.css'
 
@@ -21,7 +22,9 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <TenantProvider>
             <RoleProvider>
-              <App />
+              <WebSocketProvider>
+                <App />
+              </WebSocketProvider>
             </RoleProvider>
           </TenantProvider>
         </AuthProvider>

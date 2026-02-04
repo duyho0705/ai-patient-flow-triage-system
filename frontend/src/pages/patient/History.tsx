@@ -7,7 +7,8 @@ import {
     Calendar,
     Search,
     Filter,
-    History as HistoryIcon
+    History as HistoryIcon,
+    AlertCircle
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
@@ -87,11 +88,28 @@ export default function PatientHistory() {
                                                 </div>
                                             </div>
                                             <h4 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">
-                                                {item.diagnosisNotes || 'Đang chờ cập nhật bộ chẩn đoán...'}
+                                                {item.diagnosisNotes || 'Kết quả đang được cập nhật...'}
                                             </h4>
-                                            <p className="text-sm font-medium text-slate-400">
-                                                Bác sĩ phụ trách: <span className="text-slate-700 font-bold">{item.doctorName}</span>
-                                            </p>
+                                            {item.chiefComplaintSummary && (
+                                                <p className="text-sm font-medium text-slate-500 line-clamp-1 italic">
+                                                    "{item.chiefComplaintSummary}"
+                                                </p>
+                                            )}
+                                            <div className="flex items-center gap-4 pt-1">
+                                                <p className="text-xs font-medium text-slate-400">
+                                                    BS. <span className="text-slate-700 font-bold">{item.doctorName}</span>
+                                                </p>
+                                                {item.acuityLevel && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${item.acuityLevel === '1' ? 'bg-red-500 animate-pulse' :
+                                                            item.acuityLevel === '2' ? 'bg-orange-500' :
+                                                                item.acuityLevel === '3' ? 'bg-yellow-500' :
+                                                                    'bg-blue-500'
+                                                            }`} />
+                                                        <span className="text-[10px] font-black uppercase text-slate-400">Priority {item.acuityLevel}</span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-end md:justify-start gap-4">

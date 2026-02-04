@@ -10,7 +10,14 @@ import {
     FileText,
     Receipt,
     Printer,
-    Download
+    Download,
+    CheckCircle2,
+    Clock3,
+    ShieldCheck,
+    Thermometer,
+    Heart,
+    Wind,
+    Droplets
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import jsPDF from 'jspdf'
@@ -90,13 +97,50 @@ export default function PatientHistoryDetail() {
                         className="flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-xl shadow-slate-200"
                     >
                         <Download className="w-4 h-4" />
-                        Tải về
+                        Đơn thuốc
                     </button>
                 </div>
             </header>
 
+            {/* Visit Journey Timeline */}
+            <motion.section
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/20"
+            >
+                <div className="flex items-center gap-3 mb-8">
+                    <Clock3 className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Hành trình thăm khám</h3>
+                </div>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative">
+                    {/* Progress Bar (Desktop) */}
+                    <div className="hidden md:block absolute top-[1.125rem] left-0 right-0 h-0.5 bg-slate-100" />
+
+                    {[
+                        { label: 'Tiếp nhận', status: 'completed', icon: CheckCircle2 },
+                        { label: 'Phân loại', status: detail.consultation.triageSessionId ? 'completed' : 'pending', icon: CheckCircle2 },
+                        { label: 'Thăm khám', status: detail.consultation.status === 'COMPLETED' ? 'completed' : 'active', icon: CheckCircle2 },
+                        { label: 'Thanh toán', status: detail.invoice?.status === 'PAID' ? 'completed' : 'pending', icon: CheckCircle2 },
+                        { label: 'Nhận thuốc', status: detail.invoice?.status === 'PAID' ? 'active' : 'pending', icon: CheckCircle2 }
+                    ].map((step, idx) => (
+                        <div key={idx} className="flex flex-col items-center gap-4 relative z-10 group">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${step.status === 'completed'
+                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200'
+                                : step.status === 'active'
+                                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200 animate-pulse'
+                                    : 'bg-white border-slate-200 text-slate-300'
+                                }`}>
+                                <step.icon className="w-5 h-5" />
+                            </div>
+                            <span className={`text-[10px] font-black uppercase tracking-tight transition-colors ${step.status === 'completed' ? 'text-emerald-600' :
+                                step.status === 'active' ? 'text-blue-600' : 'text-slate-400'
+                                }`}>{step.label}</span>
+                        </div>
+                    ))}
+                </div>
+            </motion.section>
+
             <div className="grid md:grid-cols-3 gap-8">
-                {/* Left: Info Cards */}
                 <div className="md:col-span-2 space-y-8">
                     {/* Diagnosis & Notes */}
                     <motion.section
@@ -187,28 +231,61 @@ export default function PatientHistoryDetail() {
 
                     {/* Vitals */}
                     {detail.vitals && detail.vitals.length > 0 && (
-                        <div className="bg-slate-900 rounded-[2rem] p-6 text-white overflow-hidden relative">
+                        <div className="bg-slate-900 rounded-[2rem] p-6 text-white overflow-hidden relative shadow-xl">
                             <div className="absolute top-0 right-0 p-4 opacity-10">
                                 <Activity className="w-20 h-20" />
                             </div>
-                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 relative z-10">Chỉ số sinh hiệu</h3>
+                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 relative z-10">Chỉ số sinh hiệu</h3>
                             <div className="space-y-5 relative z-10">
-                                {detail.vitals.map(v => (
-                                    <div key={v.id} className="flex items-center justify-between group">
-                                        <span className="text-sm font-bold text-slate-400 group-hover:text-white transition-colors uppercase tracking-tight">{v.vitalType}</span>
-                                        <div className="flex items-end gap-1">
-                                            <span className="text-xl font-black">{v.valueNumeric}</span>
-                                            <span className="text-[10px] font-bold text-slate-500 pb-1">{v.unit}</span>
+                                {detail.vitals.map(v => {
+                                    const getIcon = (type: string) => {
+                                        const t = type.toLowerCase();
+                                        if (t.includes('temp')) return <Thermometer className="w-5 h-5 text-orange-400" />;
+                                        if (t.includes('heart') || t.includes('pulse')) return <Heart className="w-5 h-5 text-red-400" />;
+                                        if (t.includes('oxygen') || t.includes('spo2')) return <Wind className="w-5 h-5 text-blue-400" />;
+                                        if (t.includes('bp') || t.includes('pressure')) return <Droplets className="w-5 h-5 text-rose-400" />;
+                                        return <Activity className="w-5 h-5 text-slate-400" />;
+                                    }
+
+                                    return (
+                                        <div key={v.id} className="bg-white/5 p-4 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-all border border-white/5">
+                                            <div className="flex items-center gap-3">
+                                                {getIcon(v.vitalType)}
+                                                <span className="text-sm font-bold text-slate-400 group-hover:text-white transition-colors uppercase tracking-tight">{v.vitalType}</span>
+                                            </div>
+                                            <div className="flex items-end gap-1">
+                                                <span className="text-xl font-black">{v.valueNumeric}</span>
+                                                <span className="text-[10px] font-bold text-slate-500 pb-1">{v.unit}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </div>
                     )}
 
-                    {/* Invoice Link */}
+                    {/* AI Insight Card */}
+                    {detail.consultation.aiExplanation && (
+                        <div className="bg-blue-600 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-xl shadow-blue-500/30">
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <ShieldCheck className="w-24 h-24" />
+                            </div>
+                            <div className="relative z-10">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-blue-100 mb-4">Ghi chú AI (Triage)</h4>
+                                <p className="text-sm font-medium leading-relaxed italic mb-4">
+                                    "{detail.consultation.aiExplanation}"
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-blue-100 animate-pulse" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-100">Độ tin cậy: {(detail.consultation.aiConfidenceScore || 0) * 100}%</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Invoice Card */}
                     {detail.invoice && (
-                        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-lg shadow-slate-200/30">
+                        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/20">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Thanh toán</h3>
                                 <span className={`text-[8px] font-black px-2 py-0.5 rounded-full ${detail.invoice.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
@@ -225,8 +302,8 @@ export default function PatientHistoryDetail() {
                                     <p className="text-[10px] font-bold text-slate-400">Hóa đơn #{detail.invoice.invoiceNumber.toUpperCase()}</p>
                                 </div>
                             </div>
-                            <button className="w-full py-3 bg-slate-50 text-slate-900 rounded-xl font-bold text-xs hover:bg-slate-100 transition-all border border-slate-100">
-                                Xem chi tiết hóa đơn
+                            <button className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all shadow-lg shadow-slate-200">
+                                Xem chi tiếp
                             </button>
                         </div>
                     )}

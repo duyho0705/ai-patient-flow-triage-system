@@ -60,6 +60,10 @@ public class TriageService {
         return triageSessionRepository.findByTenantIdAndBranchIdOrderByStartedAtDesc(tenantId, branchId, pageable);
     }
 
+    public AiTriageService.TriageSuggestionResult suggestAiTriage(AiTriageService.TriageInput input) {
+        return aiTriageService.suggest(input);
+    }
+
     @Transactional(readOnly = true)
     public List<TriageComplaint> getComplaints(UUID triageSessionId) {
         getById(triageSessionId);
@@ -171,9 +175,9 @@ public class TriageService {
         }
         List<String> complaintTypes = request.getComplaints() != null
                 ? request.getComplaints().stream()
-                .map(CreateTriageSessionRequest.ComplaintItem::getComplaintType)
-                .filter(java.util.Objects::nonNull)
-                .toList()
+                        .map(CreateTriageSessionRequest.ComplaintItem::getComplaintType)
+                        .filter(java.util.Objects::nonNull)
+                        .toList()
                 : List.of();
         return AiTriageService.TriageInput.builder()
                 .chiefComplaintText(request.getChiefComplaintText())

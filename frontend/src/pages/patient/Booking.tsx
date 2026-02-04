@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getPortalBranches, getPortalSlots, createPortalAppointment } from '@/api/portal'
+import { getPortalBranches, getPortalSlots, createPortalAppointment, getAiPreTriage } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
 import {
     Calendar,
@@ -10,7 +10,9 @@ import {
     Building2,
     AlertCircle,
     Loader2,
-    CalendarCheck
+    CalendarCheck,
+    BrainCircuit,
+    Zap
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -28,6 +30,8 @@ export default function PatientBooking() {
     const [selectedSlot, setSelectedSlot] = useState<{ start: string, end: string } | null>(null)
     const [appointmentType, setAppointmentType] = useState('Khám tổng quát')
     const [notes, setNotes] = useState('')
+    const [aiSuggestion, setAiSuggestion] = useState<any>(null)
+    const [loadingAi, setLoadingAi] = useState(false)
 
     // Queries
     const { data: branches, isLoading: loadingBranches } = useQuery({
@@ -65,6 +69,19 @@ export default function PatientBooking() {
             appointmentType,
             notes
         })
+    }
+
+    const runAiAssessment = async () => {
+        if (!notes || notes.length < 10) return
+        setLoadingAi(true)
+        try {
+            const result = await getAiPreTriage(notes, headers)
+            setAiSuggestion(result)
+        } catch (err) {
+            console.error('AI Assessment failed', err)
+        } finally {
+            setLoadingAi(false)
+        }
     }
 
     const steps = [
@@ -252,15 +269,59 @@ export default function PatientBooking() {
                                         </select>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-1">Ghi chú triệu chứng (Nếu có)</label>
-                                    <textarea
-                                        rows={8}
-                                        value={notes}
-                                        onChange={(e) => setNotes(e.target.value)}
-                                        placeholder="Ví dụ: Tôi bị đau họng và sốt nhẹ từ tối qua..."
-                                        className="w-full p-6 bg-slate-50 border-none rounded-[1.5rem] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all resize-none"
-                                    />
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-1">Ghi chú triệu chứng (Nếu có)</label>
+                                        <textarea
+                                            rows={5}
+                                            value={notes}
+                                            onChange={(e) => setNotes(e.target.value)}
+                                            onBlur={runAiAssessment}
+                                            placeholder="Ví dụ: Tôi bị đau họng và sốt nhẹ từ tối qua..."
+                                            className="w-full p-6 bg-slate-50 border-none rounded-[1.5rem] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all resize-none"
+                                        />
+                                    </div>
+
+                                    {/* AI Prediction Section */}
+                                    <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden group shadow-2xl">
+                                        <div className="absolute top-0 right-0 p-6 opacity-10">
+                                            <BrainCircuit className="w-20 h-20" />
+                                        </div>
+                                        <div className="relative z-10 space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                                                    <Zap className="w-5 h-5" />
+                                                </div>
+                                                <h4 className="text-xs font-black uppercase tracking-widest text-blue-400">AI Virtual Assessment</h4>
+                                            </div>
+
+                                            {loadingAi ? (
+                                                <div className="flex items-center gap-4 py-4">
+                                                    <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
+                                                    <p className="text-xs font-bold text-slate-500 italic">AI đang phân tích triệu chứng của bạn...</p>
+                                                </div>
+                                            ) : aiSuggestion ? (
+                                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-[10px] font-black uppercase tracking-tighter text-slate-500">KẾT QUẢ DỰ KIẾN:</span>
+                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${aiSuggestion.suggestedAcuity === '1' ? 'bg-red-500' : 'bg-blue-600'}`}>
+                                                            Priority Level {aiSuggestion.suggestedAcuity}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm font-medium text-slate-300 leading-relaxed italic">
+                                                        "{aiSuggestion.explanation}"
+                                                    </p>
+                                                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-t border-white/5 pt-4">
+                                                        Hệ thống sẽ ưu tiên xử lý hồ sơ dựa trên mức độ này.
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs font-medium text-slate-500 py-4">
+                                                    Nhập triệu chứng cụ thể để AI có thể hỗ trợ đánh giá sơ bộ mức độ ưu tiên của bạn.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

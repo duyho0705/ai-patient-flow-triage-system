@@ -65,3 +65,11 @@ export async function getPortalNotifications(tenant: TenantHeaders | null): Prom
 export async function markPortalNotificationAsRead(id: string, tenant: TenantHeaders | null): Promise<void> {
     return post<void>(`/portal/notifications/${id}/read`, {}, tenant)
 }
+
+export async function markPortalAllNotificationsAsRead(tenant: TenantHeaders | null): Promise<void> {
+    return post<void>('/portal/notifications/read-all', {}, tenant)
+}
+
+export async function getAiPreTriage(symptoms: string, tenant: TenantHeaders | null): Promise<any> {
+    return post<any>('/portal/ai-pre-triage', symptoms, tenant)
+}

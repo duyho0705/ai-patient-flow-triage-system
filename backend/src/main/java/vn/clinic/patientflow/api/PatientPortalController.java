@@ -16,6 +16,8 @@ import vn.clinic.patientflow.scheduling.service.SchedulingService;
 import vn.clinic.patientflow.triage.service.TriageService;
 import vn.clinic.patientflow.queue.service.QueueService;
 import vn.clinic.patientflow.patient.service.PatientNotificationService;
+import vn.clinic.patientflow.triage.ai.AiTriageService;
+import vn.clinic.patientflow.triage.ai.AiTriageService.TriageSuggestionResult;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -53,10 +55,13 @@ public class PatientPortalController {
         Patient p = getAuthenticatedPatient();
         var appointments = schedulingService.getUpcomingAppointmentsByPatient(p.getId());
         var recentVisits = clinicalService.getRecentConsultationsByPatient(p.getId(), 5);
+        var activeQueues = queueService.getActiveEntriesByPatient(p.getId());
 
         return PatientDashboardDto.builder()
+                .patientId(p.getId())
+                .branchId(activeQueues.isEmpty() ? null : activeQueues.get(0).getBranch().getId())
                 .patientName(p.getFullNameVi())
-                .activeQueues(queueService.countActiveEntriesByPatient(p.getId()))
+                .activeQueues((long) activeQueues.size())
                 .nextAppointment(appointments.isEmpty() ? null : AppointmentDto.fromEntity(appointments.get(0)))
                 .recentVisits(recentVisits.stream().map(ConsultationDto::fromEntity).collect(Collectors.toList()))
                 .build();
@@ -176,6 +181,18 @@ public class PatientPortalController {
         patientNotificationService.registerToken(p, request.getToken(), request.getDeviceType());
     }
 
+    @PostMapping("/ai-pre-triage")
+    @Operation(summary = "Gợi ý phân loại AI dựa trên triệu chứng")
+    public TriageSuggestionResult getPreTriage(
+            @RequestBody String symptoms) {
+        // Simple pre-triage with text only
+        var input = AiTriageService.TriageInput.builder()
+                .chiefComplaintText(symptoms)
+                .ageInYears(30) // Default age if not known
+                .build();
+        return triageService.suggestAiTriage(input);
+    }
+
     @GetMapping("/notifications")
     @Operation(summary = "Lấy danh sách thông báo của bệnh nhân")
     public List<PatientNotificationDto> getNotifications() {
@@ -195,6 +212,15 @@ public class PatientPortalController {
         }
         notif.setRead(true);
         patientNotificationRepository.save(notif);
+    }
+
+    @PostMapping("/notifications/read-all")
+    @Operation(summary = "Đánh dấu tất cả thông báo đã đọc")
+    public void markAllAsRead() {
+        Patient p = getAuthenticatedPatient();
+        var notifications = patientNotificationRepository.findByPatientIdOrderByCreatedAtDesc(p.getId());
+        notifications.forEach(n -> n.setRead(true));
+        patientNotificationRepository.saveAll(notifications);
     }
 
     private Patient getAuthenticatedPatient() {

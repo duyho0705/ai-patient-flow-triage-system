@@ -76,8 +76,22 @@ public class SchedulingService {
     @Transactional
     public SchedulingAppointment updateAppointmentStatus(UUID id, String status) {
         SchedulingAppointment existing = getAppointmentById(id);
+        String oldStatus = existing.getStatus();
         existing.setStatus(status);
-        return appointmentRepository.save(existing);
+        SchedulingAppointment saved = appointmentRepository.save(existing);
+
+        if (!status.equals(oldStatus)) {
+            String message = "Lịch hẹn của bạn đã được cập nhật trạng thái: " + status;
+            if ("CONFIRMED".equals(status)) {
+                message = "Lịch hẹn của bạn vào ngày " + saved.getAppointmentDate() + " lúc " + saved.getSlotStartTime()
+                        + " đã được xác nhận.";
+            } else if ("CANCELLED".equals(status)) {
+                message = "Lịch hẹn của bạn vào ngày " + saved.getAppointmentDate() + " đã bị hủy.";
+            }
+            queueService.notifyPatient(saved.getPatient().getId(), message);
+        }
+
+        return saved;
     }
 
     @Transactional

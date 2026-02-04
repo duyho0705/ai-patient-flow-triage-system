@@ -14,11 +14,11 @@ import {
     X,
     Circle
 } from 'lucide-react'
-import { getPortalNotifications, markPortalNotificationAsRead } from '@/api/portal'
+import { getPortalNotifications, markPortalNotificationAsRead, markPortalAllNotificationsAsRead, getPortalProfile } from '@/api/portal'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
+import { usePatientRealtime } from '@/hooks/usePatientRealtime'
 import { useState } from 'react'
-import { WebSocketService } from '@/services/websocket'
 import toast from 'react-hot-toast'
 
 interface PatientLayoutProps {
@@ -34,30 +34,26 @@ export function PatientLayout({ children }: PatientLayoutProps) {
     const queryClient = useQueryClient()
     const [isNotifOpen, setIsNotifOpen] = useState(false)
 
+    const { data: profile } = useQuery({
+        queryKey: ['patient-profile'],
+        queryFn: () => getPortalProfile(headers),
+        enabled: !!user && !!headers?.tenantId
+    })
+
     const { data: notifications = [] } = useQuery({
-        queryKey: ['patient-notifications', user?.id],
+        queryKey: ['patient-notifications'],
         queryFn: () => getPortalNotifications(headers),
         enabled: !!user && !!headers?.tenantId,
         refetchInterval: 60000 // Poll every minute as backup
     })
 
+    // Global Real-time Listener for the whole Layout
+    usePatientRealtime(profile?.id, undefined)
+
     const unreadCount = notifications.filter(n => !n.isRead).length
 
     useEffect(() => {
         if (!user || !headers?.tenantId) return
-
-        // WebSocket for live notifications
-        const ws = new WebSocketService((msg) => {
-            // Success alert
-            toast.success(msg.body || msg.title || 'Thông báo mới!', {
-                icon: '🔔',
-                position: 'top-center'
-            })
-            // Refresh notification list
-            queryClient.invalidateQueries({ queryKey: ['patient-notifications', user.id] })
-        }, `/topic/patient/${user.id}`)
-
-        ws.connect()
 
         const setupNotifications = async () => {
             try {
@@ -71,15 +67,23 @@ export function PatientLayout({ children }: PatientLayoutProps) {
         }
 
         setupNotifications()
-        return () => ws.disconnect()
-    }, [headers, user, queryClient])
+    }, [headers, user])
 
     const handleMarkAsRead = async (id: string) => {
         try {
             await markPortalNotificationAsRead(id, headers)
-            queryClient.invalidateQueries({ queryKey: ['patient-notifications', user?.id] })
+            queryClient.invalidateQueries({ queryKey: ['patient-notifications'] })
         } catch (err) {
             console.error('Failed to mark notification as read:', err)
+        }
+    }
+
+    const handleMarkAllAsRead = async () => {
+        try {
+            await markPortalAllNotificationsAsRead(headers)
+            queryClient.invalidateQueries({ queryKey: ['patient-notifications'] })
+        } catch (err) {
+            console.error('Failed to mark all notifications as read:', err)
         }
     }
 
@@ -201,12 +205,22 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                                     </div>
                                     <h2 className="text-xl font-black text-slate-900">Thông báo</h2>
                                 </div>
-                                <button
-                                    onClick={() => setIsNotifOpen(false)}
-                                    className="p-2 hover:bg-slate-100 rounded-xl transition-all"
-                                >
-                                    <X className="w-6 h-6 text-slate-400" />
-                                </button>
+                                <div className="flex items-center gap-4">
+                                    {unreadCount > 0 && (
+                                        <button
+                                            onClick={handleMarkAllAsRead}
+                                            className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-2 rounded-xl"
+                                        >
+                                            Đọc tất cả
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setIsNotifOpen(false)}
+                                        className="p-2 hover:bg-slate-100 rounded-xl transition-all"
+                                    >
+                                        <X className="w-6 h-6 text-slate-400" />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-4 space-y-3">

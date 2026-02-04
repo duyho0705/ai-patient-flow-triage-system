@@ -38,7 +38,7 @@ export function DisplayPage() {
     useEffect(() => {
         if (!branchId) return
         const ws = new WebSocketService((msg) => {
-            if (msg.type === 'QUEUE_UPDATE' || msg.type === 'PATIENT_CALLED') {
+            if (msg.type === 'QUEUE_REFRESH' || msg.type === 'PATIENT_CALLED') {
                 queryClient.invalidateQueries({ queryKey: ['public-display', branchId] })
             }
         })

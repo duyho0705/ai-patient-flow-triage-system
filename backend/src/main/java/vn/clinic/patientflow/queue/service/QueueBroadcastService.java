@@ -11,7 +11,8 @@ import vn.clinic.patientflow.patient.domain.PatientDeviceToken;
 import java.util.List;
 import java.util.Map;
 
-import java.util.UUID;
+import vn.clinic.patientflow.api.dto.PatientEventDto;
+import vn.clinic.patientflow.api.dto.PatientEventDto.EventType;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +32,12 @@ public class QueueBroadcastService {
     public void broadcastQueueUpdate(UUID branchId) {
         String destination = "/topic/queue/" + branchId;
         log.debug("Broadcasting queue update to {}", destination);
-        messagingTemplate.convertAndSend(destination, "REFRESH_QUEUE");
+
+        PatientEventDto event = PatientEventDto.builder()
+                .type(EventType.QUEUE_REFRESH)
+                .build();
+
+        messagingTemplate.convertAndSend(destination, event);
     }
 
     /**
@@ -83,13 +89,18 @@ public class QueueBroadcastService {
         // 2. Gửi qua WebSocket (cho các app đang mở)
         String destination = "/topic/patient/" + patientId;
         log.debug("Broadcasting to WebSocket: {} - {}", destination, body);
-        messagingTemplate.convertAndSend(destination, Map.of(
-                "id", persistentNotif.getId(),
-                "title", title,
-                "body", body,
-                "type", type,
-                "resourceId", resourceId != null ? resourceId : "",
-                "createdAt", persistentNotif.getCreatedAt().toString()));
+
+        PatientEventDto event = PatientEventDto.builder()
+                .type(EventType.valueOf(type))
+                .title(title)
+                .body(body)
+                .metadata(Map.of(
+                        "id", persistentNotif.getId().toString(),
+                        "resourceId", resourceId != null ? resourceId : "",
+                        "createdAt", persistentNotif.getCreatedAt().toString()))
+                .build();
+
+        messagingTemplate.convertAndSend(destination, event);
 
         // 3. Gửi qua Push Notification (FCM)
         List<PatientDeviceToken> tokens = deviceTokenRepository.findByPatientId(patientId);

@@ -139,6 +139,10 @@ public class QueueService {
                 return queueEntryRepository.countPeopleAhead(queueDefinitionId, joinedAt);
         }
 
+        public void notifyPatient(UUID patientId, String message) {
+                queueBroadcastService.notifyPatient(patientId, message);
+        }
+
         @Transactional(readOnly = true)
         public vn.clinic.patientflow.api.dto.PublicQueueDto getPublicQueueStatus(UUID branchId) {
                 List<QueueEntry> called = queueEntryRepository.findByBranch_IdAndStatusOrderByJoinedAtAsc(branchId,

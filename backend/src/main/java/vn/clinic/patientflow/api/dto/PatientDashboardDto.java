@@ -7,6 +7,8 @@ import java.util.List;
 @Data
 @Builder
 public class PatientDashboardDto {
+    private java.util.UUID patientId;
+    private java.util.UUID branchId;
     private String patientName;
     private Long activeQueues;
     private AppointmentDto nextAppointment;
