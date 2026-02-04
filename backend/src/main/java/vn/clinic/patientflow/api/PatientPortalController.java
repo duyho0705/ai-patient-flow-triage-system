@@ -224,11 +224,32 @@ public class PatientPortalController {
                         v.getRecordedAt()))
                 .collect(Collectors.toList());
 
+        // Mock Lab Results for Demo
+        var labResults = java.util.List.of(
+                LabResultDto.builder().testName("Chỉ số đường huyết (Glucose)").value("5.2").unit("mmol/L")
+                        .referenceRange("3.9 - 6.4").status("NORMAL").build(),
+                LabResultDto.builder().testName("Cholesterol toàn phần").value("6.1").unit("mmol/L")
+                        .referenceRange("< 5.2").status("HIGH").build(),
+                LabResultDto.builder().testName("Triglycerides").value("1.8").unit("mmol/L").referenceRange("< 1.7")
+                        .status("HIGH").build());
+
+        // Mock Diagnostic Images for Demo
+        var images = java.util.List.of(
+                DiagnosticImageDto.builder()
+                        .title("Siêu âm ổ bụng")
+                        .imageUrl(
+                                "https://images.unsplash.com/photo-1579154235828-ac7d759678bb?q=80&w=1000&auto=format&fit=crop")
+                        .description("Hình ảnh gan nhiễm mỡ độ 1, nhu mô gan hơi thô.")
+                        .recordedAt(java.time.Instant.now().toString())
+                        .build());
+
         return ConsultationDetailDto.builder()
                 .consultation(ConsultationDto.fromEntity(cons))
                 .prescription(prescription)
                 .invoice(invoice)
                 .vitals(vitals)
+                .labResults(labResults)
+                .diagnosticImages(images)
                 .build();
     }
 

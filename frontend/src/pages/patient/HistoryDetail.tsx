@@ -14,10 +14,11 @@ import {
     CheckCircle2,
     Clock3,
     ShieldCheck,
-    Thermometer,
-    Heart,
-    Wind,
-    Droplets
+    Droplets,
+    Beaker,
+    Image as ImageIcon,
+    AlertCircle,
+    Check
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import jsPDF from 'jspdf'
@@ -39,16 +40,37 @@ export default function PatientHistoryDetail() {
         const doc = new jsPDF()
 
         doc.setFontSize(22)
-        doc.text('DON THUOC', 105, 20, { align: 'center' })
+        doc.text('HO SO SUC KHOE DIEN TU', 105, 20, { align: 'center' })
 
         doc.setFontSize(12)
         doc.text(`Benh nhan: ${detail.consultation.patientName || 'N/A'}`, 14, 40)
         doc.text(`Bac si: ${detail.consultation.doctorName || 'N/A'}`, 14, 50)
-        doc.text(`Ngay: ${new Date(detail.consultation.startedAt).toLocaleDateString()}`, 14, 60)
+        doc.text(`Ngay kham: ${new Date(detail.consultation.startedAt).toLocaleDateString()}`, 14, 60)
+        doc.text(`Chan doan: ${detail.consultation.diagnosisNotes || 'N/A'}`, 14, 70)
+
+        let lastY = 80;
+
+        if (detail.labResults && detail.labResults.length > 0) {
+            doc.setFontSize(14)
+            doc.text('KET QUA XET NGHIEM', 14, lastY)
+            autoTable(doc, {
+                startY: lastY + 5,
+                head: [['Ten xet nghiem', 'Ket qua', 'Don vi', 'CS Tham chieu']],
+                body: detail.labResults.map(lab => [
+                    lab.testName,
+                    lab.value,
+                    lab.unit,
+                    lab.referenceRange
+                ]),
+            })
+            lastY = (doc as any).lastAutoTable.finalY + 20;
+        }
 
         if (detail.prescription) {
+            doc.setFontSize(14)
+            doc.text('DON THUOC', 14, lastY)
             autoTable(doc, {
-                startY: 70,
+                startY: lastY + 5,
                 head: [['Ten thuoc', 'SL', 'Cach dung']],
                 body: detail.prescription.items.map(item => [
                     item.productName || '',
@@ -58,7 +80,7 @@ export default function PatientHistoryDetail() {
             })
         }
 
-        doc.save(`don-thuoc-${id}.pdf`)
+        doc.save(`digital-health-passport-${id}.pdf`)
     }
 
     if (isLoading) return <div className="p-12 text-center text-slate-400 font-bold">Đang tải chi tiết...</div>
@@ -208,6 +230,90 @@ export default function PatientHistoryDetail() {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        </motion.section>
+                    )}
+                    {/* Lab Results */}
+                    {detail.labResults && detail.labResults.length > 0 && (
+                        <motion.section
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.15 }}
+                            className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-100 shadow-xl shadow-slate-200/40"
+                        >
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Beaker className="w-5 h-5" />
+                                    Kết quả Xét nghiệm
+                                </h3>
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase tracking-widest">{detail.labResults.length} Chỉ số</span>
+                            </div>
+
+                            <div className="space-y-4">
+                                {detail.labResults.map((lab, i) => (
+                                    <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition-all group">
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-black text-slate-900">{lab.testName}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CS Tham chiếu: {lab.referenceRange}</p>
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                            <div className="text-right">
+                                                <p className={`text-xl font-black ${lab.status === 'NORMAL' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                    {lab.value} <span className="text-xs font-bold text-slate-400">{lab.unit}</span>
+                                                </p>
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    {lab.status === 'NORMAL' ? (
+                                                        <Check className="w-3 h-3 text-emerald-500" />
+                                                    ) : (
+                                                        <AlertCircle className="w-3 h-3 text-rose-500" />
+                                                    )}
+                                                    <span className={`text-[10px] font-black uppercase tracking-tighter ${lab.status === 'NORMAL' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                        {lab.status === 'NORMAL' ? 'Bình thường' : 'Bất thường'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.section>
+                    )}
+
+                    {/* Diagnostic Imaging */}
+                    {detail.diagnosticImages && detail.diagnosticImages.length > 0 && (
+                        <motion.section
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="bg-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 p-12 opacity-5">
+                                <ImageIcon className="w-32 h-32" />
+                            </div>
+                            <div className="relative z-10">
+                                <h3 className="text-xs font-black text-blue-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-8">
+                                    <ImageIcon className="w-5 h-5" />
+                                    Chẩn đoán hình ảnh
+                                </h3>
+
+                                <div className="grid sm:grid-cols-2 gap-8">
+                                    {detail.diagnosticImages.map((img, i) => (
+                                        <div key={i} className="space-y-4">
+                                            <div className="aspect-video rounded-3xl overflow-hidden border-4 border-white/5 shadow-2xl group relative pointer-events-auto cursor-zoom-in">
+                                                <img src={img.imageUrl} alt={img.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent flex items-end p-6">
+                                                    <p className="font-black text-sm">{img.title}</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kết luận:</p>
+                                                <p className="text-sm font-medium text-slate-300 leading-relaxed italic">
+                                                    "{img.description}"
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </motion.section>
                     )}

@@ -11,4 +11,6 @@ public class ConsultationDetailDto {
     private PrescriptionDto prescription;
     private InvoiceDto invoice;
     private List<TriageVitalDto> vitals;
+    private List<LabResultDto> labResults;
+    private List<DiagnosticImageDto> diagnosticImages;
 }

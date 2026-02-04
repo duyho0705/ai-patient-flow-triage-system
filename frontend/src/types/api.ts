@@ -429,11 +429,28 @@ export interface PatientDashboardDto {
   pendingInvoice?: InvoiceDto
 }
 
+export interface LabResultDto {
+  testName: string
+  value: string
+  unit: string
+  referenceRange: string
+  status: 'NORMAL' | 'HIGH' | 'LOW'
+}
+
+export interface DiagnosticImageDto {
+  title: string
+  imageUrl: string
+  description: string
+  recordedAt: string
+}
+
 export interface ConsultationDetailDto {
   consultation: ConsultationDto
   prescription?: PrescriptionDto
   invoice?: InvoiceDto
   vitals: TriageVitalDto[]
+  labResults?: LabResultDto[]
+  diagnosticImages?: DiagnosticImageDto[]
 }
 
 export interface InvoiceItemDto {
