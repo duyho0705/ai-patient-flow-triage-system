@@ -15,7 +15,9 @@ import {
     Wallet,
     ShieldPlus,
     X,
-    MessageCircle
+    MessageCircle,
+    BrainCircuit,
+    Zap
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -37,7 +39,6 @@ export default function PatientDashboard() {
     })
 
     const [isQrOpen, setIsQrOpen] = useState(false)
-    const [isPaymentSimOpen, setIsPaymentSimOpen] = useState(false)
 
     // Enable Real-time updates
     usePatientRealtime(dashboard?.patientId, dashboard?.branchId)
@@ -70,13 +71,38 @@ export default function PatientDashboard() {
                 </div>
             </header>
 
+            {/* Pending Payment Banner */}
+            {dashboard?.pendingInvoice && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-rose-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-rose-200 flex flex-col md:flex-row items-center justify-between gap-6"
+                >
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+                            <Wallet className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black tracking-tight">Thanh toán chờ xử lý</h3>
+                            <p className="text-rose-100 font-medium opacity-80">Bạn có hóa đơn chưa thanh toán: {dashboard.pendingInvoice.finalAmount.toLocaleString('vi-VN')} đ</p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/patient/billing"
+                        className="px-10 py-4 bg-white text-rose-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-50 transition-all shadow-xl shadow-rose-900/20"
+                    >
+                        Thanh toán ngay
+                    </Link>
+                </motion.div>
+            )}
+
             {/* Active Queues Card */}
             {(queues && queues.length > 0) && (
                 <section className="space-y-4">
                     <div className="flex items-center justify-between px-2">
                         <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-blue-600" />
-                            Tiến độ Hàng chờ
+                            <div className="w-2 h-2 bg-blue-600 rounded-full animate-ping" />
+                            Tiến độ Hàng chờ trực tiếp
                         </h3>
                     </div>
                     <div className="grid gap-4">
@@ -85,15 +111,16 @@ export default function PatientDashboard() {
                                 key={q.id}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white border border-slate-100 rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/40 flex items-center justify-between"
+                                className="bg-white border border-slate-100 rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/40 flex items-center justify-between relative overflow-hidden group"
                             >
+                                <div className="absolute inset-y-0 left-0 w-2 bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
                                         <Users className="w-6 h-6" />
                                     </div>
                                     <div>
                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{q.queueName}</p>
-                                        <p className="text-lg font-black text-slate-900">{q.status === 'CALLED' ? 'Mời bạn vào khám!' : 'Đang chờ nội dung'}</p>
+                                        <p className="text-lg font-black text-slate-900">{q.status === 'CALLED' ? 'Mời bạn vào khám!' : 'Đang chờ khám'}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -108,6 +135,35 @@ export default function PatientDashboard() {
             )}
 
             <div className="grid md:grid-cols-2 gap-8">
+                {/* Health Metrics (Last Vitals) */}
+                <section className="space-y-4">
+                    <h3 className="text-lg font-black text-slate-900 px-2">Chỉ số sức khỏe gần đây</h3>
+                    {dashboard?.lastVitals && dashboard.lastVitals.length > 0 ? (
+                        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white grid grid-cols-2 gap-6 shadow-2xl shadow-slate-400/20">
+                            {dashboard.lastVitals.slice(0, 4).map((v, i) => (
+                                <div key={i} className="space-y-1">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate">{v.vitalType}</p>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-2xl font-black">{v.valueNumeric}</span>
+                                        <span className="text-[10px] font-bold text-slate-400">{v.unit}</span>
+                                    </div>
+                                </div>
+                            ))}
+                            <div className="col-span-2 pt-4 border-t border-white/5 flex items-center justify-between">
+                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter italic">Cập nhật lúc: {new Date(dashboard.lastVitals[0].recordedAt).toLocaleTimeString('vi-VN')}</p>
+                                <Activity className="w-4 h-4 text-blue-500" />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-50 shadow-sm flex items-center gap-4">
+                            <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center">
+                                <Activity className="w-6 h-6 text-slate-200" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-400 italic">Chưa có dữ liệu sinh hiệu gần đây.</p>
+                        </div>
+                    )}
+                </section>
+
                 {/* Next Appointment */}
                 <section className="space-y-4">
                     <h3 className="text-lg font-black text-slate-900 px-2">Lịch hẹn sắp tới</h3>
@@ -124,7 +180,7 @@ export default function PatientDashboard() {
                                     <p className="text-xs font-medium text-slate-400">{dashboard.nextAppointment.startTime} - {dashboard.nextAppointment.endTime}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 rounded-2xl p-4 mb-8">
+                            <div className="bg-slate-50 rounded-2xl p-4 mb-4">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cơ sở khám</p>
                                 <p className="text-sm font-bold text-slate-700">{dashboard.nextAppointment.branchName}</p>
                             </div>
@@ -182,25 +238,49 @@ export default function PatientDashboard() {
                         )}
                     </div>
                 </section>
+
+                {/* AI Symptom Awareness Card */}
+                <section className="space-y-4">
+                    <h3 className="text-lg font-black text-slate-900 px-2 flex items-center gap-2">
+                        <BrainCircuit className="w-5 h-5 text-blue-600" />
+                        AI Tư vấn Sức khỏe
+                    </h3>
+                    <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl shadow-blue-200">
+                        <div className="absolute top-0 right-0 p-8 opacity-10">
+                            <Zap className="w-24 h-24" />
+                        </div>
+                        <div className="relative z-10 space-y-6">
+                            <p className="text-sm font-medium leading-relaxed">Bạn cảm thấy không khỏe? Hãy để AI hỗ trợ phân loại mức độ ưu tiên của bạn ngay bây giờ.</p>
+                            <Link
+                                to="/patient/booking"
+                                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-xl shadow-blue-900/20"
+                            >
+                                Thử ngay AI Checker
+                                <Zap className="w-4 h-4 fill-blue-600" />
+                            </Link>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             {/* Quick Actions Grid */}
             <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                     { label: 'Chat với Bác sĩ', icon: MessageCircle, color: 'bg-blue-50 text-blue-600', path: '#' },
-                    { label: 'Thanh toán', icon: Wallet, color: 'bg-emerald-50 text-emerald-600', path: '/patient/history' },
+                    { label: 'Thanh toán', icon: Wallet, color: 'bg-emerald-50 text-emerald-600', path: '/patient/billing' },
                     { label: 'Bảo hiểm', icon: ShieldPlus, color: 'bg-orange-50 text-orange-600', path: '#' },
                     { label: 'Lịch sử', icon: HistoryIcon, color: 'bg-purple-50 text-purple-600', path: '/patient/history' },
                 ].map((action, idx) => (
-                    <button
+                    <Link
                         key={idx}
+                        to={action.path}
                         className="bg-white p-6 rounded-[2rem] border border-slate-50 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all flex flex-col items-center gap-4 group"
                     >
                         <div className={`w-14 h-14 ${action.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
                             <action.icon className="w-6 h-6" />
                         </div>
                         <span className="text-xs font-black text-slate-600 uppercase tracking-tight">{action.label}</span>
-                    </button>
+                    </Link>
                 ))}
             </section>
 

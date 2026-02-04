@@ -14,6 +14,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
         java.util.List<Invoice> findByTenantIdAndBranchIdAndStatusOrderByCreatedAtDesc(UUID tenantId, UUID branchId,
                         String status);
 
+        java.util.List<Invoice> findByPatientIdAndStatusOrderByCreatedAtDesc(UUID patientId, String status);
+
+        java.util.List<Invoice> findByPatientIdOrderByCreatedAtDesc(UUID patientId);
+
         Optional<Invoice> findByConsultationId(UUID consultationId);
 
         long countByTenantIdAndCreatedAtBetween(UUID tenantId, java.time.Instant from, java.time.Instant to);

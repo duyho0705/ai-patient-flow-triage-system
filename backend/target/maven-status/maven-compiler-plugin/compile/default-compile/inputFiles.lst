@@ -16,6 +16,7 @@ E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\pati
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AppointmentDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AuditLogDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AuthUserDto.java
+E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ChangePasswordRequest.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ConsultationDetailDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ConsultationDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateAppointmentRequest.java
@@ -39,7 +40,9 @@ E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\pati
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PagedResponse.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientDashboardDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientDto.java
+E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientEventDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientInsuranceDto.java
+E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientNotificationDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientPortalStatusDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PharmacyInventoryDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PharmacyProductDto.java
@@ -68,6 +71,7 @@ E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\pati
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageSuggestionDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageVitalDto.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateAppointmentStatusRequest.java
+E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdatePatientProfileRequest.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdatePatientRequest.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateQueueEntryRequest.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateTenantSettingsRequest.java
@@ -119,6 +123,7 @@ E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\pati
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\notification\NotificationService.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\repository\AuditLogRepository.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\AuditLogService.java
+E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\FileStorageService.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\tenant\TenantContext.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\FirebaseConfig.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\JpaConfig.java
@@ -143,8 +148,10 @@ E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\pati
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\Patient.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientDeviceToken.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientInsurance.java
+E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientNotification.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientDeviceTokenRepository.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientInsuranceRepository.java
+E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientNotificationRepository.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientRepository.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientNotificationService.java
 E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientService.java

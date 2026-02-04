@@ -19,10 +19,12 @@ export function setStoredToken(token: string | null) {
   else localStorage.removeItem(TOKEN_KEY)
 }
 
-function headers(tenant: TenantHeaders | null): HeadersInit {
+function headers(tenant: TenantHeaders | null, body?: unknown): HeadersInit {
   const h: Record<string, string> = {
-    'Content-Type': 'application/json',
     Accept: 'application/json',
+  }
+  if (!(body instanceof FormData)) {
+    h['Content-Type'] = 'application/json'
   }
   const token = getStoredToken()
   if (token) h['Authorization'] = `Bearer ${token}`
@@ -41,7 +43,7 @@ export async function api<T>(
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`
   const res = await fetch(url, {
     ...init,
-    headers: { ...headers(tenant ?? null), ...(init.headers as Record<string, string>) },
+    headers: { ...headers(tenant ?? null, init.body), ...(init.headers as Record<string, string>) },
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
@@ -55,13 +57,25 @@ export const get = <T>(path: string, tenant?: TenantHeaders | null) =>
   api<T>(path, { method: 'GET', tenant })
 
 export const post = <T>(path: string, body?: unknown, tenant?: TenantHeaders | null) =>
-  api<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined, tenant })
+  api<T>(path, {
+    method: 'POST',
+    body: body instanceof FormData ? body : (body ? JSON.stringify(body) : undefined),
+    tenant
+  })
 
 export const put = <T>(path: string, body: unknown, tenant?: TenantHeaders | null) =>
-  api<T>(path, { method: 'PUT', body: JSON.stringify(body), tenant })
+  api<T>(path, {
+    method: 'PUT',
+    body: body instanceof FormData ? body : (body ? JSON.stringify(body) : undefined),
+    tenant
+  })
 
 export const patch = <T>(path: string, body?: unknown, tenant?: TenantHeaders | null) =>
-  api<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined, tenant })
+  api<T>(path, {
+    method: 'PATCH',
+    body: body instanceof FormData ? body : (body ? JSON.stringify(body) : undefined),
+    tenant
+  })
 
 export async function downloadFile(path: string, tenant: TenantHeaders | null, filename: string) {
   const url = `${API_BASE}${path}`

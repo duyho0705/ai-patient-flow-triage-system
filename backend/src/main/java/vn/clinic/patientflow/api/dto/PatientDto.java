@@ -32,11 +32,13 @@ public class PatientDto {
     private String nationality;
     private String ethnicity;
     private Boolean isActive;
+    private String avatarUrl;
     private Instant createdAt;
     private Instant updatedAt;
 
     public static PatientDto fromEntity(Patient e) {
-        if (e == null) return null;
+        if (e == null)
+            return null;
         return PatientDto.builder()
                 .id(e.getId())
                 .tenantId(e.getTenant() != null ? e.getTenant().getId() : null)
@@ -54,6 +56,7 @@ public class PatientDto {
                 .nationality(e.getNationality())
                 .ethnicity(e.getEthnicity())
                 .isActive(e.getIsActive())
+                .avatarUrl(e.getAvatarUrl())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();

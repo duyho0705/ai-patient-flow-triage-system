@@ -2,6 +2,7 @@ package vn.clinic.patientflow.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import vn.clinic.patientflow.tenant.service.TenantService;
+import vn.clinic.patientflow.triage.repository.TriageSessionRepository;
+import vn.clinic.patientflow.billing.repository.InvoiceRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
+import vn.clinic.patientflow.common.service.FileStorageService;
 
 @RestController
 @RequestMapping("/api/portal")
@@ -41,12 +48,53 @@ public class PatientPortalController {
     private final TenantService tenantService;
     private final PatientNotificationService patientNotificationService;
     private final vn.clinic.patientflow.patient.repository.PatientNotificationRepository patientNotificationRepository;
+    private final TriageSessionRepository triageSessionRepository;
+    private final InvoiceRepository invoiceRepository;
+    private final vn.clinic.patientflow.auth.AuthService authService;
+    private final FileStorageService fileStorageService;
+
+    @PostMapping("/profile/change-password")
+    @Operation(summary = "Đổi mật khẩu")
+    public void changePassword(@RequestBody ChangePasswordRequest request) {
+        UUID userId = AuthPrincipal.getCurrentUserId();
+        authService.changePassword(userId, request);
+    }
 
     @GetMapping("/profile")
     @Operation(summary = "Lấy hồ sơ bệnh nhân của user hiện tại")
     public PatientDto getProfile() {
         Patient patient = getAuthenticatedPatient();
         return PatientDto.fromEntity(patient);
+    }
+
+    @PutMapping("/profile")
+    @Operation(summary = "Cập nhật hồ sơ bệnh nhân")
+    public PatientDto updateProfile(@Valid @RequestBody UpdatePatientProfileRequest request) {
+        Patient p = getAuthenticatedPatient();
+        Patient updates = Patient.builder()
+                .fullNameVi(request.getFullNameVi())
+                .dateOfBirth(request.getDateOfBirth())
+                .gender(request.getGender())
+                .phone(request.getPhone())
+                .email(request.getEmail())
+                .addressLine(request.getAddressLine())
+                .city(request.getCity())
+                .district(request.getDistrict())
+                .ward(request.getWard())
+                .nationality(request.getNationality())
+                .ethnicity(request.getEthnicity())
+                .build();
+        return PatientDto.fromEntity(patientService.update(p.getId(), updates));
+    }
+
+    @PostMapping(value = "/profile/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Tải ảnh đại diện")
+    public PatientDto uploadAvatar(@RequestParam("file") MultipartFile file) {
+        Patient p = getAuthenticatedPatient();
+        String url = fileStorageService.saveAvatar(file, p.getId());
+
+        Patient updates = Patient.builder().avatarUrl(url).build();
+        return PatientDto.fromEntity(patientService.update(p.getId(), updates));
     }
 
     @GetMapping("/dashboard")
@@ -57,6 +105,22 @@ public class PatientPortalController {
         var recentVisits = clinicalService.getRecentConsultationsByPatient(p.getId(), 5);
         var activeQueues = queueService.getActiveEntriesByPatient(p.getId());
 
+        // Get Latest Vitals
+        var latestSessions = triageSessionRepository.findByPatientIdOrderByStartedAtDesc(p.getId(),
+                PageRequest.of(0, 1));
+        List<TriageVitalDto> lastVitals = List.of();
+        if (!latestSessions.isEmpty()) {
+            lastVitals = triageService.getVitals(latestSessions.get(0).getId())
+                    .stream()
+                    .map(v -> new TriageVitalDto(v.getId(), v.getVitalType(), v.getValueNumeric(), v.getUnit(),
+                            v.getRecordedAt()))
+                    .collect(Collectors.toList());
+        }
+
+        // Get Pending Invoice
+        var pendingInvoices = invoiceRepository.findByPatientIdAndStatusOrderByCreatedAtDesc(p.getId(), "PENDING");
+        InvoiceDto pendingInvoice = pendingInvoices.isEmpty() ? null : InvoiceDto.fromEntity(pendingInvoices.get(0));
+
         return PatientDashboardDto.builder()
                 .patientId(p.getId())
                 .branchId(activeQueues.isEmpty() ? null : activeQueues.get(0).getBranch().getId())
@@ -64,6 +128,8 @@ public class PatientPortalController {
                 .activeQueues((long) activeQueues.size())
                 .nextAppointment(appointments.isEmpty() ? null : AppointmentDto.fromEntity(appointments.get(0)))
                 .recentVisits(recentVisits.stream().map(ConsultationDto::fromEntity).collect(Collectors.toList()))
+                .lastVitals(lastVitals)
+                .pendingInvoice(pendingInvoice)
                 .build();
     }
 
@@ -172,6 +238,14 @@ public class PatientPortalController {
                 .notes(request.getNotes())
                 .build();
         return AppointmentDto.fromEntity(schedulingService.createAppointment(appointment));
+    }
+
+    @GetMapping("/invoices")
+    @Operation(summary = "Danh sách hóa đơn của bệnh nhận")
+    public List<InvoiceDto> getInvoices() {
+        Patient p = getAuthenticatedPatient();
+        return invoiceRepository.findByPatientIdOrderByCreatedAtDesc(p.getId())
+                .stream().map(InvoiceDto::fromEntity).collect(Collectors.toList());
     }
 
     @PostMapping("/register-token")

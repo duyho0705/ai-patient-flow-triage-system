@@ -13,4 +13,6 @@ public class PatientDashboardDto {
     private Long activeQueues;
     private AppointmentDto nextAppointment;
     private List<ConsultationDto> recentVisits;
+    private List<TriageVitalDto> lastVitals;
+    private InvoiceDto pendingInvoice;
 }

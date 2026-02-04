@@ -90,4 +90,14 @@ public class AuthService {
         return login(new LoginRequest(request.getEmail(), request.getPassword(), request.getTenantId(),
                 request.getBranchId()));
     }
+
+    @Transactional
+    public void changePassword(UUID userId, vn.clinic.patientflow.api.dto.ChangePasswordRequest request) {
+        IdentityUser user = identityService.getUserById(userId);
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu cũ không chính xác");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        identityService.saveUser(user);
+    }
 }

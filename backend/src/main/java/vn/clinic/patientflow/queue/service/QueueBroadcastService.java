@@ -10,6 +10,7 @@ import vn.clinic.patientflow.patient.domain.PatientDeviceToken;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import vn.clinic.patientflow.api.dto.PatientEventDto;
 import vn.clinic.patientflow.api.dto.PatientEventDto.EventType;
@@ -68,7 +69,7 @@ public class QueueBroadcastService {
      * Phương thức chung để tạo, lưu và gửi thông báo đa kênh.
      */
     private void createAndSendNotification(UUID patientId, String title, String body, String type, String resourceId) {
-        var patient = patientRepository.findById(patientId).orElse(null);
+        vn.clinic.patientflow.patient.domain.Patient patient = patientRepository.findById(patientId).orElse(null);
         if (patient == null)
             return;
 

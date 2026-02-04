@@ -158,8 +158,29 @@ export interface PatientDto {
   nationality?: string
   ethnicity?: string
   isActive?: boolean
+  avatarUrl?: string
   createdAt?: string
   updatedAt?: string
+}
+
+export interface UpdatePatientProfileRequest {
+  fullNameVi?: string
+  dateOfBirth?: string
+  gender?: string
+  phone?: string
+  email?: string
+  addressLine?: string
+  city?: string
+  district?: string
+  ward?: string
+  nationality?: string
+  ethnicity?: string
+  isActive?: boolean
+}
+
+export interface ChangePasswordRequest {
+  oldPassword?: string;
+  newPassword?: string;
 }
 
 export interface CreatePatientRequest {
@@ -293,6 +314,7 @@ export interface QueueEntryDto {
   joinedAt: string
   calledAt?: string
   completedAt?: string
+  estimatedWaitMinutes?: number
   createdAt?: string
   updatedAt?: string
 }
@@ -395,10 +417,14 @@ export interface AppointmentDto {
 }
 
 export interface PatientDashboardDto {
+  patientId?: string
+  branchId?: string
   patientName: string
   activeQueues: number
   nextAppointment?: AppointmentDto
   recentVisits: ConsultationDto[]
+  lastVitals?: TriageVitalDto[]
+  pendingInvoice?: InvoiceDto
 }
 
 export interface ConsultationDetailDto {

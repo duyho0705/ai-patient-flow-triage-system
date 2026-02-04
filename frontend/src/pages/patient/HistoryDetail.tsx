@@ -302,8 +302,11 @@ export default function PatientHistoryDetail() {
                                     <p className="text-[10px] font-bold text-slate-400">Hóa đơn #{detail.invoice.invoiceNumber.toUpperCase()}</p>
                                 </div>
                             </div>
-                            <button className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all shadow-lg shadow-slate-200">
-                                Xem chi tiếp
+                            <button
+                                onClick={() => navigate('/patient/billing')}
+                                className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all shadow-lg shadow-slate-200"
+                            >
+                                Xem chi tiết & Thanh toán
                             </button>
                         </div>
                     )}

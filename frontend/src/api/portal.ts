@@ -11,15 +11,30 @@ import type {
     TenantBranchDto,
     SlotAvailabilityDto,
     CreateAppointmentRequest,
-    PatientNotificationDto
+    PatientNotificationDto,
+    UpdatePatientProfileRequest,
+    InvoiceDto,
+    ChangePasswordRequest
 } from '@/types/api'
 
 export async function getPortalProfile(tenant: TenantHeaders | null): Promise<PatientDto> {
     return get<PatientDto>('/portal/profile', tenant)
 }
 
+export async function updatePortalProfile(data: UpdatePatientProfileRequest, tenant: TenantHeaders | null): Promise<PatientDto> {
+    return post<PatientDto>('/portal/profile', data, tenant)
+}
+
+export async function changePortalPassword(data: ChangePasswordRequest, tenant: TenantHeaders | null): Promise<void> {
+    return post<void>('/portal/profile/change-password', data, tenant)
+}
+
 export async function getPortalDashboard(tenant: TenantHeaders | null): Promise<PatientDashboardDto> {
     return get<PatientDashboardDto>('/portal/dashboard', tenant)
+}
+
+export async function getPortalInvoices(tenant: TenantHeaders | null): Promise<InvoiceDto[]> {
+    return get<InvoiceDto[]>('/portal/invoices', tenant)
 }
 
 export async function getPortalAppointments(tenant: TenantHeaders | null): Promise<AppointmentDto[]> {
@@ -72,4 +87,10 @@ export async function markPortalAllNotificationsAsRead(tenant: TenantHeaders | n
 
 export async function getAiPreTriage(symptoms: string, tenant: TenantHeaders | null): Promise<any> {
     return post<any>('/portal/ai-pre-triage', symptoms, tenant)
+}
+
+export async function uploadPortalAvatar(file: File, tenant: TenantHeaders | null): Promise<PatientDto> {
+    const formData = new FormData()
+    formData.append('file', file)
+    return post<PatientDto>('/portal/profile/avatar', formData, tenant)
 }

@@ -12,14 +12,14 @@ import {
     LogOut,
     Bell,
     X,
-    Circle
+    Circle,
+    Wallet
 } from 'lucide-react'
-import { getPortalNotifications, markPortalNotificationAsRead, markPortalAllNotificationsAsRead, getPortalProfile } from '@/api/portal'
+import { getPortalNotifications, markPortalNotificationAsRead, markPortalAllNotificationsAsRead, getPortalProfile, getPortalInvoices } from '@/api/portal'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePatientRealtime } from '@/hooks/usePatientRealtime'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
 
 interface PatientLayoutProps {
     children: ReactNode
@@ -44,13 +44,21 @@ export function PatientLayout({ children }: PatientLayoutProps) {
         queryKey: ['patient-notifications'],
         queryFn: () => getPortalNotifications(headers),
         enabled: !!user && !!headers?.tenantId,
-        refetchInterval: 60000 // Poll every minute as backup
+        refetchInterval: 60000
     })
 
-    // Global Real-time Listener for the whole Layout
+    const { data: invoices = [] } = useQuery({
+        queryKey: ['portal-invoices'],
+        queryFn: () => getPortalInvoices(headers),
+        enabled: !!user && !!headers?.tenantId,
+        refetchInterval: 120000 // Invoices less frequent than notifications
+    })
+
+    // Global Real-time Listener
     usePatientRealtime(profile?.id, undefined)
 
     const unreadCount = notifications.filter(n => !n.isRead).length
+    const hasPendingInvoice = invoices.some(inv => inv.status === 'PENDING')
 
     useEffect(() => {
         if (!user || !headers?.tenantId) return
@@ -91,6 +99,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
         { path: '/patient', label: 'Trang chủ', icon: Home },
         { path: '/patient/appointments', label: 'Lịch hẹn', icon: Calendar },
         { path: '/patient/history', label: 'Lịch sử khám', icon: History },
+        { path: '/patient/billing', label: 'Thanh toán', icon: Wallet },
         { path: '/patient/profile', label: 'Cá nhân', icon: User },
     ]
 
@@ -103,9 +112,13 @@ export function PatientLayout({ children }: PatientLayoutProps) {
         <div className="min-h-screen bg-slate-50 pb-24 lg:pb-0 lg:pl-64">
             {/* Sidebar for Desktop */}
             <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 p-6 z-50">
-                <div className="flex items-center gap-3 mb-12 px-2">
-                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                        <Bell className="w-6 h-6" />
+                <div className="flex items-center gap-3 mb-12">
+                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg shadow-blue-200 overflow-hidden">
+                        {profile?.avatarUrl ? (
+                            <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                            profile?.fullNameVi?.charAt(0)
+                        )}
                     </div>
                     <div>
                         <h1 className="font-black text-slate-900 tracking-tight">PatientPortal</h1>
@@ -116,6 +129,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                 <nav className="flex-1 space-y-2">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path
+                        const isBilling = item.path === '/patient/billing'
                         return (
                             <Link
                                 key={item.path}
@@ -125,7 +139,12 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                                     }`}
                             >
-                                <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                                <div className="relative">
+                                    <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                                    {isBilling && hasPendingInvoice && (
+                                        <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 ${isActive ? 'border-blue-600' : 'border-white'}`} />
+                                    )}
+                                </div>
                                 {item.label}
                             </Link>
                         )
@@ -164,9 +183,13 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                 </div>
                 <button
                     onClick={() => setIsNotifOpen(true)}
-                    className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-black text-[10px] relative"
+                    className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-black text-xs relative overflow-hidden shadow-sm"
                 >
-                    {user?.fullNameVi?.slice(0, 1) || 'P'}
+                    {profile?.avatarUrl ? (
+                        <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                        profile?.fullNameVi?.charAt(0) || 'P'
+                    )}
                     {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">
                             {unreadCount}
@@ -273,6 +296,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
             <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-2 py-3 flex items-center justify-around z-40">
                 {navItems.map((item) => {
                     const isActive = location.pathname === item.path
+                    const isBilling = item.path === '/patient/billing'
                     return (
                         <Link
                             key={item.path}
@@ -280,8 +304,11 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                             className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-blue-600' : 'text-slate-400'
                                 }`}
                         >
-                            <div className={`p-2 rounded-xl transition-all ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : ''}`}>
+                            <div className={`p-2 rounded-xl transition-all relative ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : ''}`}>
                                 <item.icon className="w-5 h-5" />
+                                {isBilling && hasPendingInvoice && (
+                                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white" />
+                                )}
                             </div>
                             <span className="text-[10px] font-bold">{item.label}</span>
                         </Link>

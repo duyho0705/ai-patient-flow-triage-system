@@ -48,16 +48,50 @@ function LoginForm({ onSuccess }: LoginFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (step === 1) {
-      if (!email || !password || (mode === 'register' && !fullNameVi)) {
-        setError('Vui lòng nhập đầy đủ thông tin.')
+    setError('')
+
+    // Basic Validation
+    if (!email) {
+      setError('Vui lòng nhập email.')
+      setStep(1)
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      setError('Định dạng email không hợp lệ.')
+      setStep(1)
+      return
+    }
+
+    if (!password) {
+      setError('Vui lòng nhập mật khẩu.')
+      setStep(1)
+      return
+    }
+
+    if (mode === 'register') {
+      if (!fullNameVi.trim()) {
+        setError('Vui lòng nhập họ và tên.')
+        setStep(1)
         return
       }
+      if (password.length < 8) {
+        setError('Mật khẩu đăng ký phải có ít nhất 8 ký tự.')
+        setStep(1)
+        return
+      }
+      if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/.test(password)) {
+        setError('Mật khẩu phải bao gồm chữ hoa, chữ thường và số.')
+        setStep(1)
+        return
+      }
+    }
+
+    if (step === 1) {
       setStep(2)
       return
     }
 
-    setError('')
     if (!tenantId) {
       setError('Vui lòng chọn phòng khám.')
       return
@@ -76,13 +110,14 @@ function LoginForm({ onSuccess }: LoginFormProps) {
         const req: RegisterRequest = {
           email: email.trim(),
           password,
-          fullNameVi,
+          fullNameVi: fullNameVi.trim(),
           tenantId,
           branchId: branchId || undefined,
         }
         await register(req)
       }
-      // Success logic
+      // Success logic - we need to login after registration, but context register might do it or we do it here.
+      // Based on code line 86, it calls login again. 
       const res = await login({ email: email.trim(), password, tenantId, branchId: branchId || undefined })
       setTenant(res.user.tenantId, res.user.branchId ?? undefined)
 
@@ -93,8 +128,8 @@ function LoginForm({ onSuccess }: LoginFormProps) {
         navigate('/dashboard', { replace: true })
       }
       onSuccess()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Thao tác thất bại.')
+    } catch (err: any) {
+      setError(err?.message || 'Thao tác thất bại. Vui lòng kiểm tra lại thông tin.')
       setStep(1)
     } finally {
       setSubmitting(false)
