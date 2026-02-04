@@ -515,4 +515,6 @@ public class PatientPortalController {
         } catch (Exception e) {
             log.error("getAuthenticatedPatient: Error during patient resolution/provisioning for user " + userId, e);
             throw e;
-        }
+        }
+    }
+}
