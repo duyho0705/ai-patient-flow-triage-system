@@ -14,7 +14,9 @@ import type {
     PatientNotificationDto,
     UpdatePatientProfileRequest,
     InvoiceDto,
-    ChangePasswordRequest
+    ChangePasswordRequest,
+    AiChatRequest,
+    AiChatResponse
 } from '@/types/api'
 
 export async function getPortalProfile(tenant: TenantHeaders | null): Promise<PatientDto> {
@@ -35,6 +37,10 @@ export async function getPortalDashboard(tenant: TenantHeaders | null): Promise<
 
 export async function getPortalInvoices(tenant: TenantHeaders | null): Promise<InvoiceDto[]> {
     return get<InvoiceDto[]>('/portal/invoices', tenant)
+}
+
+export async function payPortalInvoice(id: string, method: string, tenant: TenantHeaders | null): Promise<InvoiceDto> {
+    return post<InvoiceDto>(`/portal/invoices/${id}/pay`, method, tenant)
 }
 
 export async function getPortalAppointments(tenant: TenantHeaders | null): Promise<AppointmentDto[]> {
@@ -83,6 +89,10 @@ export async function markPortalNotificationAsRead(id: string, tenant: TenantHea
 
 export async function markPortalAllNotificationsAsRead(tenant: TenantHeaders | null): Promise<void> {
     return post<void>('/portal/notifications/read-all', {}, tenant)
+}
+
+export async function getAiChat(data: AiChatRequest, tenant: TenantHeaders | null): Promise<AiChatResponse> {
+    return post<AiChatResponse>('/portal/ai-assistant', data, tenant)
 }
 
 export async function getAiPreTriage(symptoms: string, tenant: TenantHeaders | null): Promise<any> {

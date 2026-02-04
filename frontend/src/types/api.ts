@@ -424,6 +424,8 @@ export interface PatientDashboardDto {
   nextAppointment?: AppointmentDto
   recentVisits: ConsultationDto[]
   lastVitals?: TriageVitalDto[]
+  vitalHistory?: TriageVitalDto[]
+  latestPrescription?: PrescriptionDto
   pendingInvoice?: InvoiceDto
 }
 
@@ -612,6 +614,16 @@ export interface CreateAppointmentRequest {
   slotEndTime: string
   appointmentType?: string
   notes?: string
+}
+
+export interface AiChatRequest {
+  message: string
+  history?: { role: string; content: string }[]
+}
+
+export interface AiChatResponse {
+  response: string
+  suggestions?: string[]
 }
 
 export interface PatientNotificationDto {

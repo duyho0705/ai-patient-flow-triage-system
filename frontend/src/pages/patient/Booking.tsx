@@ -12,7 +12,8 @@ import {
     Loader2,
     CalendarCheck,
     BrainCircuit,
-    Zap
+    Zap,
+    ChevronDown
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -23,6 +24,18 @@ export default function PatientBooking() {
     const navigate = useNavigate()
     const queryClient = useQueryClient()
     const [step, setStep] = useState(1)
+
+    // Separate state for internal select logic
+    const handleDateChange = (type: 'day' | 'month' | 'year', val: string) => {
+        const d = selectedDate ? new Date(selectedDate) : new Date();
+        if (type === 'day') d.setDate(parseInt(val));
+        if (type === 'month') d.setMonth(parseInt(val) - 1);
+        if (type === 'year') d.setFullYear(parseInt(val));
+
+        const dateStr = d.toISOString().split('T')[0];
+        setSelectedDate(dateStr);
+        setSelectedSlot(null);
+    }
 
     // Booking State
     const [selectedBranch, setSelectedBranch] = useState<string | null>(null)
@@ -171,16 +184,29 @@ export default function PatientBooking() {
                                     <Calendar className="w-5 h-5 text-blue-600" />
                                     Chọn ngày & Giờ khám
                                 </h3>
-                                <input
-                                    type="date"
-                                    min={new Date().toISOString().split('T')[0]}
-                                    value={selectedDate}
-                                    onChange={(e) => {
-                                        setSelectedDate(e.target.value)
-                                        setSelectedSlot(null)
-                                    }}
-                                    className="px-6 py-3 bg-slate-50 border-none rounded-2xl font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
-                                />
+                                <div className="flex gap-2">
+                                    <CustomSelect
+                                        value={selectedDate ? new Date(selectedDate).getDate().toString() : ''}
+                                        onChange={(val: string) => handleDateChange('day', val)}
+                                        options={Array.from({ length: 31 }, (_, i) => ({ value: (i + 1).toString(), label: (i + 1).toString() }))}
+                                        placeholder="Ngày"
+                                        className="w-24"
+                                    />
+                                    <CustomSelect
+                                        value={selectedDate ? (new Date(selectedDate).getMonth() + 1).toString() : ''}
+                                        onChange={(val: string) => handleDateChange('month', val)}
+                                        options={Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toString(), label: `Tháng ${i + 1}` }))}
+                                        placeholder="Tháng"
+                                        className="w-32"
+                                    />
+                                    <CustomSelect
+                                        value={selectedDate ? new Date(selectedDate).getFullYear().toString() : ''}
+                                        onChange={(val: string) => handleDateChange('year', val)}
+                                        options={Array.from({ length: 2 }, (_, i) => ({ value: (new Date().getFullYear() + i).toString(), label: (new Date().getFullYear() + i).toString() }))}
+                                        placeholder="Năm"
+                                        className="w-28"
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -377,6 +403,60 @@ export default function PatientBooking() {
                             </button>
                         </div>
                     </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    )
+}
+
+function CustomSelect({ value, onChange, options, placeholder, className = '' }: {
+    value: string;
+    onChange: (val: string) => void;
+    options: { value: string; label: string }[];
+    placeholder: string;
+    className?: string;
+}) {
+    const [isOpen, setIsOpen] = useState(false)
+    const selectedOption = options.find(o => o.value === value)
+
+    return (
+        <div className={`relative ${className}`}>
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full flex items-center justify-between px-4 py-3 bg-slate-50 border border-transparent rounded-2xl transition-all ${isOpen ? 'bg-white border-blue-400 shadow-lg shadow-blue-400/10' : ''}`}
+            >
+                <span className={`font-bold text-sm transition-colors ${selectedOption ? 'text-slate-700' : 'text-slate-400'}`}>
+                    {selectedOption ? selectedOption.label : placeholder}
+                </span>
+                <ChevronDown className={`w-3 h-3 text-slate-300 transition-transform ${isOpen ? 'rotate-180 text-blue-500' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <div className="fixed inset-0 z-[60]" onClick={() => setIsOpen(false)} />
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute z-[70] mt-2 w-full max-h-60 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-y-auto scrollbar-hide py-2"
+                        >
+                            {options.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => {
+                                        onChange(opt.value)
+                                        setIsOpen(false)
+                                    }}
+                                    className={`w-full text-left px-5 py-3 text-sm font-bold transition-all ${value === opt.value ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
         </div>

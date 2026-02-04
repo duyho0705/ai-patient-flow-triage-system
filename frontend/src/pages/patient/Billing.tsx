@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { getPortalInvoices } from '@/api/portal'
+import { getPortalInvoices, payPortalInvoice } from '@/api/portal'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import {
     Wallet,
@@ -11,23 +11,36 @@ import {
     Clock,
     AlertCircle,
     Calendar,
-    Download,
     QrCode
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
+import toast from 'react-hot-toast'
+
 export default function PatientBilling() {
     const { headers } = useTenant()
+    const queryClient = useQueryClient()
     const [searchTerm, setSearchTerm] = useState('')
     const [activeTab, setActiveTab] = useState<'ALL' | 'PENDING' | 'PAID' | 'CANCELLED'>('ALL')
     const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
+    const [paymentMethod, setPaymentMethod] = useState<'MOMO' | 'VNPAY' | 'BANK'>('BANK')
 
     const { data: invoices, isLoading } = useQuery({
         queryKey: ['portal-invoices'],
         queryFn: () => getPortalInvoices(headers),
         enabled: !!headers?.tenantId
+    })
+
+    const mutation = useMutation({
+        mutationFn: ({ id, method }: { id: string, method: string }) => payPortalInvoice(id, method, headers),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['portal-invoices'] })
+            queryClient.invalidateQueries({ queryKey: ['portal-dashboard'] })
+            setSelectedInvoice(data)
+            toast.success('Thanh toán thành công!')
+        }
     })
 
     const filteredInvoices = invoices?.filter(inv => {
@@ -186,26 +199,58 @@ export default function PatientBilling() {
                                         </div>
                                     </div>
 
-                                    {/* QR Code Section for Pending */}
+                                    {/* Payment Selector for Pending */}
                                     {selectedInvoice.status === 'PENDING' && (
                                         <div className="space-y-6 pt-4">
-                                            <div className="bg-white p-6 rounded-[2.5rem] flex flex-col items-center gap-4">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quét VietQR để thanh toán</p>
-                                                <div className="relative group">
-                                                    <img
-                                                        src={generateVietQR(selectedInvoice.finalAmount, selectedInvoice.invoiceNumber)}
-                                                        alt="VietQR"
-                                                        className="w-48 h-48 rounded-2xl border-4 border-slate-50 shadow-sm"
-                                                    />
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
-                                                        <QrCode className="w-10 h-10 text-slate-900" />
-                                                    </div>
-                                                </div>
-                                                <p className="text-[10px] font-bold text-slate-400 text-center italic">Sử dụng mọi app Ngân hàng hoặc Ví điện tử để quét.</p>
+                                            <div className="flex gap-2">
+                                                {[
+                                                    { id: 'BANK', label: 'VietQR', icon: QrCode },
+                                                    { id: 'MOMO', label: 'MoMo', icon: Wallet },
+                                                    { id: 'VNPAY', label: 'VNPay', icon: CreditCard }
+                                                ].map((m) => (
+                                                    <button
+                                                        key={m.id}
+                                                        onClick={() => setPaymentMethod(m.id as any)}
+                                                        className={`flex-1 p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${paymentMethod === m.id
+                                                            ? 'bg-blue-600 border-blue-500 text-white'
+                                                            : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                                                            }`}
+                                                    >
+                                                        <m.icon className="w-5 h-5" />
+                                                        <span className="text-[10px] font-black uppercase">{m.label}</span>
+                                                    </button>
+                                                ))}
                                             </div>
-                                            <button className="w-full py-5 bg-blue-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:bg-blue-500 transition-all flex items-center justify-center gap-3">
-                                                Tải mã QR
-                                                <Download className="w-4 h-4" />
+
+                                            {paymentMethod === 'BANK' ? (
+                                                <div className="bg-white p-6 rounded-[2.5rem] flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quét VietQR để thanh toán</p>
+                                                    <div className="relative group">
+                                                        <img
+                                                            src={generateVietQR(selectedInvoice.finalAmount, selectedInvoice.invoiceNumber)}
+                                                            alt="VietQR"
+                                                            className="w-48 h-48 rounded-2xl border-4 border-slate-50 shadow-sm"
+                                                        />
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
+                                                            <QrCode className="w-10 h-10 text-slate-900" />
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-slate-400 text-center italic">Sử dụng mọi app Ngân hàng để quét.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] text-center animate-in slide-in-from-bottom-4 duration-300">
+                                                    <p className="text-slate-400 text-sm font-medium">Bạn đã chọn thanh toán qua {paymentMethod}.</p>
+                                                    <p className="text-[10px] font-bold text-blue-400 uppercase mt-2">Hệ thống sẽ chuyển hướng sau khi nhấn nút.</p>
+                                                </div>
+                                            )}
+
+                                            <button
+                                                disabled={mutation.isPending}
+                                                onClick={() => mutation.mutate({ id: selectedInvoice.id, method: paymentMethod })}
+                                                className="w-full py-5 bg-blue-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:bg-blue-500 disabled:opacity-50 transition-all flex items-center justify-center gap-3"
+                                            >
+                                                {mutation.isPending ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+                                                {!mutation.isPending && <ArrowRight className="w-4 h-4" />}
                                             </button>
                                         </div>
                                     )}

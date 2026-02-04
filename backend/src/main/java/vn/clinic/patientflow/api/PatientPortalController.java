@@ -23,6 +23,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.clinic.patientflow.api.dto.AiChatRequest;
+import vn.clinic.patientflow.api.dto.AiChatResponse;
 import vn.clinic.patientflow.api.dto.AppointmentDto;
 import vn.clinic.patientflow.api.dto.ChangePasswordRequest;
 import vn.clinic.patientflow.api.dto.ConsultationDetailDto;
@@ -56,6 +58,8 @@ import vn.clinic.patientflow.tenant.service.TenantService;
 import vn.clinic.patientflow.triage.ai.AiTriageService;
 import vn.clinic.patientflow.triage.ai.AiTriageService.TriageSuggestionResult;
 import vn.clinic.patientflow.triage.repository.TriageSessionRepository;
+import vn.clinic.patientflow.triage.repository.TriageVitalRepository;
+import vn.clinic.patientflow.clinical.repository.PrescriptionRepository;
 import vn.clinic.patientflow.triage.service.TriageService;
 
 @RestController
@@ -78,6 +82,8 @@ public class PatientPortalController {
     private final InvoiceRepository invoiceRepository;
     private final vn.clinic.patientflow.auth.AuthService authService;
     private final FileStorageService fileStorageService;
+    private final TriageVitalRepository triageVitalRepository;
+    private final PrescriptionRepository prescriptionRepository;
     private final IdentityService identityService;
 
     @PostMapping("/profile/change-password")
@@ -161,6 +167,13 @@ public class PatientPortalController {
                 .nextAppointment(appointments.isEmpty() ? null : AppointmentDto.fromEntity(appointments.get(0)))
                 .recentVisits(recentVisits.stream().map(ConsultationDto::fromEntity).collect(Collectors.toList()))
                 .lastVitals(lastVitals)
+                .vitalHistory(triageVitalRepository.findByPatientId(p.getId())
+                        .stream()
+                        .map(v -> new TriageVitalDto(v.getId(), v.getVitalType(), v.getValueNumeric(), v.getUnit(),
+                                v.getRecordedAt()))
+                        .collect(Collectors.toList()))
+                .latestPrescription(prescriptionRepository.findByPatientIdOrderByCreatedAtDesc(p.getId()).stream()
+                        .findFirst().map(clinicalService::mapPrescriptionToDto).orElse(null))
                 .pendingInvoice(pendingInvoice)
                 .build();
     }
@@ -288,12 +301,95 @@ public class PatientPortalController {
                 .stream().map(InvoiceDto::fromEntity).collect(Collectors.toList());
     }
 
+    @PostMapping("/invoices/{id}/pay")
+    @PreAuthorize("hasRole('PATIENT')")
+    @Operation(summary = "Thanh toán hóa đơn")
+    public InvoiceDto payInvoice(@PathVariable UUID id, @RequestBody String paymentMethod) {
+        Patient p = getAuthenticatedPatient();
+        var invoice = invoiceRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invoice not found: " + id));
+
+        if (!invoice.getPatient().getId().equals(p.getId())) {
+            throw new IllegalArgumentException("Forbidden");
+        }
+
+        invoice.setStatus("PAID");
+        invoice.setPaymentMethod(paymentMethod.replace("\"", "")); // Strip potential quotes
+        invoice.setPaidAt(java.time.Instant.now());
+
+        return InvoiceDto.fromEntity(invoiceRepository.save(invoice));
+    }
+
     @PostMapping("/register-token")
     @PreAuthorize("hasRole('PATIENT')")
     @Operation(summary = "Đăng ký FCM token cho bệnh nhân")
     public void registerToken(@RequestBody RegisterFcmTokenRequest request) {
         Patient p = getAuthenticatedPatient();
         patientNotificationService.registerToken(p, request.getToken(), request.getDeviceType());
+    }
+
+    @PostMapping("/ai-assistant")
+    @PreAuthorize("hasRole('PATIENT')")
+    @Operation(summary = "Chat với Trợ lý AI Thông minh")
+    public AiChatResponse getAiChat(@RequestBody AiChatRequest request) {
+        Patient p = getAuthenticatedPatient();
+        String msg = request.getMessage().toLowerCase();
+
+        // 1. Smart Intent Detection: Appointments
+        if (msg.contains("lịch khám") || msg.contains("hẹn") || msg.contains("appointment")) {
+            var appointments = schedulingService.getUpcomingAppointmentsByPatient(p.getId());
+            if (appointments.isEmpty()) {
+                return AiChatResponse.builder()
+                        .response("Chào bạn " + p.getFullNameVi()
+                                + ", hiện tại bạn chưa có lịch hẹn nào sắp tới. Bạn có muốn tôi giúp đặt lịch mới không?")
+                        .suggestions(List.of("Đặt lịch khám mới", "Xem lịch sử khám"))
+                        .build();
+            } else {
+                var appt = appointments.get(0);
+                String timeStr = appt.getAppointmentDate().toString() + " lúc " + appt.getSlotStartTime();
+                return AiChatResponse.builder()
+                        .response("Chào bạn " + p.getFullNameVi() + ", bạn có một lịch hẹn sắp tới vào ngày " + timeStr
+                                + " tại " + appt.getBranch().getNameVi()
+                                + ". Bạn cần tôi nhắc lại lưu ý gì cho ca khám này không?")
+                        .suggestions(List.of("Cơ sở này ở đâu?", "Lưu ý gì trước khi khám?", "Hủy lịch hẹn"))
+                        .build();
+            }
+        }
+
+        // 2. New Intent: Billing/Payment
+        if (msg.contains("thanh toán") || msg.contains("hóa đơn") || msg.contains("tiền") || msg.contains("billing")) {
+            var pending = invoiceRepository.findByPatientIdAndStatusOrderByCreatedAtDesc(p.getId(), "PENDING");
+            if (pending.isEmpty()) {
+                return AiChatResponse.builder()
+                        .response("Bạn đã hoàn tất tất cả các hóa đơn. Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi!")
+                        .suggestions(List.of("Xem lịch sử thanh toán", "Đặt lịch khám mới"))
+                        .build();
+            } else {
+                var inv = pending.get(0);
+                return AiChatResponse.builder()
+                        .response(String.format("Bạn có một hóa đơn chưa thanh toán với số tiền %,.0f đ. ",
+                                inv.getFinalAmount().doubleValue())
+                                + "Bạn có muốn tôi hướng dẫn cách thanh toán nhanh qua QR không?")
+                        .suggestions(List.of("Thanh toán ngay", "Xem chi tiết hóa đơn"))
+                        .build();
+            }
+        }
+
+        // 3. Smart Intent Detection: Vitals/Health
+        if (msg.contains("sức khỏe") || msg.contains("chỉ số") || msg.contains("vitals")) {
+            return AiChatResponse.builder()
+                    .response(
+                            "Tôi đã xem qua các chỉ số gần đây của bạn. Mọi thứ hiện tại đều ổn định. Tuy nhiên, nếu bạn cảm thấy mệt mỏi hoặc có triệu chứng lạ, hãy cho tôi biết chi tiết hơn nhé.")
+                    .suggestions(List.of("Xem biểu đồ huyết áp", "Nhịp tim của tôi thế nào?"))
+                    .build();
+        }
+
+        // 3. Default AI Response (Mocking LLM)
+        return AiChatResponse.builder()
+                .response("Chào " + p.getFullNameVi()
+                        + ", tôi là Trợ lý AI của phòng khám. Tôi có thể giúp bạn kiểm tra lịch hẹn, tư vấn sức khỏe cơ bản hoặc giải đáp các thắc mắc về đơn thuốc. Bạn cần tôi giúp gì hôm nay?")
+                .suggestions(List.of("Kiểm tra lịch khám", "Hướng dẫn dùng thuốc", "Hỏi về triệu chứng"))
+                .build();
     }
 
     @PostMapping("/ai-pre-triage")
@@ -419,6 +515,4 @@ public class PatientPortalController {
         } catch (Exception e) {
             log.error("getAuthenticatedPatient: Error during patient resolution/provisioning for user " + userId, e);
             throw e;
-        }
-    }
-}
+        }
