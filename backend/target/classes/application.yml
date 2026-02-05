@@ -68,7 +68,8 @@ triage:
   ai:
     enabled: true
     model-key: triage_acuity_v1
-    provider: rule-based
+    provider: http-endpoint
+    service-url: http://localhost:5000/predict
 
 # Logging
 logging:

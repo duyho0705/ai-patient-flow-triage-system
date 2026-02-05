@@ -73,7 +73,7 @@ export default function PatientBooking() {
     const [loadingAi, setLoadingAi] = useState(false)
 
     // Queries
-    const { data: family = [], isLoading: loadingFamily } = useQuery({
+    const { data: family = [] } = useQuery({
         queryKey: ['portal-family'],
         queryFn: () => getPortalFamily(headers),
         enabled: !!headers?.tenantId

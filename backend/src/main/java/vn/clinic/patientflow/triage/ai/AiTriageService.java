@@ -42,12 +42,16 @@ public class AiTriageService {
     @Value("${triage.ai.model-key:triage_acuity_v1}")
     private String modelKey;
 
+    @Value("${triage.ai.provider:rule-based}")
+    private String defaultProvider;
+
     /**
      * Gợi ý acuity từ lý do khám, sinh hiệu, tuổi.
      * Chọn provider dựa trên cấu hình Tenant.
      */
     public TriageSuggestionResult suggest(TriageInput input) {
-        AiTriageProvider selectedProvider = ruleBasedProvider; // Default
+        AiTriageProvider selectedProvider = "http-endpoint".equalsIgnoreCase(defaultProvider) ? httpProvider
+                : ruleBasedProvider;
 
         try {
             // Check Tenant settings

@@ -1,31 +1,25 @@
 package vn.clinic.patientflow.patient.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import vn.clinic.patientflow.api.dto.AiChatRequest;
-import vn.clinic.patientflow.api.dto.AiChatResponse;
-import vn.clinic.patientflow.clinical.service.ClinicalService;
-import vn.clinic.patientflow.patient.domain.Patient;
-import vn.clinic.patientflow.scheduling.service.SchedulingService;
-import vn.clinic.patientflow.billing.repository.InvoiceRepository;
-import vn.clinic.patientflow.clinical.repository.PrescriptionRepository;
-import vn.clinic.patientflow.triage.repository.TriageSessionRepository;
-import vn.clinic.patientflow.triage.service.TriageService;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
+import vn.clinic.patientflow.api.dto.AiChatRequest;
+import vn.clinic.patientflow.api.dto.AiChatResponse;
+import vn.clinic.patientflow.billing.repository.InvoiceRepository;
+import vn.clinic.patientflow.clinical.repository.PrescriptionRepository;
+import vn.clinic.patientflow.patient.domain.Patient;
+import vn.clinic.patientflow.scheduling.service.SchedulingService;
 
 @Service
 @RequiredArgsConstructor
 public class PatientAiChatService {
 
     private final SchedulingService schedulingService;
-    private final ClinicalService clinicalService;
     private final InvoiceRepository invoiceRepository;
     private final PrescriptionRepository prescriptionRepository;
-    private final TriageSessionRepository triageSessionRepository;
-    private final TriageService triageService;
 
     public AiChatResponse processMessage(Patient patient, AiChatRequest request) {
         String msg = request.getMessage().toLowerCase();
@@ -45,7 +39,7 @@ public class PatientAiChatService {
                 response = String.format(
                         "Bạn có lịch hẹn vào ngày %s lúc %s tại %s (%s). Hãy nhớ đến trước 15 phút để làm thủ tục nhé!",
                         appt.getAppointmentDate(), appt.getSlotStartTime(),
-                        appt.getBranch().getNameVi(), appt.getBranch().getAddress());
+                        appt.getBranch().getNameVi(), appt.getBranch().getAddressLine());
                 suggestions.add("Chỉ đường đến phòng khám");
                 suggestions.add("Hủy/Đổi lịch");
             }

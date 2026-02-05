@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { MessageSquare, Send, User, Bot, Search, Video, Phone, MoreVertical, Paperclip, Smile, ShieldCheck, Clock, Loader2 } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { MessageSquare, Send, Search, Video, Phone, Paperclip, ShieldCheck, Clock, Loader2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getPortalChatDoctors, getPortalChatHistory, sendPortalChatMessage } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
