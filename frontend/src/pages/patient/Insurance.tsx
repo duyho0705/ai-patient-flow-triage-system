@@ -53,7 +53,7 @@ export default function PatientInsurance() {
     const primaryCard = insurances.find(i => i.isPrimary) || insurances[0]
 
     return (
-        <div className="max-w-[1200px] mx-auto space-y-12 pb-20">
+        <div className="space-y-12 pb-20">
             <header className="space-y-2">
                 <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-4">
                     <div className="p-3 bg-orange-500 rounded-2xl text-white shadow-xl shadow-orange-200">

@@ -9,13 +9,19 @@ import {
     Filter,
     History as HistoryIcon
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 export default function PatientHistory() {
     const { headers } = useTenant()
-    const [searchTerm, setSearchTerm] = useState('')
+    const [searchParams] = useSearchParams()
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
+
+    useEffect(() => {
+        const query = searchParams.get('search')
+        if (query) setSearchTerm(query)
+    }, [searchParams])
 
     const { data: history, isLoading } = useQuery({
         queryKey: ['portal-history'],

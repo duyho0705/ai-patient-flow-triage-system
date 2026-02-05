@@ -192,7 +192,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
             </header>
 
             {/* Main Content */}
-            <main className="p-4 sm:p-8 md:p-12 animate-in fade-in duration-500">
+            <main className="p-4 sm:p-10 lg:p-14 animate-in fade-in duration-500">
                 {children}
             </main>
 

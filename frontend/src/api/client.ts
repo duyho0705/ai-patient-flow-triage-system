@@ -50,7 +50,9 @@ export async function api<T>(
     throw new Error(err.message || err.error || res.statusText)
   }
   if (res.status === 204) return undefined as T
-  return res.json()
+  const text = await res.text()
+  if (!text) return undefined as T
+  return JSON.parse(text)
 }
 
 export const get = <T>(path: string, tenant?: TenantHeaders | null) =>
