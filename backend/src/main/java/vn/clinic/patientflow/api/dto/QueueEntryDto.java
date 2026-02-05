@@ -56,6 +56,7 @@ public class QueueEntryDto {
                 .notes(e.getNotes())
                 .position(e.getPosition())
                 .status(e.getStatus())
+                .queueName(e.getQueueDefinition() != null ? e.getQueueDefinition().getNameVi() : null)
                 .acuityLevel(e.getTriageSession() != null ? e.getTriageSession().getAcuityLevel() : null)
                 .joinedAt(e.getJoinedAt())
                 .calledAt(e.getCalledAt())

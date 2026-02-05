@@ -145,6 +145,7 @@ public class QueueService {
 
         @Transactional(readOnly = true)
         public vn.clinic.patientflow.api.dto.PublicQueueDto getPublicQueueStatus(UUID branchId) {
+                var branch = tenantService.getBranchById(branchId);
                 List<QueueEntry> called = queueEntryRepository.findByBranch_IdAndStatusOrderByJoinedAtAsc(branchId,
                                 "CALLED");
                 List<QueueEntry> waiting = queueEntryRepository.findByBranch_IdAndStatusOrderByJoinedAtAsc(branchId,
@@ -154,6 +155,7 @@ public class QueueService {
                 List<QueueEntry> nextWaiting = waiting.stream().limit(10).toList();
 
                 return vn.clinic.patientflow.api.dto.PublicQueueDto.builder()
+                                .branchName(branch.getNameVi())
                                 .calledEntries(called.stream()
                                                 .map(vn.clinic.patientflow.api.dto.QueueEntryDto::fromEntity).toList())
                                 .waitingEntries(nextWaiting.stream()

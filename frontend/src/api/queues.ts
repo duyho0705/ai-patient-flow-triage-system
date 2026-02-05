@@ -72,8 +72,8 @@ export async function getQueueEntry(
 export async function getPublicQueueStatus(
   branchId: string,
   tenant: TenantHeaders | null
-): Promise<{ calledEntries: QueueEntryDto[], waitingEntries: QueueEntryDto[] }> {
-  return get<{ calledEntries: QueueEntryDto[], waitingEntries: QueueEntryDto[] }>(
+): Promise<{ branchName: string, calledEntries: QueueEntryDto[], waitingEntries: QueueEntryDto[] }> {
+  return get<{ branchName: string, calledEntries: QueueEntryDto[], waitingEntries: QueueEntryDto[] }>(
     `/queues/public-status?branchId=${branchId}`,
     tenant
   )

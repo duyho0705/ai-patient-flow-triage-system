@@ -70,8 +70,12 @@ export default function PublicQueue() {
                         <Monitor className="w-10 h-10 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black tracking-tightest">HỆ THỐNG ĐIỀU PHỐI</h1>
-                        <p className="text-blue-500 font-black uppercase tracking-widest text-xs">TRẠNG THÁI HÀNG CHỜ THỜI GIAN THỰC</p>
+                        <h1 className="text-4xl font-black tracking-tightest">
+                            {status?.branchName || 'HỆ THỐNG ĐIỀU PHỐI'}
+                        </h1>
+                        <p className="text-blue-500 font-black uppercase tracking-widest text-xs">
+                            TRẠNG THÁI HÀNG CHỜ - {status?.branchName ? 'THỜI GIAN THỰC' : 'ĐANG KẾT NỐI...'}
+                        </p>
                     </div>
                 </div>
 

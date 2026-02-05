@@ -22,7 +22,10 @@ import {
     Zap,
     BellRing,
     Clock,
-    Pill
+    Pill,
+    Thermometer,
+    Heart,
+    Wind
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -599,6 +602,14 @@ function HealthCard({ vital, history }: { vital: any, history: any[] }) {
         }));
     }, [history]);
 
+    const getIcon = () => {
+        const type = vital.vitalType.toLowerCase();
+        if (type.includes('temp') || type.includes('nhiệt độ')) return <Thermometer className="w-5 h-5" />;
+        if (type.includes('heart') || type.includes('nhịp tim') || type.includes('mạch')) return <Heart className="w-5 h-5" />;
+        if (type.includes('spo2') || type.includes('oxy') || type.includes('spo2')) return <Wind className="w-5 h-5" />;
+        return <Activity className="w-5 h-5" />;
+    };
+
     return (
         <motion.div
             whileHover={{ y: -5 }}
@@ -613,7 +624,7 @@ function HealthCard({ vital, history }: { vital: any, history: any[] }) {
                     </div>
                 </div>
                 <div className={`p-2 rounded-xl ${isCritical ? 'bg-rose-50 text-rose-500' : 'bg-slate-50 text-slate-400'}`}>
-                    <Activity className="w-5 h-5" />
+                    {getIcon()}
                 </div>
             </div>
 
