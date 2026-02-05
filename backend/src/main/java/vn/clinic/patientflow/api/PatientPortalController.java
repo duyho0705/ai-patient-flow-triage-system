@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +24,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.clinic.patientflow.api.dto.AddPatientInsuranceRequest;
+import vn.clinic.patientflow.api.dto.AddPatientRelativeRequest;
 import vn.clinic.patientflow.api.dto.AiChatRequest;
 import vn.clinic.patientflow.api.dto.AiChatResponse;
 import vn.clinic.patientflow.api.dto.AppointmentDto;
@@ -30,11 +33,15 @@ import vn.clinic.patientflow.api.dto.ChangePasswordRequest;
 import vn.clinic.patientflow.api.dto.ConsultationDetailDto;
 import vn.clinic.patientflow.api.dto.ConsultationDto;
 import vn.clinic.patientflow.api.dto.CreateAppointmentRequest;
+import vn.clinic.patientflow.api.dto.DiagnosticImageDto;
 import vn.clinic.patientflow.api.dto.InvoiceDto;
+import vn.clinic.patientflow.api.dto.LabResultDto;
 import vn.clinic.patientflow.api.dto.PatientDashboardDto;
 import vn.clinic.patientflow.api.dto.PatientDto;
+import vn.clinic.patientflow.api.dto.PatientInsuranceDto;
 import vn.clinic.patientflow.api.dto.PatientNotificationDto;
 import vn.clinic.patientflow.api.dto.PatientPortalStatusDto;
+import vn.clinic.patientflow.api.dto.PatientRelativeDto;
 import vn.clinic.patientflow.api.dto.QueueEntryDto;
 import vn.clinic.patientflow.api.dto.RegisterFcmTokenRequest;
 import vn.clinic.patientflow.api.dto.SlotAvailabilityDto;
@@ -44,12 +51,21 @@ import vn.clinic.patientflow.api.dto.UpdatePatientProfileRequest;
 import vn.clinic.patientflow.auth.AuthPrincipal;
 import vn.clinic.patientflow.billing.repository.InvoiceRepository;
 import vn.clinic.patientflow.billing.service.BillingService;
+import vn.clinic.patientflow.clinical.domain.DiagnosticImage;
+import vn.clinic.patientflow.clinical.domain.LabResult;
+import vn.clinic.patientflow.clinical.repository.DiagnosticImageRepository;
+import vn.clinic.patientflow.clinical.repository.LabResultRepository;
+import vn.clinic.patientflow.clinical.repository.PrescriptionRepository;
 import vn.clinic.patientflow.clinical.service.ClinicalService;
 import vn.clinic.patientflow.common.exception.ResourceNotFoundException;
 import vn.clinic.patientflow.common.service.FileStorageService;
 import vn.clinic.patientflow.identity.domain.IdentityUser;
 import vn.clinic.patientflow.identity.service.IdentityService;
 import vn.clinic.patientflow.patient.domain.Patient;
+import vn.clinic.patientflow.patient.domain.PatientInsurance;
+import vn.clinic.patientflow.patient.domain.PatientRelative;
+import vn.clinic.patientflow.patient.repository.PatientInsuranceRepository;
+import vn.clinic.patientflow.patient.repository.PatientRelativeRepository;
 import vn.clinic.patientflow.patient.service.PatientNotificationService;
 import vn.clinic.patientflow.patient.service.PatientService;
 import vn.clinic.patientflow.queue.service.QueueService;
@@ -59,16 +75,7 @@ import vn.clinic.patientflow.triage.ai.AiTriageService;
 import vn.clinic.patientflow.triage.ai.AiTriageService.TriageSuggestionResult;
 import vn.clinic.patientflow.triage.repository.TriageSessionRepository;
 import vn.clinic.patientflow.triage.repository.TriageVitalRepository;
-import vn.clinic.patientflow.clinical.repository.PrescriptionRepository;
 import vn.clinic.patientflow.triage.service.TriageService;
-import vn.clinic.patientflow.clinical.repository.LabResultRepository;
-import vn.clinic.patientflow.clinical.repository.DiagnosticImageRepository;
-import vn.clinic.patientflow.patient.repository.PatientRelativeRepository;
-import vn.clinic.patientflow.patient.repository.PatientInsuranceRepository;
-import vn.clinic.patientflow.api.dto.LabResultDto;
-import vn.clinic.patientflow.api.dto.DiagnosticImageDto;
-import vn.clinic.patientflow.api.dto.PatientRelativeDto;
-import vn.clinic.patientflow.api.dto.PatientInsuranceDto;
 
 @RestController
 @RequestMapping("/api/portal")
@@ -281,6 +288,127 @@ public class PatientPortalController {
                 return patientInsuranceRepository.findByPatientIdOrderByIsPrimaryDesc(p.getId()).stream()
                                 .map(PatientInsuranceDto::fromEntity)
                                 .collect(Collectors.toList());
+        }
+
+        @PostMapping("/family")
+        @PreAuthorize("hasRole('PATIENT')")
+        @Operation(summary = "Thêm người thân")
+        public PatientRelativeDto addRelative(@RequestBody AddPatientRelativeRequest request) {
+                Patient p = getAuthenticatedPatient();
+                PatientRelative relative = PatientRelative.builder()
+                                .patient(p)
+                                .fullName(request.getFullName())
+                                .relationship(request.getRelationship())
+                                .phoneNumber(request.getPhoneNumber())
+                                .gender(request.getGender())
+                                .age(request.getAge())
+                                .build();
+                return PatientRelativeDto.fromEntity(patientRelativeRepository.save(relative));
+        }
+
+        @PutMapping("/family/{id}")
+        @PreAuthorize("hasRole('PATIENT')")
+        @Operation(summary = "Cập nhật người thân")
+        public PatientRelativeDto updateRelative(@PathVariable UUID id,
+                        @RequestBody AddPatientRelativeRequest request) {
+                Patient p = getAuthenticatedPatient();
+                PatientRelative relative = patientRelativeRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy người thân"));
+
+                if (!relative.getPatient().getId().equals(p.getId())) {
+                        throw new RuntimeException("Không có quyền truy cập");
+                }
+
+                relative.setFullName(request.getFullName());
+                relative.setRelationship(request.getRelationship());
+                relative.setPhoneNumber(request.getPhoneNumber());
+                relative.setGender(request.getGender());
+                relative.setAge(request.getAge());
+
+                return PatientRelativeDto.fromEntity(patientRelativeRepository.save(relative));
+        }
+
+        @DeleteMapping("/family/{id}")
+        @PreAuthorize("hasRole('PATIENT')")
+        @Operation(summary = "Xóa người thân")
+        public void deleteRelative(@PathVariable UUID id) {
+                Patient p = getAuthenticatedPatient();
+                var relative = patientRelativeRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException("PatientRelative", id));
+                if (!relative.getPatient().getId().equals(p.getId())) {
+                        throw new IllegalArgumentException("Forbidden");
+                }
+                patientRelativeRepository.delete(relative);
+        }
+
+        @PostMapping("/insurance")
+        @PreAuthorize("hasRole('PATIENT')")
+        @Operation(summary = "Thêm bảo hiểm")
+        public PatientInsuranceDto addInsurance(@RequestBody AddPatientInsuranceRequest request) {
+                Patient p = getAuthenticatedPatient();
+                PatientInsurance insurance = PatientInsurance.builder()
+                                .patient(p)
+                                .insuranceType(request.getInsuranceType())
+                                .insuranceNumber(request.getInsuranceNumber())
+                                .holderName(request.getHolderName())
+                                .validFrom(request.getValidFrom())
+                                .validTo(request.getValidTo())
+                                .isPrimary(request.getIsPrimary())
+                                .build();
+                return PatientInsuranceDto.fromEntity(patientInsuranceRepository.save(insurance));
+        }
+
+        @DeleteMapping("/insurance/{id}")
+        @PreAuthorize("hasRole('PATIENT')")
+        @Operation(summary = "Xóa bảo hiểm")
+        public void deleteInsurance(@PathVariable UUID id) {
+                Patient p = getAuthenticatedPatient();
+                var insurance = patientInsuranceRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException("PatientInsurance", id));
+                if (!insurance.getPatient().getId().equals(p.getId())) {
+                        throw new IllegalArgumentException("Forbidden");
+                }
+                patientInsuranceRepository.delete(insurance);
+        }
+
+        @PostMapping("/seed-medical-data")
+        @PreAuthorize("hasRole('PATIENT')")
+        @Operation(summary = "Tạo dữ liệu y tế mẫu (Chỉ dành cho Demo/Dev)")
+        public void seedMedicalData() {
+                Patient p = getAuthenticatedPatient();
+                var consultations = clinicalService.getConsultationsByPatient(p.getId());
+
+                for (var cons : consultations) {
+                        // Seed Lab Results if none
+                        if (labResultRepository.findByConsultation(cons).isEmpty()) {
+                                labResultRepository.save(LabResult.builder()
+                                                .consultation(cons)
+                                                .testName("Tổng phân tích tế bào máu")
+                                                .value("4.5")
+                                                .unit("T/L")
+                                                .referenceRange("3.8 - 5.8")
+                                                .status("NORMAL")
+                                                .build());
+                                labResultRepository.save(LabResult.builder()
+                                                .consultation(cons)
+                                                .testName("Đường huyết (Glucose)")
+                                                .value("7.2")
+                                                .unit("mmol/L")
+                                                .referenceRange("3.9 - 6.4")
+                                                .status("HIGH")
+                                                .build());
+                        }
+
+                        // Seed Images if none
+                        if (diagnosticImageRepository.findByConsultation(cons).isEmpty()) {
+                                diagnosticImageRepository.save(DiagnosticImage.builder()
+                                                .consultation(cons)
+                                                .title("X-Quang Ngực Thẳng")
+                                                .imageUrl("https://images.unsplash.com/photo-1576086213369-97a306d36557?q=80&w=1000")
+                                                .description("Không thấy tổn thương nhu mô phổi tiến triển.")
+                                                .build());
+                        }
+                }
         }
 
         @GetMapping("/queues")

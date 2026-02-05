@@ -1,4 +1,4 @@
-import { get, post, put } from './client'
+import { get, post, put, del } from './client'
 import type { TenantHeaders } from './client'
 import type {
     PatientPortalStatusDto,
@@ -111,6 +111,30 @@ export async function getPortalFamily(tenant: TenantHeaders | null): Promise<Pat
     return get<PatientRelativeDto[]>('/portal/family', tenant)
 }
 
+export async function addPortalRelative(data: any, tenant: TenantHeaders | null): Promise<PatientRelativeDto> {
+    return post<PatientRelativeDto>('/portal/family', data, tenant)
+}
+
+export async function updatePortalRelative(id: string, data: any, tenant: TenantHeaders | null): Promise<PatientRelativeDto> {
+    return put<PatientRelativeDto>(`/portal/family/${id}`, data, tenant)
+}
+
+export async function deletePortalRelative(id: string, tenant: TenantHeaders | null): Promise<void> {
+    return del<void>(`/portal/family/${id}`, tenant)
+}
+
 export async function getPortalInsurance(tenant: TenantHeaders | null): Promise<PatientInsuranceDto[]> {
     return get<PatientInsuranceDto[]>('/portal/insurance', tenant)
+}
+
+export async function addPortalInsurance(data: any, tenant: TenantHeaders | null): Promise<PatientInsuranceDto> {
+    return post<PatientInsuranceDto>('/portal/insurance', data, tenant)
+}
+
+export async function deletePortalInsurance(id: string, tenant: TenantHeaders | null): Promise<void> {
+    return del<void>(`/portal/insurance/${id}`, tenant)
+}
+
+export async function seedMedicalData(tenant: TenantHeaders | null): Promise<void> {
+    return post<void>('/portal/seed-medical-data', {}, tenant)
 }

@@ -77,6 +77,9 @@ export const patch = <T>(path: string, body?: unknown, tenant?: TenantHeaders | 
     tenant
   })
 
+export const del = <T>(path: string, tenant?: TenantHeaders | null) =>
+  api<T>(path, { method: 'DELETE', tenant })
+
 export async function downloadFile(path: string, tenant: TenantHeaders | null, filename: string) {
   const url = `${API_BASE}${path}`
   const res = await fetch(url, {

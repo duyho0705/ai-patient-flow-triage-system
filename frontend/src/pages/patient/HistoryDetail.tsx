@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPortalHistoryDetail } from '@/api/portal'
+import { getPortalHistoryDetail, seedMedicalData } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
 import {
     ChevronLeft,
@@ -21,16 +21,19 @@ import {
     Check,
     Thermometer,
     Heart,
-    Wind
+    Wind,
+    Sparkles
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { toast } from 'react-hot-toast'
 
 export default function PatientHistoryDetail() {
     const { id } = useParams()
     const navigate = useNavigate()
     const { headers } = useTenant()
+    const queryClient = useQueryClient()
 
     const { data: detail, isLoading } = useQuery({
         queryKey: ['portal-history-detail', id],
@@ -113,6 +116,21 @@ export default function PatientHistoryDetail() {
                     </h1>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={async () => {
+                            try {
+                                await seedMedicalData(headers);
+                                queryClient.invalidateQueries({ queryKey: ['portal-history-detail', id] });
+                                toast.success('Đã làm mới dữ liệu y tế mẫu');
+                            } catch (e) {
+                                toast.error('Lỗi khi tạo dữ liệu');
+                            }
+                        }}
+                        className="flex items-center justify-center gap-2 px-5 py-3 bg-blue-50 text-blue-600 rounded-2xl font-bold hover:bg-blue-100 transition-all border border-blue-100"
+                    >
+                        <Sparkles className="w-4 h-4" />
+                        Tạo dữ liệu mẫu
+                    </button>
                     <button className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-100 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
                         <Printer className="w-4 h-4" />
                         In KQ
