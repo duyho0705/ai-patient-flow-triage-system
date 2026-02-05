@@ -151,15 +151,38 @@ public class QueueService {
                 List<QueueEntry> waiting = queueEntryRepository.findByBranch_IdAndStatusOrderByJoinedAtAsc(branchId,
                                 "WAITING");
 
-                // Limited waiting to top 10
                 List<QueueEntry> nextWaiting = waiting.stream().limit(10).toList();
+                // Mapping with wait time logic
+                List<vn.clinic.patientflow.api.dto.QueueEntryDto> waitingDtos = new java.util.ArrayList<>();
+                for (int i = 0; i < nextWaiting.size(); i++) {
+                        var dto = vn.clinic.patientflow.api.dto.QueueEntryDto.fromEntity(nextWaiting.get(i));
+                        dto.setPatientName(maskName(dto.getPatientName()));
+                        dto.setPeopleAhead(i);
+                        dto.setEstimatedWaitMinutes(i * 10); // Mock: assume 10 mins per patient
+                        waitingDtos.add(dto);
+                }
 
                 return vn.clinic.patientflow.api.dto.PublicQueueDto.builder()
                                 .branchName(branch.getNameVi())
                                 .calledEntries(called.stream()
-                                                .map(vn.clinic.patientflow.api.dto.QueueEntryDto::fromEntity).toList())
-                                .waitingEntries(nextWaiting.stream()
-                                                .map(vn.clinic.patientflow.api.dto.QueueEntryDto::fromEntity).toList())
+                                                .map(vn.clinic.patientflow.api.dto.QueueEntryDto::fromEntity)
+                                                .peek(d -> d.setPatientName(maskName(d.getPatientName())))
+                                                .toList())
+                                .waitingEntries(waitingDtos)
                                 .build();
+        }
+
+        private String maskName(String name) {
+                if (name == null || name.isEmpty())
+                        return "***";
+                String[] parts = name.split(" ");
+                if (parts.length == 0)
+                        return "***";
+
+                StringBuilder masked = new StringBuilder(parts[0]);
+                for (int i = 1; i < parts.length; i++) {
+                        masked.append(" *");
+                }
+                return masked.toString();
         }
 }

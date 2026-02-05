@@ -465,10 +465,16 @@ public class PatientPortalController {
         @Operation(summary = "Đặt lịch hẹn mới")
         public AppointmentDto createAppointment(@RequestBody CreateAppointmentRequest request) {
                 Patient p = getAuthenticatedPatient();
+
+                // Allow booking for self or handle relative (simplified: if p exists, tenant
+                // check is done by service)
+                UUID targetId = request.getPatientId() != null ? request.getPatientId() : p.getId();
+
                 vn.clinic.patientflow.scheduling.domain.SchedulingAppointment appointment = vn.clinic.patientflow.scheduling.domain.SchedulingAppointment
                                 .builder()
+                                .tenant(p.getTenant())
                                 .branch(new vn.clinic.patientflow.tenant.domain.TenantBranch(request.getBranchId()))
-                                .patient(p)
+                                .patient(new Patient(targetId))
                                 .appointmentDate(request.getAppointmentDate())
                                 .slotStartTime(request.getSlotStartTime())
                                 .slotEndTime(request.getSlotEndTime())
@@ -528,10 +534,12 @@ public class PatientPortalController {
         @Operation(summary = "Gợi ý phân loại AI dựa trên triệu chứng")
         public TriageSuggestionResult getPreTriage(
                         @RequestBody String symptoms) {
-                // Simple pre-triage with text only
+                Patient p = getAuthenticatedPatient();
+                int age = java.time.Period.between(p.getDateOfBirth(), LocalDate.now()).getYears();
+
                 var input = AiTriageService.TriageInput.builder()
                                 .chiefComplaintText(symptoms)
-                                .ageInYears(30) // Default age if not known
+                                .ageInYears(age)
                                 .build();
                 return triageService.suggestAiTriage(input);
         }

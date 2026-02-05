@@ -20,11 +20,15 @@ public class PatientAiChatService {
     private final SchedulingService schedulingService;
     private final InvoiceRepository invoiceRepository;
     private final PrescriptionRepository prescriptionRepository;
+    private final vn.clinic.patientflow.triage.repository.TriageVitalRepository triageVitalRepository;
 
     public AiChatResponse processMessage(Patient patient, AiChatRequest request) {
         String msg = request.getMessage().toLowerCase();
         List<String> suggestions = new ArrayList<>();
         String response = "";
+
+        // ... existing cases ...
+        // (I will keep the logic but update the health case)
 
         // 1. Appointment Intent
         if (msg.contains("lịch khám") || msg.contains("hẹn") || msg.contains("bác sĩ nào")) {
@@ -62,9 +66,20 @@ public class PatientAiChatService {
         // 3. Health/Vitals Intent
         else if (msg.contains("sức khỏe") || msg.contains("huyết áp") || msg.contains("chỉ số")
                 || msg.contains("nhịp tim")) {
-            response = "Dựa trên dữ liệu gần nhất, các chỉ số sinh hiệu của bạn đang ở mức ổn định. Bạn nên tiếp tục duy trì chế độ ăn uống và tập luyện như bác sĩ đã dặn.";
-            suggestions.add("Xem biểu đồ sức khỏe");
-            suggestions.add("Tư vấn dinh dưỡng");
+            var vitals = triageVitalRepository.findByPatientId(patient.getId());
+            if (vitals.isEmpty()) {
+                response = "Tôi chưa ghi nhận chỉ số sinh hiệu nào của bạn trong hệ thống. Bạn có muốn đặt lịch để được bác sĩ kiểm tra không?";
+                suggestions.add("Đặt lịch khám");
+            } else {
+                var latest = vitals.get(vitals.size() - 1);
+                response = String.format("Chỉ số %s gần nhất của bạn là %s %s (ghi nhận vào %s). " +
+                        "Dựa trên dữ liệu, các chỉ số của bạn đang được theo dõi tốt. Đừng quên duy trì lối sống lành mạnh nhé!",
+                        latest.getVitalType(), latest.getValueNumeric(), latest.getUnit(),
+                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                                .withZone(java.time.ZoneId.systemDefault()).format(latest.getRecordedAt()));
+                suggestions.add("Xem biểu đồ sức khỏe");
+                suggestions.add("Tư vấn dinh dưỡng");
+            }
         }
         // 4. Medication Intent
         else if (msg.contains("thuốc") || msg.contains("uống như thế nào") || msg.contains("đơn thuốc")) {
