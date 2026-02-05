@@ -18,7 +18,10 @@ import {
     Beaker,
     Image as ImageIcon,
     AlertCircle,
-    Check
+    Check,
+    Thermometer,
+    Heart,
+    Wind
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import jsPDF from 'jspdf'

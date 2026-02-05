@@ -111,14 +111,7 @@ public class PatientController {
     @Operation(summary = "Danh sách bảo hiểm của bệnh nhân")
     public List<PatientInsuranceDto> getInsurances(@PathVariable UUID id) {
         return patientService.getInsurances(id).stream()
-                .map(i -> new PatientInsuranceDto(
-                        i.getId(),
-                        i.getInsuranceType(),
-                        i.getInsuranceNumber(),
-                        i.getHolderName(),
-                        i.getValidFrom(),
-                        i.getValidTo(),
-                        i.getIsPrimary()))
+                .map(PatientInsuranceDto::fromEntity)
                 .collect(Collectors.toList());
     }
 }
