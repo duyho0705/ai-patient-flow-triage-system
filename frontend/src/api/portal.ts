@@ -138,3 +138,15 @@ export async function deletePortalInsurance(id: string, tenant: TenantHeaders | 
 export async function seedMedicalData(tenant: TenantHeaders | null): Promise<void> {
     return post<void>('/portal/seed-medical-data', {}, tenant)
 }
+
+export async function getPortalChatDoctors(tenant: TenantHeaders | null): Promise<any[]> {
+    return get<any[]>('/portal/chat/doctors', tenant)
+}
+
+export async function getPortalChatHistory(doctorId: string, tenant: TenantHeaders | null): Promise<any[]> {
+    return get<any[]>(`/portal/chat/history/${doctorId}`, tenant)
+}
+
+export async function sendPortalChatMessage(doctorId: string, content: string, tenant: TenantHeaders | null): Promise<any> {
+    return post<any>('/portal/chat/send', { doctorUserId: doctorId, content }, tenant)
+}

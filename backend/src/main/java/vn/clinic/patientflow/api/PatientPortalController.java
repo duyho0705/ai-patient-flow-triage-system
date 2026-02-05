@@ -40,6 +40,9 @@ import vn.clinic.patientflow.api.dto.PatientDashboardDto;
 import vn.clinic.patientflow.api.dto.PatientDto;
 import vn.clinic.patientflow.api.dto.PatientInsuranceDto;
 import vn.clinic.patientflow.api.dto.PatientNotificationDto;
+import vn.clinic.patientflow.api.dto.DoctorInfoDto;
+import vn.clinic.patientflow.api.dto.PatientChatMessageDto;
+import vn.clinic.patientflow.api.dto.SendChatMessageRequest;
 import vn.clinic.patientflow.api.dto.PatientPortalStatusDto;
 import vn.clinic.patientflow.api.dto.PatientRelativeDto;
 import vn.clinic.patientflow.api.dto.QueueEntryDto;
@@ -66,6 +69,8 @@ import vn.clinic.patientflow.patient.domain.PatientInsurance;
 import vn.clinic.patientflow.patient.domain.PatientRelative;
 import vn.clinic.patientflow.patient.repository.PatientInsuranceRepository;
 import vn.clinic.patientflow.patient.repository.PatientRelativeRepository;
+import vn.clinic.patientflow.patient.service.PatientAiChatService;
+import vn.clinic.patientflow.patient.service.PatientChatService;
 import vn.clinic.patientflow.patient.service.PatientNotificationService;
 import vn.clinic.patientflow.patient.service.PatientService;
 import vn.clinic.patientflow.queue.service.QueueService;
@@ -104,6 +109,8 @@ public class PatientPortalController {
         private final DiagnosticImageRepository diagnosticImageRepository;
         private final PatientRelativeRepository patientRelativeRepository;
         private final PatientInsuranceRepository patientInsuranceRepository;
+        private final PatientAiChatService patientAiChatService;
+        private final PatientChatService patientChatService;
 
         @PostMapping("/profile/change-password")
         @PreAuthorize("hasRole('PATIENT')")
@@ -513,70 +520,7 @@ public class PatientPortalController {
         @Operation(summary = "Chat với Trợ lý AI Thông minh")
         public AiChatResponse getAiChat(@RequestBody AiChatRequest request) {
                 Patient p = getAuthenticatedPatient();
-                String msg = request.getMessage().toLowerCase();
-
-                // 1. Smart Intent Detection: Appointments
-                if (msg.contains("lịch khám") || msg.contains("hẹn") || msg.contains("appointment")) {
-                        var appointments = schedulingService.getUpcomingAppointmentsByPatient(p.getId());
-                        if (appointments.isEmpty()) {
-                                return AiChatResponse.builder()
-                                                .response("Chào bạn " + p.getFullNameVi()
-                                                                + ", hiện tại bạn chưa có lịch hẹn nào sắp tới. Bạn có muốn tôi giúp đặt lịch mới không?")
-                                                .suggestions(List.of("Đặt lịch khám mới", "Xem lịch sử khám"))
-                                                .build();
-                        } else {
-                                var appt = appointments.get(0);
-                                String timeStr = appt.getAppointmentDate().toString() + " lúc "
-                                                + appt.getSlotStartTime();
-                                return AiChatResponse.builder()
-                                                .response("Chào bạn " + p.getFullNameVi()
-                                                                + ", bạn có một lịch hẹn sắp tới vào ngày " + timeStr
-                                                                + " tại " + appt.getBranch().getNameVi()
-                                                                + ". Bạn cần tôi nhắc lại lưu ý gì cho ca khám này không?")
-                                                .suggestions(List.of("Cơ sở này ở đâu?", "Lưu ý gì trước khi khám?",
-                                                                "Hủy lịch hẹn"))
-                                                .build();
-                        }
-                }
-
-                // 2. New Intent: Billing/Payment
-                if (msg.contains("thanh toán") || msg.contains("hóa đơn") || msg.contains("tiền")
-                                || msg.contains("billing")) {
-                        var pending = invoiceRepository.findByPatientIdAndStatusOrderByCreatedAtDesc(p.getId(),
-                                        "PENDING");
-                        if (pending.isEmpty()) {
-                                return AiChatResponse.builder()
-                                                .response("Bạn đã hoàn tất tất cả các hóa đơn. Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi!")
-                                                .suggestions(List.of("Xem lịch sử thanh toán", "Đặt lịch khám mới"))
-                                                .build();
-                        } else {
-                                var inv = pending.get(0);
-                                return AiChatResponse.builder()
-                                                .response(String.format(
-                                                                "Bạn có một hóa đơn chưa thanh toán với số tiền %,.0f đ. ",
-                                                                inv.getFinalAmount().doubleValue())
-                                                                + "Bạn có muốn tôi hướng dẫn cách thanh toán nhanh qua QR không?")
-                                                .suggestions(List.of("Thanh toán ngay", "Xem chi tiết hóa đơn"))
-                                                .build();
-                        }
-                }
-
-                // 3. Smart Intent Detection: Vitals/Health
-                if (msg.contains("sức khỏe") || msg.contains("chỉ số") || msg.contains("vitals")) {
-                        return AiChatResponse.builder()
-                                        .response(
-                                                        "Tôi đã xem qua các chỉ số gần đây của bạn. Mọi thứ hiện tại đều ổn định. Tuy nhiên, nếu bạn cảm thấy mệt mỏi hoặc có triệu chứng lạ, hãy cho tôi biết chi tiết hơn nhé.")
-                                        .suggestions(List.of("Xem biểu đồ huyết áp", "Nhịp tim của tôi thế nào?"))
-                                        .build();
-                }
-
-                // 3. Default AI Response (Mocking LLM)
-                return AiChatResponse.builder()
-                                .response("Chào " + p.getFullNameVi()
-                                                + ", tôi là Trợ lý AI của phòng khám. Tôi có thể giúp bạn kiểm tra lịch hẹn, tư vấn sức khỏe cơ bản hoặc giải đáp các thắc mắc về đơn thuốc. Bạn cần tôi giúp gì hôm nay?")
-                                .suggestions(List.of("Kiểm tra lịch khám", "Hướng dẫn dùng thuốc",
-                                                "Hỏi về triệu chứng"))
-                                .build();
+                return patientAiChatService.processMessage(p, request);
         }
 
         @PostMapping("/ai-pre-triage")
@@ -651,6 +595,29 @@ public class PatientPortalController {
                                 .peopleAhead((long) ahead)
                                 .estimatedWaitMinutes(ahead * 10)
                                 .build();
+        }
+
+        @GetMapping("/chat/doctors")
+        @PreAuthorize("hasRole('PATIENT')")
+        @Operation(summary = "Lấy danh sách bác sĩ tư vấn")
+        public List<DoctorInfoDto> getChatDoctors() {
+                return patientChatService.getAvailableDoctors();
+        }
+
+        @GetMapping("/chat/history/{doctorId}")
+        @PreAuthorize("hasRole('PATIENT')")
+        @Operation(summary = "Lấy lịch sử chat với bác sĩ")
+        public List<PatientChatMessageDto> getChatHistory(@PathVariable UUID doctorId) {
+                Patient p = getAuthenticatedPatient();
+                return patientChatService.getChatHistory(p, doctorId);
+        }
+
+        @PostMapping("/chat/send")
+        @PreAuthorize("hasRole('PATIENT')")
+        @Operation(summary = "Gửi tin nhắn cho bác sĩ")
+        public PatientChatMessageDto sendChatMessage(@RequestBody SendChatMessageRequest request) {
+                Patient p = getAuthenticatedPatient();
+                return patientChatService.sendMessage(p, request.getDoctorUserId(), request.getContent());
         }
 
         protected Patient getAuthenticatedPatient() {

@@ -57,7 +57,7 @@ export default function PatientDashboard() {
 
     return (
         <>
-            <FloatingAssistant />
+            <FloatingAssistant dashboard={dashboard} />
             <div className="space-y-10">
                 {/* Hero Welcome */}
                 <header className="relative overflow-hidden bg-slate-900 rounded-[3rem] p-8 md:p-12 text-white">
@@ -328,19 +328,12 @@ export default function PatientDashboard() {
                                     </div>
                                     <div className="bg-slate-900 p-8 rounded-[2rem] relative group">
                                         <div className="aspect-square bg-white rounded-2xl flex items-center justify-center p-4 shadow-inner">
-                                            {/* Simulated QR Code SVG */}
-                                            <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900">
-                                                <rect x="10" y="10" width="25" height="25" fill="currentColor" />
-                                                <rect x="65" y="10" width="25" height="25" fill="currentColor" />
-                                                <rect x="10" y="65" width="25" height="25" fill="currentColor" />
-                                                <rect x="15" y="15" width="15" height="15" fill="white" />
-                                                <rect x="70" y="15" width="15" height="15" fill="white" />
-                                                <rect x="15" y="70" width="15" height="15" fill="white" />
-                                                <rect x="40" y="10" width="10" height="10" fill="currentColor" />
-                                                <rect x="55" y="40" width="15" height="20" fill="currentColor" />
-                                                <rect x="40" y="55" width="10" height="35" fill="currentColor" />
-                                                <rect x="75" y="65" width="15" height="15" fill="currentColor" />
-                                            </svg>
+                                            {/* Real QR Code using Cloud API for reliability */}
+                                            <img
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${dashboard?.patientId}&bgcolor=ffffff&color=0f172a&margin=0`}
+                                                alt="Check-in QR"
+                                                className="w-full h-full"
+                                            />
                                         </div>
                                         <div className="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem] pointer-events-none" />
                                     </div>
@@ -358,11 +351,11 @@ export default function PatientDashboard() {
     )
 }
 
-function FloatingAssistant() {
+function FloatingAssistant({ dashboard }: { dashboard: any }) {
     const { headers } = useTenant()
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
-        { role: 'assistant', content: 'Chào bạn! Tôi là Trợ lý AI của phòng khám. Tôi có thể giúp bạn kiểm tra lịch khám, xem chỉ số sức khỏe hoặc giải đáp thắc mắc về đơn thuốc. Bạn cần tôi giúp gì không?' }
+        { role: 'assistant', content: `Chào ${dashboard?.patientName}! Tôi là Trợ lý AI của phòng khám. Tôi có thể giúp bạn kiểm tra lịch khám, xem chỉ số sức khỏe hoặc giải đáp thắc mắc về đơn thuốc. Bạn cần tôi giúp gì không?` }
     ])
     const [input, setInput] = useState('')
     const [loading, setLoading] = useState(false)
