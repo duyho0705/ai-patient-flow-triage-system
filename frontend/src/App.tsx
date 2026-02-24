@@ -24,6 +24,7 @@ import PatientHistoryDetail from '@/pages/patient/HistoryDetail'
 import PatientAppointments from '@/pages/patient/Appointments'
 import PatientBooking from '@/pages/patient/Booking'
 import PatientProfile from '@/pages/patient/Profile'
+import PatientVitals from '@/pages/patient/Vitals'
 import PatientBilling from '@/pages/patient/Billing'
 import PatientPaymentReturn from '@/pages/patient/PaymentReturn'
 import PatientInsurance from '@/pages/patient/Insurance'
@@ -58,6 +59,7 @@ function App() {
               <Route index element={<PatientDashboard />} />
               <Route path="history" element={<PatientHistory />} />
               <Route path="history/:id" element={<PatientHistoryDetail />} />
+              <Route path="vitals" element={<PatientVitals />} />
               <Route path="appointments" element={<PatientAppointments />} />
               <Route path="booking" element={<PatientBooking />} />
               <Route path="billing" element={<PatientBilling />} />

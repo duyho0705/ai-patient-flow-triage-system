@@ -5,20 +5,20 @@ import { useTenant } from '@/context/TenantContext'
 import { requestForToken } from '@/firebase'
 import { registerPortalFcmToken } from '@/api/portal'
 import {
-    Home,
+    LayoutGrid,
+    Pill,
+    BarChart3,
     Calendar,
-    History,
+    MessageSquare,
     User,
     LogOut,
     Bell,
-    MessageSquare,
     Search,
     Settings,
-    ShieldCheck,
     X,
     Circle,
-    Activity,
-    LifeBuoy
+    LifeBuoy,
+    BriefcaseMedical
 } from 'lucide-react'
 import { getPortalNotifications, markPortalNotificationAsRead, markPortalAllNotificationsAsRead, getPortalProfile, getPortalInvoices } from '@/api/portal'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -101,9 +101,9 @@ export function PatientLayout({ children }: PatientLayoutProps) {
     }
 
     const navItems = [
-        { path: '/patient', label: 'Bảng điều khiển', icon: Home },
-        { path: '/patient/history', label: 'Đơn thuốc', icon: History },
-        { path: '/patient/vitals', label: 'Chỉ số sức khỏe', icon: Activity },
+        { path: '/patient', label: 'Bảng điều khiển', icon: LayoutGrid },
+        { path: '/patient/history', label: 'Đơn thuốc', icon: Pill },
+        { path: '/patient/vitals', label: 'Chỉ số sức khỏe', icon: BarChart3 },
         { path: '/patient/appointments', label: 'Lịch hẹn', icon: Calendar },
         { path: '/patient/chat', label: 'Tin nhắn bác sĩ', icon: MessageSquare },
         { path: '/patient/profile', label: 'Hồ sơ cá nhân', icon: User },
@@ -118,15 +118,10 @@ export function PatientLayout({ children }: PatientLayoutProps) {
         <div className="min-h-screen bg-slate-50 pb-24 lg:pb-0 lg:pl-64">
             {/* Sidebar for Desktop */}
             <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-6 z-50">
-                <div className="p-6 flex items-center gap-3 mb-6">
-                    <div className="bg-emerald-500 rounded-lg p-2 flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                        <ShieldCheck className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <h1 className="font-bold text-lg leading-none text-slate-900 dark:text-white">Sống Khỏe</h1>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Quản lý sức khỏe thông minh</p>
-                    </div>
-                </div>
+                <Link to="/" className="flex items-center gap-3 mb-10 px-2 hover:opacity-80 transition-opacity">
+                    <BriefcaseMedical className="h-9 w-9 text-emerald-500" strokeWidth={2.5} />
+                    <h1 className="font-semibold text-2xl text-slate-800 dark:text-slate-100 leading-none tracking-tight">Sống Khỏe</h1>
+                </Link>
 
                 <nav className="flex-1 space-y-2">
                     {navItems.map((item) => {
@@ -136,18 +131,16 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${isActive
-                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200'
-                                    : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                                className={`flex items-center gap-4 px-5 py-3.5 rounded-full font-bold transition-all ${isActive
+                                    ? 'bg-emerald-500/10 text-emerald-500'
+                                    : 'text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-300'
                                     }`}
                             >
-                                <div className="relative">
-                                    <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                                    {isBilling && hasPendingInvoice && (
-                                        <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 ${isActive ? 'border-blue-600' : 'border-white'}`} />
-                                    )}
-                                </div>
-                                {item.label}
+                                <item.icon className={`w-6 h-6 ${isActive ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`} />
+                                <span className="text-base tracking-tight">{item.label}</span>
+                                {isBilling && hasPendingInvoice && !isActive && (
+                                    <span className="ml-auto w-2 h-2 bg-rose-500 rounded-full" />
+                                )}
                             </Link>
                         )
                     })}

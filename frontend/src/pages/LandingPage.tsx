@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import {
   CheckCircle,
-  BriefcaseMedical,
   LineChart,
   FileText,
   Leaf,
@@ -16,7 +15,8 @@ import {
   Instagram,
   Facebook,
   Twitter,
-  ArrowRight
+  ArrowRight,
+  BriefcaseMedical
 } from 'lucide-react'
 import { LoginModal } from '@/pages/Login'
 
