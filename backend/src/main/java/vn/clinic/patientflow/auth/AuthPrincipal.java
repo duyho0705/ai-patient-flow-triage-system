@@ -20,11 +20,21 @@ public class AuthPrincipal {
     private final UUID branchId;
     private final List<String> roles;
 
-    public static UUID getCurrentUserId() {
+    public static AuthPrincipal getCurrent() {
         var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof AuthPrincipal principal) {
-            return principal.getUserId();
+            return principal;
         }
         return null;
+    }
+
+    public static UUID getCurrentUserId() {
+        var p = getCurrent();
+        return p != null ? p.getUserId() : null;
+    }
+
+    public static String getCurrentUserEmail() {
+        var p = getCurrent();
+        return p != null ? p.getEmail() : null;
     }
 }

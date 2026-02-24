@@ -11,5 +11,10 @@ public interface TriageVitalRepository extends JpaRepository<TriageVital, UUID> 
     List<TriageVital> findByTriageSessionIdOrderByRecordedAtAsc(UUID triageSessionId);
 
     @org.springframework.data.jpa.repository.Query("SELECT v FROM TriageVital v JOIN v.triageSession s WHERE s.patient.id = :patientId ORDER BY v.recordedAt ASC")
-    List<TriageVital> findByPatientId(@org.springframework.data.repository.query.Param("patientId") UUID patientId);
+    List<vn.clinic.patientflow.triage.domain.TriageVital> findByPatientId(
+            @org.springframework.data.repository.query.Param("patientId") UUID patientId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT v FROM TriageVital v JOIN v.triageSession s WHERE s.patient.id = :patientId ORDER BY v.recordedAt DESC")
+    List<TriageVital> findTop5ByPatientIdOrderByRecordedAtDesc(
+            @org.springframework.data.repository.query.Param("patientId") UUID patientId);
 }

@@ -12,6 +12,8 @@ import java.util.UUID;
 public interface PatientChatConversationRepository extends JpaRepository<PatientChatConversation, UUID> {
     List<PatientChatConversation> findByPatientId(UUID patientId);
 
+    List<PatientChatConversation> findByDoctorUserId(UUID doctorUserId);
+
     Optional<PatientChatConversation> findByPatientIdAndDoctorUserIdAndStatus(UUID patientId, UUID doctorUserId,
             String status);
 }

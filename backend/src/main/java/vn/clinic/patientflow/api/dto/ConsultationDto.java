@@ -20,6 +20,7 @@ public class ConsultationDto {
         private Instant endedAt;
         private String diagnosisNotes;
         private String prescriptionNotes;
+        private String aiInsights;
 
         private UUID queueEntryId;
         private UUID triageSessionId;
@@ -66,6 +67,7 @@ public class ConsultationDto {
                                 .endedAt(entity.getEndedAt())
                                 .diagnosisNotes(entity.getDiagnosisNotes())
                                 .prescriptionNotes(entity.getPrescriptionNotes())
+                                .aiInsights(entity.getAiInsights())
                                 .build();
         }
 }

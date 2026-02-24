@@ -14,8 +14,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreatePrescriptionRequest {
+    @jakarta.validation.constraints.NotNull(message = "Phiên khám không được để trống")
     private UUID consultationId;
+
     private String notes;
+
+    @jakarta.validation.constraints.NotEmpty(message = "Đơn thuốc phải có ít nhất một loại thuốc")
     private List<ItemRequest> items;
 
     @Data
@@ -25,8 +29,14 @@ public class CreatePrescriptionRequest {
     public static class ItemRequest {
         private UUID productId;
         private String productNameCustom;
+
+        @jakarta.validation.constraints.NotNull(message = "Số lượng không được để trống")
+        @jakarta.validation.constraints.Positive(message = "Số lượng phải lớn hơn 0")
         private BigDecimal quantity;
+
+        @jakarta.validation.constraints.NotBlank(message = "Hướng dẫn sử dụng không được để trống")
         private String dosageInstruction;
+
         private BigDecimal unitPrice;
     }
 }

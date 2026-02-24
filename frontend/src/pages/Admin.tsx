@@ -15,7 +15,7 @@ export function Admin() {
   const [activeTab, setActiveTab] = useState<AdminTab>('users')
 
   const userRoles = authUser?.roles || []
-  const isAdmin = userRoles.includes('ADMIN') || userRoles.includes('CLINIC_MANAGER')
+  const isAdmin = userRoles.some(r => ['admin', 'clinic_manager', 'ADMIN', 'CLINIC_MANAGER'].includes(r))
 
   if (!isAdmin) {
     return (
@@ -27,61 +27,26 @@ export function Admin() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl pb-20 space-y-10 animate-in fade duration-700">
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-blue-600 ${activeTab === 'users' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'
-            }`}
-        >
-          <Users className={`h-4 w-4 ${activeTab === 'users' ? 'text-blue-600' : 'text-slate-300 group-hover:text-blue-600'}`} />
-          Nhân sự
-        </button>
-
-        <button
-          onClick={() => setActiveTab('branches')}
-          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-emerald-600 ${activeTab === 'branches' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-400'
-            }`}
-        >
-          <Building2 className={`h-4 w-4 ${activeTab === 'branches' ? 'text-emerald-600' : 'text-slate-300 group-hover:text-emerald-600'}`} />
-          Chi nhánh
-        </button>
-
-        <button
-          onClick={() => setActiveTab('services')}
-          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-amber-600 ${activeTab === 'services' ? 'border-amber-600 text-amber-600' : 'border-transparent text-slate-400'
-            }`}
-        >
-          <Layers className={`h-4 w-4 ${activeTab === 'services' ? 'text-amber-600' : 'text-slate-300 group-hover:text-amber-600'}`} />
-          Dịch vụ & Gói khám
-        </button>
-
-        <button
-          onClick={() => setActiveTab('ai')}
-          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-purple-600 ${activeTab === 'ai' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-400'
-            }`}
-        >
-          <Settings className={`h-4 w-4 ${activeTab === 'ai' ? 'text-purple-600' : 'text-slate-300 group-hover:text-purple-600'}`} />
-          Cấu hình AI
-        </button>
-
-        <button
-          onClick={() => setActiveTab('audit')}
-          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-slate-900 ${activeTab === 'audit' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400'
-            }`}
-        >
-          <History className={`h-4 w-4 ${activeTab === 'audit' ? 'text-slate-900' : 'text-slate-300 group-hover:text-slate-900'}`} />
-          Nhật ký (Audit)
-        </button>
-
-        <button
-          onClick={() => setActiveTab('revenue')}
-          className={`group flex items-center gap-2 border-b-2 px-6 py-5 text-xs font-black uppercase tracking-widest transition-all hover:text-blue-600 ${activeTab === 'revenue' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'
-            }`}
-        >
-          <BarChart3 className={`h-4 w-4 ${activeTab === 'revenue' ? 'text-blue-600' : 'text-slate-300 group-hover:text-blue-600'}`} />
-          Doanh thu
-        </button>
+    <div className="pb-12 space-y-4 animate-in fade duration-700">
+      <div className="flex flex-wrap items-center gap-1 border-b border-slate-100">
+        {[
+          { key: 'users' as AdminTab, label: 'Nhân sự', icon: Users, color: 'blue' },
+          { key: 'branches' as AdminTab, label: 'Chi nhánh', icon: Building2, color: 'emerald' },
+          { key: 'services' as AdminTab, label: 'Dịch vụ', icon: Layers, color: 'amber' },
+          { key: 'ai' as AdminTab, label: 'Cấu hình', icon: Settings, color: 'purple' },
+          { key: 'audit' as AdminTab, label: 'Nhật ký', icon: History, color: 'slate' },
+          { key: 'revenue' as AdminTab, label: 'Doanh thu', icon: BarChart3, color: 'blue' },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`group flex items-center gap-1.5 border-b-2 px-4 py-3 text-[11px] font-bold uppercase tracking-wider transition-all hover:text-${tab.color}-600 ${activeTab === tab.key ? `border-${tab.color === 'slate' ? 'slate-900' : tab.color + '-600'} text-${tab.color === 'slate' ? 'slate-900' : tab.color + '-600'}` : 'border-transparent text-slate-400'
+              }`}
+          >
+            <tab.icon className="h-3.5 w-3.5" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       <div className="min-h-[500px]">

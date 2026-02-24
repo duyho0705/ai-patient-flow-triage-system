@@ -119,4 +119,23 @@ public class QueueBroadcastService {
             }
         }
     }
+
+    /**
+     * Thông báo cho nhân viên y tế (Bác sĩ, Điều dưỡng) khi có trường hợp cấp
+     * cứu/nguy kịch.
+     * Topic format: /topic/staff/{branchId}
+     */
+    public void broadcastUrgentAlert(UUID branchId, String patientName, String acuityLevel, String complaint) {
+        String destination = "/topic/staff/" + branchId;
+        log.warn("Broadcasting URGENT ALERT to {}: BN {} - Mức độ: {}", destination, patientName, acuityLevel);
+
+        Map<String, String> alert = Map.of(
+                "type", "URGENT_TRIAGE_ALERT",
+                "patientName", patientName,
+                "acuityLevel", acuityLevel,
+                "complaint", complaint,
+                "timestamp", java.time.Instant.now().toString());
+
+        messagingTemplate.convertAndSend(destination, alert);
+    }
 }

@@ -4,9 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import vn.clinic.patientflow.api.dto.ApiResponse;
 import vn.clinic.patientflow.api.dto.AuthUserDto;
 import vn.clinic.patientflow.api.dto.LoginRequest;
 import vn.clinic.patientflow.api.dto.LoginResponse;
@@ -24,39 +27,77 @@ import vn.clinic.patientflow.identity.service.IdentityService;
 @Tag(name = "Auth", description = "Đăng nhập và thông tin user")
 public class AuthController {
 
-    private final AuthService authService;
-    private final IdentityService identityService;
+        private final AuthService authService;
+        private final IdentityService identityService;
 
-    @PostMapping("/login")
-    @Operation(summary = "Đăng nhập", description = "Trả về JWT và thông tin user. Cần tenantId; branchId tùy chọn.")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
-    }
+        @PostMapping("/login")
+        @Operation(summary = "Đăng nhập", description = "Trả về JWT và thông tin user (Cũng đặt JWT trong HttpOnly Cookie).")
+        public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+                LoginResponse response = authService.login(request);
 
-    @PostMapping("/register")
-    @Operation(summary = "Đăng ký", description = "Tự đăng ký tài khoản mới cho tenant.")
-    public ResponseEntity<LoginResponse> register(
-            @Valid @RequestBody vn.clinic.patientflow.api.dto.RegisterRequest request) {
-        LoginResponse response = authService.register(request);
-        return ResponseEntity.ok(response);
-    }
+                ResponseCookie cookie = ResponseCookie.from("jwt", response.getToken())
+                                .httpOnly(true)
+                                .secure(false) // Set true in production with HTTPS
+                                .path("/")
+                                .maxAge(24 * 60 * 60) // 1 day
+                                .sameSite("Lax")
+                                .build();
 
-    @GetMapping("/me")
-    @Operation(summary = "Thông tin user hiện tại", description = "Lấy thông tin user từ JWT (cần Authorization: Bearer <token>).")
-    public ResponseEntity<AuthUserDto> me(@AuthenticationPrincipal AuthPrincipal principal) {
-        if (principal == null) {
-            return ResponseEntity.status(401).build();
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                                .body(ApiResponse.success(response));
         }
-        IdentityUser user = identityService.getUserById(principal.getUserId());
-        AuthUserDto dto = AuthUserDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .fullNameVi(user.getFullNameVi())
-                .roles(principal.getRoles())
-                .tenantId(principal.getTenantId())
-                .branchId(principal.getBranchId())
-                .build();
-        return ResponseEntity.ok(dto);
-    }
+
+        @PostMapping("/register")
+        @Operation(summary = "Đăng ký", description = "Tự đăng ký tài khoản mới và đặt JWT Cookie.")
+        public ResponseEntity<ApiResponse<LoginResponse>> register(
+                        @Valid @RequestBody vn.clinic.patientflow.api.dto.RegisterRequest request) {
+                LoginResponse response = authService.register(request);
+
+                ResponseCookie cookie = ResponseCookie.from("jwt", response.getToken())
+                                .httpOnly(true)
+                                .secure(false)
+                                .path("/")
+                                .maxAge(24 * 60 * 60)
+                                .sameSite("Lax")
+                                .build();
+
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                                .body(ApiResponse.success(response));
+        }
+
+        @PostMapping("/logout")
+        @Operation(summary = "Đăng xuất", description = "Xóa JWT Cookie.")
+        public ResponseEntity<ApiResponse<Void>> logout() {
+                ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                                .httpOnly(true)
+                                .secure(false)
+                                .path("/")
+                                .maxAge(0)
+                                .sameSite("Lax")
+                                .build();
+
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                                .body(ApiResponse.success(null));
+        }
+
+        @GetMapping("/me")
+        @Operation(summary = "Thông tin user hiện tại", description = "Lấy thông tin user từ JWT (cần Authorization: Bearer <token>).")
+        public ResponseEntity<ApiResponse<AuthUserDto>> me(@AuthenticationPrincipal AuthPrincipal principal) {
+                if (principal == null) {
+                        return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+                }
+                IdentityUser user = identityService.getUserById(principal.getUserId());
+                AuthUserDto dto = AuthUserDto.builder()
+                                .id(user.getId())
+                                .email(user.getEmail())
+                                .fullNameVi(user.getFullNameVi())
+                                .roles(principal.getRoles())
+                                .tenantId(principal.getTenantId())
+                                .branchId(principal.getBranchId())
+                                .build();
+                return ResponseEntity.ok(ApiResponse.success(dto));
+        }
 }

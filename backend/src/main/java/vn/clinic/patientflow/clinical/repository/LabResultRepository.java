@@ -9,4 +9,6 @@ import java.util.UUID;
 
 public interface LabResultRepository extends JpaRepository<LabResult, UUID> {
     List<LabResult> findByConsultation(ClinicalConsultation consultation);
+
+    List<LabResult> findByConsultationPatientIdOrderByCreatedAtDesc(UUID patientId);
 }

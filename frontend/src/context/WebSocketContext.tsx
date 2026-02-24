@@ -17,8 +17,10 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     useEffect(() => {
         if (!user) return
 
-        const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8080'
-        const wsUrl = apiBase.endsWith('/') ? apiBase + 'ws-queue' : apiBase + '/ws-queue'
+        const apiBase = import.meta.env.VITE_API_BASE
+        const wsUrl = apiBase
+            ? (apiBase.endsWith('/') ? apiBase + 'ws-queue' : apiBase + '/ws-queue')
+            : '/ws-queue'
 
         const client = new Client({
             webSocketFactory: () => new SockJS(wsUrl),

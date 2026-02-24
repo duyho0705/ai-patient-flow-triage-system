@@ -8,9 +8,21 @@ import {
     completeConsultation,
     createPrescription,
     getPatientHistory,
-    getVitals
+    getVitals,
+    getAiClinicalSupport,
+    sendClinicalAiChat,
+    verifyPrescriptionAi,
+    getCdsAdvice,
+    getEarlyWarning,
+    getSuggestedTemplates,
+    orderDiagnosticImage,
+    getLabResults,
+    getDiagnosticImages,
+    downloadConsultationPdf
 } from '@/api/clinical'
+import { ChronicDiseasePanel } from '@/components/clinical/ChronicDiseasePanel'
 import { getPharmacyProducts } from '@/api/pharmacy'
+import { WebSocketService } from '@/services/websocket'
 import { toastService } from '@/services/toast'
 import {
     Clock,
@@ -32,13 +44,20 @@ import {
     Droplets,
     Zap,
     ExternalLink,
-    BrainCircuit
+    BrainCircuit,
+    FlaskConical,
+    ImageIcon,
+    Maximize2,
+    Printer,
+    ShieldAlert
 } from 'lucide-react'
 import type {
     ConsultationDto,
     PharmacyProductDto,
     QueueEntryDto,
-    QueueDefinitionDto
+    QueueDefinitionDto,
+    CdsAdviceDto,
+    ClinicalEarlyWarningDto
 } from '@/types/api'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -59,7 +78,17 @@ export function Consultation() {
         dosageInstruction: string;
     }[]>([])
     const [drugSearch, setDrugSearch] = useState('')
-    const [activeTab, setActiveTab] = useState<'exam' | 'history' | 'vitals'>('exam')
+    const [activeTab, setActiveTab] = useState<'exam' | 'history' | 'vitals' | 'results' | 'cdm'>('exam')
+    const [aiInsights, setAiInsights] = useState<string>('')
+    const [aiChatInput, setAiChatInput] = useState('')
+    const [aiChatHistory, setAiChatHistory] = useState<{ sender: 'ai' | 'doctor', message: string }[]>([])
+    const [isVerifyingPrescription, setIsVerifyingPrescription] = useState(false)
+    const [prescriptionWarning, setPrescriptionWarning] = useState<string | null>(null)
+    const [cdsAdvice, setCdsAdvice] = useState<CdsAdviceDto | null>(null)
+    const [earlyWarning, setEarlyWarning] = useState<ClinicalEarlyWarningDto | null>(null)
+    const [isSafetyLoading, setIsSafetyLoading] = useState(false)
+    const [suggestedTemplates, setSuggestedTemplates] = useState<string | null>(null)
+    const [isSuggestingTemplates, setIsSuggestingTemplates] = useState(false)
 
     // 1. Fetch Queues
     const { data: queues } = useQuery<QueueDefinitionDto[]>({
@@ -81,8 +110,18 @@ export function Consultation() {
         queryKey: ['doctor-waiting-list', selectedQueueId],
         queryFn: () => getQueueEntries(selectedQueueId!, branchId!, headers),
         enabled: !!selectedQueueId && !!branchId && !!headers?.tenantId,
-        refetchInterval: 5000 // Poll every 5s
     })
+
+    useEffect(() => {
+        if (!selectedQueueId) return
+        const ws = new WebSocketService((msg) => {
+            if (msg.type === 'QUEUE_REFRESH' || msg.type === 'PATIENT_CALLED') {
+                queryClient.invalidateQueries({ queryKey: ['doctor-waiting-list'] })
+            }
+        })
+        ws.connect()
+        return () => ws.disconnect()
+    }, [selectedQueueId, queryClient])
 
     // 3. Fetch Drugs
     const { data: drugs } = useQuery<PharmacyProductDto[]>({
@@ -90,6 +129,13 @@ export function Consultation() {
         queryFn: () => getPharmacyProducts(headers),
         enabled: !!activeConsultation
     })
+
+    // Auto-fetch CDS and Early Warning when consultation starts
+    useEffect(() => {
+        if (activeConsultation) {
+            fetchCdsAdvice()
+        }
+    }, [activeConsultation?.id])
 
     // 4. Start Consultation Mutation
     const startMutation = useMutation<ConsultationDto, Error, string>({
@@ -136,6 +182,115 @@ export function Consultation() {
             queryClient.invalidateQueries({ queryKey: ['doctor-waiting-list'] })
         }
     })
+
+    const { data: labResults } = useQuery({
+        queryKey: ['clinical-lab-results', activeConsultation?.id],
+        queryFn: () => getLabResults(activeConsultation!.id, headers),
+        enabled: !!activeConsultation && activeTab === 'results'
+    })
+
+    const { data: diagImages } = useQuery({
+        queryKey: ['clinical-diag-images', activeConsultation?.id],
+        queryFn: () => getDiagnosticImages(activeConsultation!.id, headers),
+        enabled: !!activeConsultation && activeTab === 'results'
+    })
+
+    const aiMutation = useMutation({
+        mutationFn: () => getAiClinicalSupport(activeConsultation!.id, headers),
+        onSuccess: (data) => {
+            setAiInsights(data)
+            toastService.success('🧠 AI Clinical Assistant đã sẵn sàng')
+        },
+        onError: (e: Error) => toastService.error(e.message)
+    })
+
+    const cdsMutation = useMutation({
+        mutationFn: () => getCdsAdvice(activeConsultation!.id, headers),
+        onSuccess: (data: CdsAdviceDto) => {
+            setCdsAdvice(data)
+            toastService.success('🎯 Đã cập nhật tín hiệu CDS')
+        },
+        onError: (e: Error) => toastService.error('CDS Error: ' + e.message)
+    })
+
+    const orderImagingMutation = useMutation({
+        mutationFn: (title: string) => orderDiagnosticImage(activeConsultation!.id, title, headers),
+        onSuccess: () => {
+            toastService.success('📸 Đã gửi chỉ định chẩn đoán hình ảnh')
+        },
+        onError: (e: Error) => toastService.error(e.message)
+    })
+
+    const handleAiChat = async () => {
+        if (!aiChatInput.trim() || !activeConsultation) return
+        const userMsg = aiChatInput
+        setAiChatInput('')
+        setAiChatHistory(prev => [...prev, { sender: 'doctor', message: userMsg }])
+
+        try {
+            const res = await sendClinicalAiChat(activeConsultation.id, userMsg, headers)
+            setAiChatHistory(prev => [...prev, { sender: 'ai', message: res }])
+        } catch (e: any) {
+            toastService.error('AI Chat Error: ' + e.message)
+        }
+    }
+
+    const fetchCdsAdvice = async () => {
+        if (!activeConsultation) return
+        setIsSafetyLoading(true)
+        try {
+            const [advice, warning] = await Promise.all([
+                getCdsAdvice(activeConsultation.id, headers),
+                getEarlyWarning(activeConsultation.id, headers)
+            ])
+            setCdsAdvice(advice)
+            setEarlyWarning(warning)
+            toastService.success('AI Safety Monitor updated')
+        } catch (err) {
+            toastService.error('Failed to update Safety Monitor')
+        } finally {
+            setIsSafetyLoading(false)
+        }
+    }
+
+    const fetchSuggestedTemplates = async () => {
+        if (!activeConsultation || !diagnosis) {
+            toastService.warning('Cần nhập chẩn đoán trước khi gợi ý phác đồ')
+            return
+        }
+        setIsSuggestingTemplates(true)
+        try {
+            // Enterprise: Update diagnosis on server first to ensure AI sees current notes
+            await updateConsultation(activeConsultation.id, { diagnosisNotes: diagnosis }, headers)
+            const res = await getSuggestedTemplates(activeConsultation.id, headers)
+            setSuggestedTemplates(res)
+            toastService.success('💡 Đã tìm thấy phác đồ phù hợp')
+        } catch (err) {
+            toastService.error('Không thể lấy gợi ý phác đồ')
+        } finally {
+            setIsSuggestingTemplates(false)
+        }
+    }
+
+    const handleVerifyPrescription = async () => {
+        if (!activeConsultation || prescriptionItems.length === 0) return
+        setIsVerifyingPrescription(true)
+        setPrescriptionWarning(null)
+        try {
+            const res = await verifyPrescriptionAi(activeConsultation.id, prescriptionItems, headers)
+            if (res.includes('OK')) {
+                toastService.success('✅ Đơn thuốc an toàn')
+                setPrescriptionWarning(null)
+            } else {
+                setPrescriptionWarning(res)
+                toastService.warning('⚠️ Phát hiện vấn đề trong đơn thuốc')
+            }
+        } catch (e: any) {
+            toastService.error('Verification Error')
+        } finally {
+            setIsVerifyingPrescription(false)
+        }
+    }
 
     const handleCall = async (entryId: string) => {
         try {
@@ -199,256 +354,629 @@ export function Consultation() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={() => completeMutation.mutate()}
-                        disabled={completeMutation.isPending}
-                        className="bg-blue-600 text-white px-10 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-900 hover:shadow-2xl hover:shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
-                    >
-                        {completeMutation.isPending ? (
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <>
-                                <CheckCircle2 className="w-5 h-5" />
-                                Kết thúc & Lưu hồ sơ
-                            </>
-                        )}
-                    </button>
-                </div>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => downloadConsultationPdf(activeConsultation.id, headers)}
+                            className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-inner group relative"
+                            title="In phiếu khám & đơn thuốc"
+                        >
+                            <Printer className="w-6 h-6" />
+                            <span className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[8px] px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-black uppercase tracking-widest">In hồ sơ PDF</span>
+                        </button>
 
-                <div className="flex-1 flex gap-8 min-h-0">
-                    {/* Left: Main Workspace */}
-                    <div className="flex-1 bg-white rounded-[3.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col">
-                        <div className="flex bg-slate-50/50 p-2 border-b border-slate-100">
-                            {[
-                                { id: 'exam', label: 'EHR Workspace', icon: FileText },
-                                { id: 'history', label: 'Lịch sử Clinical', icon: History },
-                                { id: 'vitals', label: 'Sinh hiệu chi tiết', icon: Activity }
-                            ].map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
-                                    className={`flex-1 py-5 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] rounded-3xl transition-all ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}
-                                >
-                                    <tab.icon className="w-4 h-4" />
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
+                        <button
+                            onClick={() => completeMutation.mutate()}
+                            disabled={completeMutation.isPending}
+                            className="bg-blue-600 text-white px-10 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-900 hover:shadow-2xl hover:shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
+                        >
+                            {completeMutation.isPending ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    <CheckCircle2 className="w-5 h-5" />
+                                    Kết thúc & Lưu hồ sơ
+                                </>
+                            )}
+                        </button>
+                    </div>
 
-                        <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-                            <AnimatePresence mode="wait">
-                                {activeTab === 'exam' && (
-                                    <motion.div
-                                        key="exam"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                        className="space-y-12"
+                    <div className="flex-1 flex gap-8 min-h-0">
+                        {/* Left: Main Workspace */}
+                        <div className="flex-1 bg-white rounded-[3.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col">
+                            <div className="flex bg-slate-50/50 p-2 border-b border-slate-100">
+                                {[
+                                    { id: 'exam', label: 'EHR Workspace', icon: FileText },
+                                    { id: 'cdm', label: 'Quản lý Mãn tính', icon: ShieldAlert },
+                                    { id: 'history', label: 'Lịch sử Clinical', icon: History },
+                                    { id: 'vitals', label: 'Sinh hiệu chi tiết', icon: Activity },
+                                    { id: 'results', label: 'Kết quả & Hình ảnh', icon: FlaskConical }
+                                ].map((tab: any) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id as any)}
+                                        className={`flex-1 py-5 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.15em] rounded-3xl transition-all ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}
                                     >
-                                        <div className="space-y-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
-                                                    <ClipboardList className="w-5 h-5" />
-                                                </div>
-                                                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Chẩn đoán chuyên môn</h3>
-                                            </div>
-                                            <textarea
-                                                value={diagnosis}
-                                                onChange={e => setDiagnosis(e.target.value)}
-                                                placeholder="Khám lâm sàng, kết luận chẩn đoán và ghi chú điều trị..."
-                                                className="w-full bg-slate-50 border-none rounded-[2.5rem] p-8 font-medium text-slate-700 h-56 focus:bg-white focus:ring-8 focus:ring-blue-500/5 transition-all outline-none resize-none leading-relaxed text-lg shadow-inner"
-                                            />
-                                        </div>
+                                        <tab.icon className="w-4 h-4" />
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
 
-                                        <div className="space-y-6">
-                                            <div className="flex items-center justify-between">
+                            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+                                <AnimatePresence mode="wait">
+                                    {activeTab === 'cdm' && (
+                                        <motion.div
+                                            key="cdm"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                        >
+                                            <ChronicDiseasePanel
+                                                patientId={activeConsultation.patientId}
+                                                consultationId={activeConsultation.id}
+                                            />
+                                        </motion.div>
+                                    )}
+                                    {activeTab === 'exam' && (
+                                        <motion.div
+                                            key="exam"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className="space-y-12"
+                                        >
+                                            <div className="space-y-6">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
-                                                        <Pill className="w-5 h-5" />
+                                                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                                                        <ClipboardList className="w-5 h-5" />
                                                     </div>
-                                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Kế hoạch sử dụng thuốc</h3>
+                                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Chẩn đoán chuyên môn</h3>
                                                 </div>
-                                                <div className="relative w-96">
-                                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Tìm tên thuốc hoặc mã dược..."
-                                                        value={drugSearch}
-                                                        onChange={e => setDrugSearch(e.target.value)}
-                                                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border-none rounded-2xl text-xs font-black focus:bg-white focus:ring-8 focus:ring-blue-500/5 outline-none transition-all shadow-inner"
-                                                    />
-                                                    {drugSearch && filteredDrugs && (
-                                                        <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-slate-100 rounded-[2rem] shadow-2xl z-50 overflow-hidden ring-1 ring-slate-200">
-                                                            {filteredDrugs.map(d => (
+                                                <textarea
+                                                    value={diagnosis}
+                                                    onChange={e => setDiagnosis(e.target.value)}
+                                                    placeholder="Khám lâm sàng, kết luận chẩn đoán và ghi chú điều trị..."
+                                                    className="w-full bg-slate-50 border-none rounded-[2.5rem] p-8 font-medium text-slate-700 h-56 focus:bg-white focus:ring-8 focus:ring-blue-500/5 transition-all outline-none resize-none leading-relaxed text-lg shadow-inner"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
+                                                            <Pill className="w-5 h-5" />
+                                                        </div>
+                                                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Kế hoạch sử dụng thuốc</h3>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <button
+                                                            onClick={handleVerifyPrescription}
+                                                            disabled={isVerifyingPrescription || prescriptionItems.length === 0}
+                                                            className="px-6 py-4 bg-amber-100 text-amber-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all flex items-center gap-2 disabled:opacity-50"
+                                                        >
+                                                            {isVerifyingPrescription ? 'Đang kiểm tra...' : 'AI Kiểm tra đơn'}
+                                                        </button>
+                                                        <div className="relative w-96">
+                                                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Tìm tên thuốc hoặc mã dược..."
+                                                                value={drugSearch}
+                                                                onChange={e => setDrugSearch(e.target.value)}
+                                                                className="w-full pl-14 pr-6 py-4 bg-slate-50 border-none rounded-2xl text-xs font-black focus:bg-white focus:ring-8 focus:ring-blue-500/5 outline-none transition-all shadow-inner"
+                                                            />
+                                                            {drugSearch && filteredDrugs && (
+                                                                <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-slate-100 rounded-[2rem] shadow-2xl z-50 overflow-hidden ring-1 ring-slate-200">
+                                                                    {filteredDrugs.map(d => (
+                                                                        <button
+                                                                            key={d.id}
+                                                                            onClick={() => addPrescriptionItem(d)}
+                                                                            className="w-full p-5 hover:bg-blue-50 text-left border-b border-slate-50 last:border-0 transition-colors flex items-center justify-between group"
+                                                                        >
+                                                                            <div>
+                                                                                <p className="text-[11px] font-black uppercase text-slate-900 group-hover:text-blue-600 transition-colors">{d.nameVi}</p>
+                                                                                <p className="text-[9px] font-bold text-slate-400 mt-0.5">{d.code} • {d.unit}</p>
+                                                                            </div>
+                                                                            <div className="text-right">
+                                                                                <p className="text-[11px] font-black text-slate-900">{d.standardPrice.toLocaleString()}đ</p>
+                                                                                <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter">Sẵn sàng</span>
+                                                                            </div>
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {prescriptionWarning && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                        className="bg-rose-50 border border-rose-100 p-6 rounded-[2rem] text-rose-600 space-y-2 mb-4 shadow-sm"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <AlertCircle className="w-5 h-5" />
+                                                            <p className="text-[11px] font-black uppercase tracking-widest">Cảnh báo An toàn Đơn thuốc (AI)</p>
+                                                        </div>
+                                                        <p className="text-sm font-medium leading-relaxed italic">{prescriptionWarning}</p>
+                                                    </motion.div>
+                                                )}
+
+                                                {/* Enterprise CDS Insight Panel */}
+                                                <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden mb-6">
+                                                    <div className="bg-slate-900 p-4 flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <Zap className="w-4 h-4 text-emerald-400" />
+                                                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Clinical AI Radar</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={fetchCdsAdvice}
+                                                            disabled={isSafetyLoading}
+                                                            className="p-1.5 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-all"
+                                                        >
+                                                            <Activity className={`w-3 h-3 ${isSafetyLoading ? 'animate-spin' : ''}`} />
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="p-5 space-y-6">
+                                                        {earlyWarning && (
+                                                            <div className="space-y-3">
+                                                                <div className="flex items-center justify-between">
+                                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">NEWS2 Warning Score</p>
+                                                                    <div className={`px-2 py-0.5 rounded-full text-[9px] font-black ${earlyWarning.riskLevel === 'HIGH' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'
+                                                                        }`}>
+                                                                        {earlyWarning.riskLevel} RISK
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-baseline gap-2">
+                                                                    <span className="text-3xl font-black text-slate-900">{earlyWarning.news2Score}</span>
+                                                                    <span className="text-[10px] font-black text-slate-400">/ 20</span>
+                                                                </div>
+                                                                <p className="text-[10px] font-bold text-slate-600 leading-relaxed italic border-l-2 border-amber-400 pl-3">
+                                                                    "{earlyWarning.aiClinicalAssessment}"
+                                                                </p>
+
+                                                                <div className="grid grid-cols-2 gap-2 mt-4">
+                                                                    {earlyWarning.warnings?.slice(0, 2).map((w: any, idx: number) => (
+                                                                        <div key={idx} className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                                                            <p className="text-[8px] font-black text-slate-400 uppercase mb-1">{w.vitalType}</p>
+                                                                            <div className="flex items-center justify-between">
+                                                                                <span className="text-xs font-black text-slate-800">{w.value}</span>
+                                                                                <span className={`text-[8px] font-black ${w.trend === 'WORSENING' ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                                                                    {w.trend === 'WORSENING' ? '↑↑' : 'STABLE'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="h-px bg-slate-100" />
+
+                                                        {cdsAdvice && (
+                                                            <div className="bg-blue-50/50 p-6 rounded-3xl space-y-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    <BrainCircuit className="w-4 h-4 text-blue-600" />
+                                                                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">CDS Suggestions</span>
+                                                                </div>
+                                                                <ul className="space-y-2">
+                                                                    {cdsAdvice.suggestions.map((s: any, idx: number) => (
+                                                                        <li key={idx} className="text-xs font-bold text-slate-700 flex items-start gap-2">
+                                                                            <span className="text-blue-500">•</span>
+                                                                            {s.title}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    {prescriptionItems.length === 0 ? (
+                                                        <div className="flex flex-col gap-6">
+                                                            <div className="py-20 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-400">
+                                                                <div className="p-6 bg-white rounded-3xl mb-4 shadow-sm">
+                                                                    <Pill className="w-10 h-10 opacity-20" />
+                                                                </div>
+                                                                <p className="text-[11px] font-black uppercase tracking-[0.2em]">Chưa có chỉ định thuốc</p>
+
                                                                 <button
-                                                                    key={d.id}
-                                                                    onClick={() => addPrescriptionItem(d)}
-                                                                    className="w-full p-5 hover:bg-blue-50 text-left border-b border-slate-50 last:border-0 transition-colors flex items-center justify-between group"
+                                                                    onClick={fetchSuggestedTemplates}
+                                                                    disabled={isSuggestingTemplates}
+                                                                    className="mt-6 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center gap-2"
                                                                 >
-                                                                    <div>
-                                                                        <p className="text-[11px] font-black uppercase text-slate-900 group-hover:text-blue-600 transition-colors">{d.nameVi}</p>
-                                                                        <p className="text-[9px] font-bold text-slate-400 mt-0.5">{d.code} • {d.unit}</p>
-                                                                    </div>
-                                                                    <div className="text-right">
-                                                                        <p className="text-[11px] font-black text-slate-900">{d.standardPrice.toLocaleString()}đ</p>
-                                                                        <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter">Sẵn sàng</span>
-                                                                    </div>
+                                                                    {isSuggestingTemplates ? <Activity className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                                                                    Gợi ý Phác đồ (AI)
                                                                 </button>
+                                                            </div>
+
+                                                            {suggestedTemplates && (
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, y: 10 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    className="bg-blue-50 border border-blue-100 rounded-[2.5rem] p-8"
+                                                                >
+                                                                    <div className="flex items-center gap-3 mb-6">
+                                                                        <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                                                                            <BrainCircuit className="w-5 h-5" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-black text-blue-900 uppercase">Phác đồ đề xuất</h4>
+                                                                            <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Dựa trên chẩn đoán & phác đồ mẫu</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="prose prose-sm max-w-none text-blue-900 font-medium leading-relaxed whitespace-pre-wrap">
+                                                                        {suggestedTemplates}
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-3">
+                                                            {prescriptionItems.map((it, idx) => (
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, x: -10 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    key={idx}
+                                                                    className="bg-white border border-slate-100 p-6 rounded-[2rem] flex gap-6 hover:shadow-lg hover:border-blue-100 transition-all group"
+                                                                >
+                                                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xs group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                                                        {idx + 1}
+                                                                    </div>
+                                                                    <div className="flex-1 grid grid-cols-12 gap-8">
+                                                                        <div className="col-span-4">
+                                                                            <p className="text-[11px] font-black text-slate-900 uppercase mb-1">{it.productName}</p>
+                                                                            <p className="text-[10px] font-bold text-slate-400">Đơn giá: {it.unitPrice?.toLocaleString()}đ</p>
+                                                                        </div>
+                                                                        <div className="col-span-2">
+                                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter block mb-2">Số lượng</label>
+                                                                            <input
+                                                                                type="number"
+                                                                                value={it.quantity}
+                                                                                onChange={e => {
+                                                                                    const newItems = [...prescriptionItems]
+                                                                                    newItems[idx].quantity = parseInt(e.target.value) || 0
+                                                                                    setPrescriptionItems(newItems)
+                                                                                }}
+                                                                                className="w-full bg-slate-50 p-3 rounded-xl text-sm font-black outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all text-center"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="col-span-5">
+                                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter block mb-2">Liều dùng & Cách dùng</label>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={it.dosageInstruction}
+                                                                                onChange={e => {
+                                                                                    const newItems = [...prescriptionItems]
+                                                                                    newItems[idx].dosageInstruction = e.target.value
+                                                                                    setPrescriptionItems(newItems)
+                                                                                }}
+                                                                                className="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all italic"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="col-span-1 flex items-end justify-end">
+                                                                            <button
+                                                                                onClick={() => setPrescriptionItems(prescriptionItems.filter((_, i) => i !== idx))}
+                                                                                className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                                                            >
+                                                                                <Trash2 className="w-5 h-5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </motion.div>
                                                             ))}
                                                         </div>
                                                     )}
                                                 </div>
-                                            </div>
 
-                                            <div className="space-y-4">
-                                                {prescriptionItems.length === 0 ? (
-                                                    <div className="py-20 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-400">
-                                                        <div className="p-6 bg-white rounded-3xl mb-4 shadow-sm">
-                                                            <Pill className="w-10 h-10 opacity-20" />
+                                                <div className="space-y-6 pt-12 border-t border-slate-100">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                                                            <ExternalLink className="w-5 h-5" />
                                                         </div>
-                                                        <p className="text-[11px] font-black uppercase tracking-[0.2em]">Chưa có chỉ định thuốc</p>
+                                                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Chỉ định Cận lâm sàng</h3>
                                                     </div>
-                                                ) : (
-                                                    <div className="space-y-3">
-                                                        {prescriptionItems.map((it, idx) => (
-                                                            <motion.div
-                                                                initial={{ opacity: 0, x: -10 }}
-                                                                animate={{ opacity: 1, x: 0 }}
-                                                                key={idx}
-                                                                className="bg-white border border-slate-100 p-6 rounded-[2rem] flex gap-6 hover:shadow-lg hover:border-blue-100 transition-all group"
+                                                    <div className="flex flex-wrap gap-4">
+                                                        {[
+                                                            { label: 'Chụp X-Quang Phổi', value: 'X-RAY CHEST' },
+                                                            { label: 'Siêu âm Bụng', value: 'ULTRASOUND ABDOMEN' },
+                                                            { label: 'Xét nghiệm Máu', value: 'BLOOD TEST' },
+                                                            { label: 'Chụp CT Scanner', value: 'CT SCAN' }
+                                                        ].map(opt => (
+                                                            <button
+                                                                key={opt.value}
+                                                                onClick={() => orderImagingMutation.mutate(opt.value)}
+                                                                disabled={orderImagingMutation.isPending}
+                                                                className="px-6 py-4 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all flex items-center gap-2 group scroll-mt-20"
                                                             >
-                                                                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xs group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                                                    {idx + 1}
-                                                                </div>
-                                                                <div className="flex-1 grid grid-cols-12 gap-8">
-                                                                    <div className="col-span-4">
-                                                                        <p className="text-[11px] font-black text-slate-900 uppercase mb-1">{it.productName}</p>
-                                                                        <p className="text-[10px] font-bold text-slate-400">Đơn giá: {it.unitPrice.toLocaleString()}đ</p>
-                                                                    </div>
-                                                                    <div className="col-span-2">
-                                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter block mb-2">Số lượng</label>
-                                                                        <input
-                                                                            type="number"
-                                                                            value={it.quantity}
-                                                                            onChange={e => {
-                                                                                const newItems = [...prescriptionItems]
-                                                                                newItems[idx].quantity = parseInt(e.target.value) || 0
-                                                                                setPrescriptionItems(newItems)
-                                                                            }}
-                                                                            className="w-full bg-slate-50 p-3 rounded-xl text-sm font-black outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all text-center"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="col-span-5">
-                                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter block mb-2">Liều dùng & Cách dùng</label>
-                                                                        <input
-                                                                            type="text"
-                                                                            value={it.dosageInstruction}
-                                                                            onChange={e => {
-                                                                                const newItems = [...prescriptionItems]
-                                                                                newItems[idx].dosageInstruction = e.target.value
-                                                                                setPrescriptionItems(newItems)
-                                                                            }}
-                                                                            className="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all italic"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="col-span-1 flex items-end justify-end">
-                                                                        <button
-                                                                            onClick={() => setPrescriptionItems(prescriptionItems.filter((_, i) => i !== idx))}
-                                                                            className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-                                                                        >
-                                                                            <Trash2 className="w-5 h-5" />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </motion.div>
+                                                                {opt.label}
+                                                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
+                                                            </button>
                                                         ))}
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                )}
+                                        </motion.div>
+                                    )}
 
-                                {activeTab === 'history' && (
-                                    <motion.div
-                                        key="history"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="animate-in slide-in-from-right-4 duration-500"
-                                    >
-                                        <PatientHistory patientId={activeConsultation.patientId} />
-                                    </motion.div>
-                                )}
+                                    {activeTab === 'history' && (
+                                        <motion.div
+                                            key="history"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                        >
+                                            <PatientHistory patientId={activeConsultation.patientId} />
+                                        </motion.div>
+                                    )}
 
-                                {activeTab === 'vitals' && (
-                                    <motion.div
-                                        key="vitals"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="grid grid-cols-2 gap-8"
-                                    >
-                                        <ConsultationVitals consultationId={activeConsultation.id} />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </div>
+                                    {activeTab === 'vitals' && (
+                                        <motion.div
+                                            key="vitals"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                        >
+                                            <ConsultationVitals consultationId={activeConsultation.id} />
+                                        </motion.div>
+                                    )}
 
-                    {/* Right: Sidebar EHR Info */}
-                    <div className="w-96 flex flex-col gap-8">
-                        {/* Vital Monitoring */}
-                        <div className="bg-white rounded-[3.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
-                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full" />
-                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-                                <Activity className="w-5 h-5 text-emerald-500" />
-                                Sinh hiệu hiện thời
-                                <span className="text-[10px] text-emerald-500 font-bold ml-auto px-2 py-0.5 bg-emerald-50 rounded-full">REALTIME</span>
-                            </h3>
-                            <div className="grid grid-cols-1 gap-4">
-                                {[
-                                    { label: 'Nhiệt độ', value: '37.2', unit: '°C', icon: Thermometer, color: 'text-orange-500', bg: 'bg-orange-50' },
-                                    { label: 'Huyết áp', value: '120/80', unit: 'mmHg', icon: Activity, color: 'text-blue-500', bg: 'bg-blue-50' },
-                                    { label: 'Nhịp tim', value: '82', unit: 'bpm', icon: Heart, color: 'text-red-500', bg: 'bg-red-50' },
-                                    { label: 'SpO2', value: '98', unit: '%', icon: Droplets, color: 'text-blue-600', bg: 'bg-blue-50' }
-                                ].map((v, i) => (
-                                    <div key={i} className="flex justify-between items-center bg-slate-50/50 hover:bg-white hover:shadow-md p-4 rounded-3xl transition-all border border-transparent hover:border-slate-100">
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 ${v.bg} ${v.color} rounded-2xl flex items-center justify-center`}>
-                                                <v.icon className="w-5 h-5" />
+                                    {activeTab === 'results' && (
+                                        <motion.div
+                                            key="results"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="space-y-12"
+                                        >
+                                            {/* Results content follows... */}
+                                            {/* Labs Section */}
+                                            <div className="space-y-6">
+                                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                                    <FlaskConical className="w-4 h-4 text-blue-500" />
+                                                    Kết quả Xét nghiệm Máu / Sinh hóa
+                                                </h4>
+                                                <div className="bg-slate-50/50 rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-inner">
+                                                    <table className="w-full">
+                                                        <thead>
+                                                            <tr className="border-b border-white">
+                                                                <th className="px-8 py-5 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Chỉ số</th>
+                                                                <th className="px-8 py-5 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Giá trị</th>
+                                                                <th className="px-8 py-5 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Đơn vị</th>
+                                                                <th className="px-8 py-5 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Tham chiếu</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-white">
+                                                            {(labResults || []).map((lr: any, i: number) => (
+                                                                <tr key={i} className="hover:bg-white transition-colors">
+                                                                    <td className="px-8 py-5 text-xs font-black text-slate-900">{lr.testName}</td>
+                                                                    <td className="px-8 py-5">
+                                                                        <span className={`text-xs font-black ${lr.status === 'HIGH' ? 'text-red-500' : lr.status === 'LOW' ? 'text-amber-500' : 'text-emerald-600'}`}>
+                                                                            {lr.value}
+                                                                            {lr.status !== 'NORMAL' && <span className="ml-2 text-[8px] uppercase font-bold">{lr.status === 'HIGH' ? '↑' : '↓'}</span>}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-8 py-5 text-xs font-bold text-slate-500">{lr.unit}</td>
+                                                                    <td className="px-8 py-5 text-xs font-medium text-slate-400 italic">{lr.referenceRange}</td>
+                                                                </tr>
+                                                            ))}
+                                                            {(!labResults || labResults.length === 0) && (
+                                                                <tr>
+                                                                    <td colSpan={4} className="px-8 py-20 text-center flex flex-col items-center">
+                                                                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 text-slate-100 italic font-black shadow-sm">!</div>
+                                                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic tracking-[0.3em]">Chưa có dữ liệu xét nghiệm</p>
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
                                             </div>
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">{v.label}</span>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-base font-black text-slate-900 leading-none">{v.value}</p>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{v.unit}</p>
-                                        </div>
-                                    </div>
-                                ))}
+
+                                            {/* Imaging Section */}
+                                            <div className="space-y-6">
+                                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                                    <ImageIcon className="w-4 h-4 text-indigo-500" />
+                                                    Chẩn đoán Hình ảnh (XR / Ultrasound / CT)
+                                                </h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-10">
+                                                    {(diagImages || []).map((img: any, i: number) => (
+                                                        <div key={i} className="group bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/30 space-y-4 hover:border-indigo-200 transition-all hover:shadow-indigo-500/10">
+                                                            <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-900 shadow-inner">
+                                                                <img
+                                                                    src={img.imageUrl}
+                                                                    alt={img.title}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80 group-hover:opacity-100"
+                                                                />
+                                                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent" />
+                                                                <button className="absolute top-4 right-4 p-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all active:scale-90 flex items-center gap-2 text-[8px] font-black uppercase tracking-widest">
+                                                                    <Maximize2 className="w-4 h-4" />
+                                                                    View Full
+                                                                </button>
+                                                            </div>
+                                                            <div>
+                                                                <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-2 flex items-center justify-between">
+                                                                    {img.title}
+                                                                    <span className="text-[8px] text-slate-400 font-bold px-2 py-0.5 bg-slate-50 rounded-md">VERIFIED</span>
+                                                                </h5>
+                                                                <p className="text-[11px] font-bold text-slate-400 leading-relaxed italic border-l-2 border-indigo-100 pl-4 py-1">{img.description}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {(!diagImages || diagImages.length === 0) && (
+                                                        <div className="col-span-2 p-20 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-300">
+                                                            <ImageIcon className="w-12 h-12 mb-4 opacity-20" />
+                                                            <p className="text-[10px] font-black uppercase tracking-widest italic">Chưa có dữ liệu hình ảnh</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
 
-                        {/* AI Warning / EHR Notes */}
-                        <div className="bg-slate-900 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden group flex-1">
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent pointer-events-none" />
-                            <div className="absolute bottom-10 right-10 opacity-[0.03] group-hover:scale-125 transition-transform duration-1000">
-                                <AlertCircle className="w-48 h-48" />
-                            </div>
-                            <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-3 text-amber-500">
-                                <Zap className="w-5 h-5" />
-                                AI Insight & EHR Notes
-                            </h3>
-                            <div className="space-y-6 relative z-10">
-                                <div className="p-6 bg-white/5 border border-white/5 rounded-[2.5rem] space-y-3">
-                                    <h4 className="text-[10px] font-black uppercase text-amber-500">Lưu ý tiền sử bệnh</h4>
-                                    <p className="text-xs font-bold text-slate-400 leading-relaxed italic">
-                                        "Bệnh nhân có tiền sử dị ứng với Penicillin G và đau dạ dày mạn tính. Ưu tiên các dòng kháng sinh thế hệ mới nếu cần."
-                                    </p>
+                        {/* Right: Sidebar EHR Info */}
+                        <div className="w-96 flex flex-col gap-8">
+                            {/* Vital Monitoring */}
+                            <div className="bg-white rounded-[3.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
+                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full" />
+                                <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                                    <Activity className="w-5 h-5 text-emerald-500" />
+                                    Sinh hiệu hiện thời
+                                    <span className="text-[10px] text-emerald-500 font-bold ml-auto px-2 py-0.5 bg-emerald-50 rounded-full">REALTIME</span>
+                                </h3>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {[
+                                        { label: 'Nhiệt độ', value: '37.2', unit: '°C', icon: Thermometer, color: 'text-orange-500', bg: 'bg-orange-50' },
+                                        { label: 'Huyết áp', value: '120/80', unit: 'mmHg', icon: Activity, color: 'text-blue-500', bg: 'bg-blue-50' },
+                                        { label: 'Nhịp tim', value: '82', unit: 'bpm', icon: Heart, color: 'text-red-500', bg: 'bg-red-50' },
+                                        { label: 'SpO2', value: '98', unit: '%', icon: Droplets, color: 'text-blue-600', bg: 'bg-blue-50' }
+                                    ].map((v, i) => (
+                                        <div key={i} className="flex justify-between items-center bg-slate-50/50 hover:bg-white hover:shadow-md p-4 rounded-3xl transition-all border border-transparent hover:border-slate-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 ${v.bg} ${v.color} rounded-2xl flex items-center justify-center`}>
+                                                    <v.icon className="w-5 h-5" />
+                                                </div>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">{v.label}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-base font-black text-slate-900 leading-none">{v.value}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{v.unit}</p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="p-6 bg-white/5 border border-white/5 rounded-[2.5rem] space-y-3">
-                                    <h4 className="text-[10px] font-black uppercase text-blue-400">Gợi ý chẩn đoán (AI)</h4>
-                                    <p className="text-xs font-bold text-slate-400 leading-relaxed">
-                                        Dựa trên các triệu chứng và sinh hiệu, AI đề xuất khả năng Viêm đường hô hấp trên cấp tính (J06.9).
-                                    </p>
+                            </div>
+
+                            {/* Enterprise: CDS Signals Panel */}
+                            {cdsAdvice && (
+                                <div className="bg-slate-800 rounded-[2.5rem] p-8 border border-white/5 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">CDS Signals</h3>
+                                        <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter ${cdsAdvice.riskLevel === 'CRITICAL' ? 'bg-red-500 text-white animate-pulse' :
+                                            cdsAdvice.riskLevel === 'HIGH' ? 'bg-orange-500 text-white' :
+                                                'bg-emerald-500 text-white'
+                                            }`}>
+                                            Risk: {cdsAdvice.riskLevel}
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {cdsAdvice.warnings.map((w, i) => (
+                                            <div key={i} className={`p-4 rounded-2xl border ${w.severity === 'ERROR' ? 'bg-red-500/10 border-red-500/20 text-red-200' :
+                                                'bg-amber-500/10 border-amber-500/20 text-amber-200'
+                                                } text-[10px] font-medium leading-relaxed`}>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <AlertCircle className="w-3.5 h-3.5" />
+                                                    <span className="font-black uppercase tracking-widest">{w.type}</span>
+                                                </div>
+                                                {w.message}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Gợi ý lâm sàng</p>
+                                        {cdsAdvice.suggestions.map((s, i) => (
+                                            <div key={i} className="flex gap-4 items-start group cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all">
+                                                <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                                    <Zap className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[11px] font-black text-white group-hover:text-blue-400">{s.title}</p>
+                                                    <p className="text-[9px] text-white/40 font-bold mt-0.5">{s.reason}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {cdsAdvice.differentialDiagnoses.length > 0 && (
+                                        <div className="pt-4 border-t border-white/5 space-y-2">
+                                            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Chẩn đoán phân biệt</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {cdsAdvice.differentialDiagnoses.map((d, i) => (
+                                                    <span key={i} className="px-3 py-1.5 bg-white/5 rounded-lg text-[9px] font-bold text-white/70 italic border border-white/5">{d}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* AI Warning / EHR Notes */}
+                            <div className="bg-slate-900 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden group flex-1">
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent pointer-events-none" />
+                                <div className="absolute bottom-10 right-10 opacity-[0.03] group-hover:scale-125 transition-transform duration-1000">
+                                    <AlertCircle className="w-48 h-48" />
+                                </div>
+                                <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-3 text-amber-500">
+                                    <BrainCircuit className="w-5 h-5" />
+                                    AI Clinical Assistant
+                                </h3>
+                                <div className="space-y-6 relative z-10">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button
+                                            onClick={() => aiMutation.mutate()}
+                                            disabled={aiMutation.isPending}
+                                            className="py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 border border-white/10 disabled:opacity-50"
+                                        >
+                                            {aiMutation.isPending ? '...' : 'Tóm tắt EMR'}
+                                        </button>
+                                        <button
+                                            onClick={() => cdsMutation.mutate()}
+                                            disabled={cdsMutation.isPending}
+                                            className="py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                                        >
+                                            {cdsMutation.isPending ? '...' : 'CDS Signals'}
+                                        </button>
+                                    </div>
+
+                                    {aiInsights || aiChatHistory.length > 0 ? (
+                                        <div className="flex flex-col gap-4 max-h-[500px] overflow-hidden">
+                                            <div className="p-6 bg-white/5 border border-white/10 rounded-[2.5rem] overflow-y-auto space-y-4 custom-scrollbar">
+                                                {aiInsights && (
+                                                    <div className="prose prose-invert prose-xs max-w-none text-slate-100 font-medium leading-relaxed whitespace-pre-wrap border-b border-white/10 pb-6 mb-6">
+                                                        {aiInsights}
+                                                    </div>
+                                                )}
+                                                {aiChatHistory.map((h, i) => (
+                                                    <div key={i} className={`flex ${h.sender === 'doctor' ? 'justify-end' : 'justify-start'}`}>
+                                                        <div className={`max-w-[85%] p-4 rounded-2xl text-xs font-medium ${h.sender === 'doctor' ? 'bg-blue-600 text-white' : 'bg-white/10 text-slate-300 border border-white/10'}`}>
+                                                            {h.message}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value={aiChatInput}
+                                                    onChange={e => setAiChatInput(e.target.value)}
+                                                    onKeyDown={e => e.key === 'Enter' && handleAiChat()}
+                                                    placeholder="Hỏi AI thêm về ca bệnh..."
+                                                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pr-14 text-xs text-white placeholder:text-white/20 outline-none focus:bg-white/10 transition-all font-bold"
+                                                />
+                                                <button
+                                                    onClick={handleAiChat}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-all"
+                                                >
+                                                    <Zap className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="p-6 bg-white/5 border border-white/5 rounded-[2.5rem] space-y-3">
+                                            <h4 className="text-[10px] font-black uppercase text-blue-400">Trạng thái</h4>
+                                            <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
+                                                "Bấm nút ở trên để AI phân tích triệu chứng và tiền sử nệnh nhân này."
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -640,7 +1168,7 @@ function PatientHistory({ patientId }: { patientId: string }) {
                     <History className="w-12 h-12 mx-auto mb-4 text-slate-200" />
                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Hồ sơ bệnh án trống</p>
                 </div>
-            ) : history?.map((item) => (
+            ) : history?.map((item: any) => (
                 <div key={item.id} className="bg-white border border-slate-100 p-8 rounded-[3rem] hover:shadow-xl hover:border-blue-100 transition-all group">
                     <div className="flex justify-between items-start mb-6">
                         <div className="flex items-center gap-4">
@@ -681,11 +1209,11 @@ function ConsultationVitals({ consultationId }: { consultationId: string }) {
         enabled: !!consultationId
     })
 
-    if (isLoading) return Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 bg-slate-50 rounded-3xl animate-pulse" />)
+    if (isLoading) return <div className="grid grid-cols-2 gap-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 bg-slate-50 rounded-3xl animate-pulse" />)}</div>
 
     return (
-        <>
-            {vitals?.map((v, i) => (
+        <div className="grid grid-cols-2 gap-4">
+            {vitals?.map((v: any, i: number) => (
                 <div key={i} className="bg-white border border-slate-100 p-6 rounded-[2.5rem] shadow-sm flex items-center gap-6">
                     <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-blue-600">
                         <Activity className="w-7 h-7" />
@@ -702,6 +1230,6 @@ function ConsultationVitals({ consultationId }: { consultationId: string }) {
                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Không có dữ liệu sinh hiệu chi tiết cho ca này</p>
                 </div>
             )}
-        </>
+        </div>
     )
 }

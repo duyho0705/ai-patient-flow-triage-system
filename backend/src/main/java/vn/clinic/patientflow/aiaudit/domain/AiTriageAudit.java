@@ -11,7 +11,7 @@ import java.util.UUID;
 /**
  * Kiểm toán mỗi lần gọi AI phân loại. Truy vết cho tuân thủ và an toàn.
  */
-@Entity
+@Entity(name = "AiTriageAudit")
 @Table(name = "ai_triage_audit")
 @Getter
 @Setter
@@ -20,7 +20,7 @@ import java.util.UUID;
 @Builder
 public class AiTriageAudit extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, targetEntity = TriageSession.class)
     @JoinColumn(name = "triage_session_id", nullable = false)
     private TriageSession triageSession;
 

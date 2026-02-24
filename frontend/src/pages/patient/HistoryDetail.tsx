@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPortalHistoryDetail, seedMedicalData } from '@/api/portal'
+import { getPortalHistoryDetail, seedMedicalData, downloadPortalConsultationPdf, downloadPrescriptionPdf } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
 import {
     ChevronLeft,
@@ -25,8 +25,6 @@ import {
     Sparkles
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { toast } from 'react-hot-toast'
 
 export default function PatientHistoryDetail() {
@@ -41,52 +39,27 @@ export default function PatientHistoryDetail() {
         enabled: !!id && !!headers?.tenantId
     })
 
-    const handleDownload = () => {
-        if (!detail) return
-        const doc = new jsPDF()
-
-        doc.setFontSize(22)
-        doc.text('HO SO SUC KHOE DIEN TU', 105, 20, { align: 'center' })
-
-        doc.setFontSize(12)
-        doc.text(`Benh nhan: ${detail.consultation.patientName || 'N/A'}`, 14, 40)
-        doc.text(`Bac si: ${detail.consultation.doctorName || 'N/A'}`, 14, 50)
-        doc.text(`Ngay kham: ${new Date(detail.consultation.startedAt).toLocaleDateString()}`, 14, 60)
-        doc.text(`Chan doan: ${detail.consultation.diagnosisNotes || 'N/A'}`, 14, 70)
-
-        let lastY = 80;
-
-        if (detail.labResults && detail.labResults.length > 0) {
-            doc.setFontSize(14)
-            doc.text('KET QUA XET NGHIEM', 14, lastY)
-            autoTable(doc, {
-                startY: lastY + 5,
-                head: [['Ten xet nghiem', 'Ket qua', 'Don vi', 'CS Tham chieu']],
-                body: detail.labResults.map(lab => [
-                    lab.testName,
-                    lab.value,
-                    lab.unit,
-                    lab.referenceRange
-                ]),
-            })
-            lastY = (doc as any).lastAutoTable.finalY + 20;
+    const handleDownloadSummary = async () => {
+        if (!id) return
+        try {
+            await downloadPortalConsultationPdf(id, headers)
+            toast.success('Đang tải tóm tắt ca khám...')
+        } catch (e) {
+            toast.error('Lỗi khi tải PDF')
         }
+    }
 
-        if (detail.prescription) {
-            doc.setFontSize(14)
-            doc.text('DON THUOC', 14, lastY)
-            autoTable(doc, {
-                startY: lastY + 5,
-                head: [['Ten thuoc', 'SL', 'Cach dung']],
-                body: detail.prescription.items.map(item => [
-                    item.productName || '',
-                    item.quantity || 0,
-                    item.dosageInstruction || ''
-                ]),
-            })
+    const handleDownloadPrescription = async () => {
+        if (!detail?.prescription?.id) {
+            toast.error('Không tìm thấy đơn thuốc cho ca này')
+            return
         }
-
-        doc.save(`digital-health-passport-${id}.pdf`)
+        try {
+            await downloadPrescriptionPdf(detail.prescription.id, headers)
+            toast.success('Đang tải đơn thuốc...')
+        } catch (e) {
+            toast.error('Lỗi khi tải PDF')
+        }
     }
 
     if (isLoading) return <div className="p-12 text-center text-slate-400 font-bold">Đang tải chi tiết...</div>
@@ -131,16 +104,19 @@ export default function PatientHistoryDetail() {
                         <Sparkles className="w-4 h-4" />
                         Tạo dữ liệu mẫu
                     </button>
-                    <button className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-100 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+                    <button
+                        onClick={handleDownloadSummary}
+                        className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-100 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+                    >
                         <Printer className="w-4 h-4" />
-                        In KQ
+                        In Tóm tắt PDF
                     </button>
                     <button
-                        onClick={handleDownload}
+                        onClick={handleDownloadPrescription}
                         className="flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-xl shadow-slate-200"
                     >
                         <Download className="w-4 h-4" />
-                        Đơn thuốc
+                        Tải Đơn thuốc
                     </button>
                 </div>
             </header>
@@ -393,21 +369,53 @@ export default function PatientHistoryDetail() {
 
                     {/* AI Insight Card */}
                     {detail.consultation.aiExplanation && (
-                        <div className="bg-blue-600 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-xl shadow-blue-500/30">
+                        <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-xl shadow-slate-200">
                             <div className="absolute top-0 right-0 p-8 opacity-10">
                                 <ShieldCheck className="w-24 h-24" />
                             </div>
                             <div className="relative z-10">
-                                <h4 className="text-xs font-black uppercase tracking-widest text-blue-100 mb-4">Ghi chú AI (Triage)</h4>
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Gợi ý Phân loại (Triage AI)</h4>
                                 <p className="text-sm font-medium leading-relaxed italic mb-4">
                                     "{detail.consultation.aiExplanation}"
                                 </p>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-blue-100 animate-pulse" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-100">Độ tin cậy: {(detail.consultation.aiConfidenceScore || 0) * 100}%</p>
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Độ tin cậy: {(detail.consultation.aiConfidenceScore || 0) * 100}%</p>
                                 </div>
                             </div>
                         </div>
+                    )}
+
+                    {/* Enterprise: AI Health Navigator (Long-term Care Plan) */}
+                    {detail.consultation.aiInsights && (
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-blue-200"
+                        >
+                            <div className="absolute top-0 right-0 p-8 opacity-20 rotate-12">
+                                <Sparkles className="w-32 h-32 text-white" />
+                            </div>
+                            <div className="relative z-10 space-y-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
+                                        <Sparkles className="w-5 h-5" />
+                                    </div>
+                                    <h4 className="text-xs font-black uppercase tracking-widest text-blue-100">AI Health Navigator</h4>
+                                </div>
+
+                                <div className="prose prose-invert prose-sm max-w-none">
+                                    <div className="text-sm font-medium leading-relaxed text-blue-50/90 whitespace-pre-line bg-white/5 backdrop-blur-sm p-6 rounded-3xl border border-white/10">
+                                        {detail.consultation.aiInsights}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 px-2">
+                                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                                    <p className="text-[9px] font-bold text-blue-200 uppercase tracking-tight">Cố vấn sức khỏe cá nhân hóa • Enterprise AI Engine</p>
+                                </div>
+                            </div>
+                        </motion.div>
                     )}
 
                     {/* Invoice Card */}

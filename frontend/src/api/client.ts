@@ -35,6 +35,13 @@ function headers(tenant: TenantHeaders | null, body?: unknown): HeadersInit {
   return h
 }
 
+export interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+  timestamp: string
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit & { tenant?: TenantHeaders | null } = {}
@@ -43,16 +50,33 @@ export async function api<T>(
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`
   const res = await fetch(url, {
     ...init,
+    credentials: 'include', // Support HttpOnly cookies
     headers: { ...headers(tenant ?? null, init.body), ...(init.headers as Record<string, string>) },
   })
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
-    throw new Error(err.message || err.error || res.statusText)
+    const error: any = new Error(err.message || err.error || res.statusText)
+    error.details = err
+    throw error
   }
+
   if (res.status === 204) return undefined as T
   const text = await res.text()
   if (!text) return undefined as T
-  return JSON.parse(text)
+
+  const json = JSON.parse(text)
+
+  // If it's an Enterprise ApiResponse, unwrap the data
+  if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+    const apiRes = json as ApiResponse<T>
+    if (!apiRes.success) {
+      throw new Error(apiRes.message || 'API Error')
+    }
+    return apiRes.data
+  }
+
+  return json as T
 }
 
 export const get = <T>(path: string, tenant?: TenantHeaders | null) =>
@@ -86,6 +110,7 @@ export async function downloadFile(path: string, tenant: TenantHeaders | null, f
   const url = `${API_BASE}${path}`
   const res = await fetch(url, {
     method: 'GET',
+    credentials: 'include',
     headers: headers(tenant),
   })
   if (!res.ok) throw new Error('Download failed')

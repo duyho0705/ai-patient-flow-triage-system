@@ -1,16 +1,5 @@
-# Compiled class file
+# ===================== Java / Maven =====================
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
 *.jar
 *.war
 *.nar
@@ -19,6 +8,64 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Maven build output
+backend/target/
+
+# ===================== IDE =====================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# ===================== Node / Frontend =====================
+node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+
+# ===================== Logs =====================
+*.log
+logs/
+
+# ===================== OS Generated =====================
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===================== Temp & Debug Files =====================
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+*.txt
+!README.txt
+!LICENSE.txt
+!requirements.txt
+
+# ===================== Environment =====================
+.env
+.env.local
+.env.*.local
+
+# ===================== Uploads (dev artifacts) =====================
+backend/uploads/
+
+# ===================== JVM Crash Logs =====================
 hs_err_pid*
 replay_pid*
+
+# ===================== Java Misc =====================
+*.ctxt
+.mtj.tmp/

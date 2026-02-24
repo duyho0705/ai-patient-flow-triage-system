@@ -148,4 +148,14 @@ public class SchedulingService {
                     .build();
         }).collect(Collectors.toList());
     }
+
+    @Transactional
+    public SchedulingAppointment saveAppointment(SchedulingAppointment appointment) {
+        return appointmentRepository.save(appointment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SchedulingAppointment> getDoctorTodayAppointments(UUID doctorUserId) {
+        return appointmentRepository.findByDoctorUserIdAndAppointmentDate(doctorUserId, LocalDate.now());
+    }
 }

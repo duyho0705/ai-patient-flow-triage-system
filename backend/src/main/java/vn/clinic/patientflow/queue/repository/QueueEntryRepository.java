@@ -14,6 +14,8 @@ public interface QueueEntryRepository extends JpaRepository<QueueEntry, UUID> {
 
         List<QueueEntry> findByBranchId(UUID branchId);
 
+        List<QueueEntry> findByTenantIdAndStatusIn(UUID tenantId, List<String> statuses);
+
         Optional<QueueEntry> findFirstByPatientIdAndStatusInOrderByJoinedAtDesc(UUID patientId, List<String> statuses);
 
         long countByPatientIdAndStatusIn(UUID patientId, List<String> statuses);
@@ -52,4 +54,7 @@ public interface QueueEntryRepository extends JpaRepository<QueueEntry, UUID> {
         long countByTenantIdAndStatusAndCompletedAtBetween(@Param("tenantId") UUID tenantId,
                         @Param("status") String status,
                         @Param("from") Instant from, @Param("to") Instant to);
+
+        @Query("SELECT qe.queueDefinition.nameVi, COUNT(qe) FROM QueueEntry qe WHERE qe.branch.id = :branchId AND qe.status IN ('WAITING', 'CALLING') GROUP BY qe.queueDefinition.nameVi")
+        List<Object[]> countActivePatientsByQueue(@Param("branchId") UUID branchId);
 }

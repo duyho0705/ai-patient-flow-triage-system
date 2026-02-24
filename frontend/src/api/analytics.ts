@@ -12,10 +12,10 @@ export interface AnalyticsSummary {
 
 export async function getTodaySummary(branchId: string | undefined, headers: TenantHeaders | null): Promise<AnalyticsSummary> {
   const params = branchId ? `?branchId=${branchId}` : ''
-  return get(`/api/analytics/summary/today${params}`, headers)
+  return get(`/admin/analytics/summary/today${params}`, headers)
 }
 
 export async function getWeekSummary(branchId: string | undefined, headers: TenantHeaders | null): Promise<AnalyticsSummary> {
   const params = branchId ? `?branchId=${branchId}` : ''
-  return get(`/api/analytics/summary/week${params}`, headers)
+  return get(`/admin/analytics/summary/week${params}`, headers)
 }

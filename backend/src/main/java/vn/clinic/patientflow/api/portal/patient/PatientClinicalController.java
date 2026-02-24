@@ -1,0 +1,68 @@
+package vn.clinic.patientflow.api.portal.patient;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import vn.clinic.patientflow.api.dto.*;
+import vn.clinic.patientflow.patient.domain.Patient;
+import vn.clinic.patientflow.patient.service.PatientPortalService;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/portal/clinical")
+@RequiredArgsConstructor
+@Tag(name = "Patient Clinical", description = "Quản lý dữ liệu lâm sàng của bệnh nhân")
+@PreAuthorize("hasRole('PATIENT')")
+public class PatientClinicalController {
+
+        private final PatientPortalService portalService;
+
+        @GetMapping("/dashboard")
+        @Operation(summary = "Dữ liệu tổng quan cho trang chủ bệnh nhân")
+        public ResponseEntity<ApiResponse<PatientDashboardDto>> getDashboard() {
+                Patient p = portalService.getAuthenticatedPatient();
+                return ResponseEntity.ok(ApiResponse.success(portalService.getDashboardData(p.getId())));
+        }
+
+        @GetMapping("/medical-history")
+        @Operation(summary = "Lịch sử khám bệnh (Có phân trang)")
+        public ResponseEntity<ApiResponse<PagedResponse<ConsultationDto>>> getHistory(
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
+                Patient p = portalService.getAuthenticatedPatient();
+                return ResponseEntity.ok(ApiResponse.success(portalService.getMedicalHistory(p.getId(), page, size)));
+        }
+
+        @GetMapping("/medical-history/{id}")
+        @Operation(summary = "Chi tiết ca khám")
+        public ResponseEntity<ApiResponse<ConsultationDetailDto>> getHistoryDetail(@PathVariable UUID id) {
+                Patient p = portalService.getAuthenticatedPatient();
+                return ResponseEntity.ok(ApiResponse.success(portalService.getConsultationDetail(p.getId(), id)));
+        }
+
+        @GetMapping("/vitals/trends")
+        @Operation(summary = "Dữ liệu xu hướng sinh hiệu cho biểu đồ")
+        public ResponseEntity<ApiResponse<List<VitalTrendDto>>> getVitalTrends(@RequestParam String type) {
+                Patient p = portalService.getAuthenticatedPatient();
+                return ResponseEntity.ok(ApiResponse.success(portalService.getVitalTrends(p.getId(), type)));
+        }
+
+        @GetMapping("/queues")
+        @Operation(summary = "Trạng thái hàng chờ hiện tại")
+        public ResponseEntity<ApiResponse<List<QueueEntryDto>>> getActiveQueues() {
+                Patient p = portalService.getAuthenticatedPatient();
+                return ResponseEntity.ok(ApiResponse.success(portalService.getActiveQueues(p.getId())));
+        }
+
+        @PostMapping("/vitals")
+        @Operation(summary = "Bệnh nhân tự nhập chỉ số sinh hiệu")
+        public ResponseEntity<ApiResponse<PatientVitalLogDto>> logVital(@RequestBody PatientVitalLogDto dto) {
+                Patient p = portalService.getAuthenticatedPatient();
+                return ResponseEntity.ok(ApiResponse.success(portalService.logVitalMetric(p, dto)));
+        }
+}

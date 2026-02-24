@@ -17,4 +17,6 @@ public class PatientDashboardDto {
     private List<TriageVitalDto> vitalHistory;
     private PrescriptionDto latestPrescription;
     private InvoiceDto pendingInvoice;
+    private List<MedicationReminderDto> medicationReminders;
+    private List<String> healthAlerts;
 }

@@ -9,4 +9,6 @@ import java.util.UUID;
 
 public interface DiagnosticImageRepository extends JpaRepository<DiagnosticImage, UUID> {
     List<DiagnosticImage> findByConsultation(ClinicalConsultation consultation);
+
+    List<DiagnosticImage> findByConsultationPatientIdOrderByCreatedAtDesc(UUID patientId);
 }

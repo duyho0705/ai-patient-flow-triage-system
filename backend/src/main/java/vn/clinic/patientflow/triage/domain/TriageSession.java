@@ -16,7 +16,7 @@ import java.util.UUID;
 /**
  * Phiên phân loại ưu tiên. acuity_source: HUMAN | AI | HYBRID.
  */
-@Entity
+@Entity(name = "TriageSession")
 @Table(name = "triage_session")
 @Getter
 @Setter

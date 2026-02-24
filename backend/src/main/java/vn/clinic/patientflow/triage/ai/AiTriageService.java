@@ -95,6 +95,8 @@ public class AiTriageService {
         return result;
     }
 
+    private final vn.clinic.patientflow.aiaudit.service.AiAuditServiceV2 universalAuditService;
+
     /**
      * Ghi audit sau khi đã tạo triage_session (để có triage_session_id).
      */
@@ -102,6 +104,7 @@ public class AiTriageService {
     public void recordAudit(UUID triageSessionId, TriageInput input, TriageSuggestionResult result) {
         TriageSession session = triageSessionRepository.findById(triageSessionId)
                 .orElseThrow(() -> new IllegalArgumentException("TriageSession not found: " + triageSessionId));
+
         AiModelVersion modelVersion = getOrCreateCurrentModelVersion(modelKey);
         String inputJson = toJsonSafe(inputToMap(input));
         String outputJson = toJsonSafe(resultToMap(result));
@@ -109,6 +112,7 @@ public class AiTriageService {
         String actualAcuity = session.getAcuityLevel();
         boolean matched = suggestedAcuity != null && suggestedAcuity.equalsIgnoreCase(actualAcuity);
 
+        // 1. Domain-specific Audit (Legacy/Detailed)
         AiTriageAudit audit = AiTriageAudit.builder()
                 .triageSession(session)
                 .modelVersion(modelVersion)
@@ -119,7 +123,19 @@ public class AiTriageService {
                 .calledAt(Instant.now())
                 .build();
         triageAuditRepository.save(audit);
-        log.debug("Recorded ai_triage_audit for session {}", triageSessionId);
+
+        // 2. Enterprise Universal Audit (New)
+        universalAuditService.recordInteraction(
+                vn.clinic.patientflow.aiaudit.domain.AiAuditLog.AiFeatureType.TRIAGE,
+                session.getPatient().getId(),
+                null,
+                inputJson,
+                outputJson,
+                result.getLatencyMs().longValue(),
+                "SUCCESS",
+                null);
+
+        log.debug("Recorded dual ai_triage_audit for session {}", triageSessionId);
     }
 
     public AiModelVersion getOrCreateCurrentModelVersion(String key) {

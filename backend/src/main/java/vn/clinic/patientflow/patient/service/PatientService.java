@@ -11,9 +11,12 @@ import vn.clinic.patientflow.patient.domain.Patient;
 import vn.clinic.patientflow.patient.domain.PatientInsurance;
 import vn.clinic.patientflow.tenant.domain.Tenant;
 import vn.clinic.patientflow.tenant.repository.TenantRepository;
+import vn.clinic.patientflow.patient.repository.PatientDeviceTokenRepository;
+import vn.clinic.patientflow.patient.domain.PatientDeviceToken;
 import vn.clinic.patientflow.patient.repository.PatientInsuranceRepository;
 import vn.clinic.patientflow.patient.repository.PatientRepository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +31,7 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final PatientInsuranceRepository patientInsuranceRepository;
     private final TenantRepository tenantRepository;
+    private final PatientDeviceTokenRepository deviceTokenRepository;
 
     @Transactional(readOnly = true)
     public Patient getById(UUID id) {
@@ -122,7 +126,28 @@ public class PatientService {
     }
 
     @Transactional(readOnly = true)
+    public Patient getByUserId(UUID userId) {
+        return patientRepository.findFirstByIdentityUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found for user: " + userId));
+    }
+
+    @Transactional(readOnly = true)
     public Optional<Patient> getByIdentityUserId(UUID identityUserId) {
         return patientRepository.findFirstByIdentityUserId(identityUserId);
+    }
+
+    @Transactional
+    public void registerDeviceToken(Patient patient, String fcmToken, String deviceType) {
+        // Remove old token if exists to maintain uniqueness
+        deviceTokenRepository.deleteByFcmToken(fcmToken);
+
+        PatientDeviceToken token = PatientDeviceToken.builder()
+                .patient(patient)
+                .fcmToken(fcmToken)
+                .deviceType(deviceType)
+                .lastSeenAt(Instant.now())
+                .build();
+
+        deviceTokenRepository.save(token);
     }
 }

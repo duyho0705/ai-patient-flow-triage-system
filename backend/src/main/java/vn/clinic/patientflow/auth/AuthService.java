@@ -84,8 +84,8 @@ public class AuthService {
         user.setIsActive(true);
         user = identityService.saveUser(user);
 
-        // Assign default role 'admin' for first-time registration in demo
-        identityService.assignRole(user.getId(), request.getTenantId(), request.getBranchId(), "admin");
+        // Assign default role 'patient' for public registration
+        identityService.assignRole(user.getId(), request.getTenantId(), request.getBranchId(), "patient");
 
         return login(new LoginRequest(request.getEmail(), request.getPassword(), request.getTenantId(),
                 request.getBranchId()));

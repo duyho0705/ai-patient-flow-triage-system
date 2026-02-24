@@ -1,157 +1,68 @@
-# Danh sách role & chức năng (thực tế phòng khám VN)
+# Phân tích Role & Chức năng hệ thống Sống Khỏe (CDM)
 
-Tài liệu mô tả role chính và chức năng theo từng vai trò trong hệ thống Luồng bệnh nhân & Phân loại ưu tiên.
+Hệ thống Sống Khỏe tập trung vào Quản lý bệnh mãn tính (Chronic Disease Management - CDM), được thiết kế xoay quanh 4 vai trò chính để đảm bảo quy trình chăm sóc sức khỏe toàn diện và hiệu quả.
 
 ---
 
-## 1. ADMIN – Quản trị hệ thống (IT / chủ phòng khám)
+## 1. PATIENT – Bệnh nhân (Trung tâm của hệ thống)
 
-**👉 Không đụng bệnh nhân, quản lý toàn hệ thống.**
+**👉 Người dùng cuối, tự quản lý sức khỏe và kết nối với y tế.**
 
 ### Chức năng chính
-
-- Quản lý tenant (phòng khám / chi nhánh)
-- Quản lý người dùng (user)
-- Gán role cho user
-- Quản lý cấu hình hệ thống
-- Quản lý AI model (audit, version)
-- Xem báo cáo tổng hợp
-
-### Chi tiết chức năng
-
-**Người dùng & phân quyền**
-
-- Tạo / khóa / mở tài khoản nhân viên
-- Gán role: Receptionist, Triage Nurse, Doctor
-- Phân quyền theo chi nhánh
-
-**Cấu hình phòng khám**
-
-- Thời gian làm việc
-- Các hàng chờ (queue)
-- Luồng khám
-
-**AI (enterprise)**
-
-- Xem model AI đang dùng
-- Xem lịch sử AI decision
-- So sánh: AI đề xuất vs quyết định con người
-- Bật / tắt AI theo chi nhánh
-
-**📌 Điểm ăn tiền CV:** AI Audit + Explainability
+- **Cổng thông tin bệnh nhân (Patient Portal):** Theo dõi phác đồ điều trị cá nhân hóa.
+- **Theo dõi chỉ số (CDM Tracking):** Nhập và theo dõi các chỉ số sinh hiệu (Huyết áp, Đường huyết, BMI...) theo thời gian thực.
+- **Kết nối bác sỹ (Communication):** Chat trực tiếp với bác sĩ điều trị và nhận hỗ trợ từ AI Assistant 24/7.
+- **Quản lý lịch hẹn:** Đặt lịch tái khám, nhận thông báo nhắc lịch và nhắc uống thuốc.
+- **Hồ sơ sức khỏe điện tử (EHR):** Xem lịch sử khám bệnh, kết quả xét nghiệm và đơn thuốc điện tử.
 
 ---
 
-## 2. RECEPTIONIST – Lễ tân (điểm tiếp xúc đầu tiên)
+## 2. DOCTOR – Bác sĩ (Người ra quyết định y khoa)
 
-**👉 Vai trò cực kỳ quan trọng trong thực tế VN.**
+**👉 Quản lý lộ trình điều trị và theo dõi bệnh nhân sát sao.**
 
-### Mục tiêu
-
-- Tiếp nhận bệnh nhân
-- Giảm tắc nghẽn
-- Không cần kiến thức y khoa
-
-### Chức năng
-
-**Tiếp nhận bệnh nhân**
-
-- Tìm bệnh nhân bằng: CCCD, SĐT
-- Tạo bệnh nhân mới (nếu chưa có)
-- Đặt lịch / check-in
-  - Tạo lịch hẹn
-  - Check-in bệnh nhân đến khám
-- Walk-in (không đặt lịch trước)
-
-**Quản lý luồng**
-
-- Gửi bệnh nhân sang Triage Nurse
-- Xem trạng thái: Đã chờ, Đang phân loại, Đang khám
-
-**📌 Lễ tân KHÔNG quyết định ưu tiên.**
+### Chức năng chính
+- **Dashboard quản lý bệnh nhân:** Danh sách bệnh nhân đang theo dõi, phân loại mức độ nguy cơ dựa trên dữ liệu sinh hiệu.
+- **Hỗ trợ chẩn đoán AI:** AI phân tích dữ liệu lịch sử để đưa ra cảnh báo sớm về các biến chứng tiềm ẩn.
+- **Thăm khám & Tư vấn:** Thực hiện tư vấn từ xa hoặc trực tiếp, ghi chép lâm sàng và kê đơn thuốc điện tử.
+- **Quản lý phác đồ CDM:** Thiết lập ngưỡng cảnh báo sinh hiệu cho từng bệnh nhân cụ thể.
+- **Giao tiếp:** Phản hồi chat, giải đáp thắc mắc và điều chỉnh lộ trình điều trị kịp thời.
 
 ---
 
-## 3. TRIAGE NURSE – Y tá phân loại (CORE của dự án)
+## 3. CLINIC_MANAGER – Quản lý phòng khám (Vận hành & Kinh doanh)
 
-**🔥 Đây là linh hồn của đồ án.**
+**👉 Đảm bảo hiệu quả hoạt động và chất lượng dịch vụ của cơ sở.**
 
-### Mục tiêu
-
-- Phân loại bệnh nhân
-- Xác định mức độ ưu tiên
-- Là nơi AI can thiệp
-
-### Chức năng
-
-**Thu thập thông tin**
-
-- Lý do đến khám (triệu chứng)
-- Sinh hiệu: Mạch, Huyết áp, SpO₂, Nhiệt độ
-- Tiền sử cơ bản
-
-**AI hỗ trợ phân loại**
-
-- Gửi dữ liệu cho AI
-- Nhận: Mức độ nguy cấp (acuity), Độ tin cậy
-- AI giải thích ngắn gọn (vd: "SpO₂ thấp + đau ngực → nguy cơ cao")
-
-**Quyết định cuối**
-
-- Chấp nhận AI hoặc override bằng con người
-- Ghi lý do override
-- Đưa bệnh nhân vào hàng chờ **theo mức độ ưu tiên** (không theo thứ tự đến trước)
-
-**📌 AI không thay người – AI hỗ trợ người.**
+### Chức năng chính
+- **Quản lý vận hành:** Giám sát luồng bệnh nhân, quản lý nhân sự (bác sĩ, nhân viên) tại chi nhánh.
+- **Báo cáo & Phân tích:** Xem báo cáo doanh thu, hiệu suất làm việc của bác sĩ và mức độ hài lòng của bệnh nhân.
+- **Quản lý danh mục:** Quản lý gói dịch vụ CDM, danh mục thuốc và vật tư y tế.
+- **Marketing & CRM:** Quản lý chương trình chăm sóc khách hàng, thẻ thành viên và các chiến dịch sức khỏe cộng đồng.
+- **Giám sát chất lượng:** Theo dõi thời gian chờ trung bình và tỉ lệ tuân thủ phác đồ của bệnh nhân.
 
 ---
 
-## 4. DOCTOR – Bác sĩ (người ra quyết định y khoa)
+## 4. SYSTEM_ADMIN – Quản trị hệ thống (IT / Chủ đầu tư)
 
-### Mục tiêu
+**👉 Quản trị nền tảng và cấu hình kỹ thuật cấp cao.**
 
-- Khám nhanh
-- Không bị quá tải
-- Thấy bệnh nhân nặng trước
-
-### Chức năng
-
-**Dashboard bác sĩ**
-
-- Danh sách bệnh nhân chờ khám
-- Sắp xếp theo: Mức độ nguy cấp, Thời gian chờ
-- Xem trước hồ sơ: Lý do đến khám, Sinh hiệu, Kết quả AI triage
-
-**Khám bệnh**
-
-- Ghi chẩn đoán
-- Ghi chỉ định (text)
-- Kết thúc lượt khám
-
-**📌 Bác sĩ KHÔNG cần nhập lại dữ liệu đã có.**
+### Chức năng chính
+- **Quản lý Multi-tenant:** Khởi tạo và quản lý các phòng khám/chuỗi phòng khám trên hệ thống.
+- **Phân quyền & Bảo mật:** Quản lý tài khoản người dùng, thiết lập Role-Based Access Control (RBAC).
+- **Cấu hình AI:** Quản lý các phiên bản Model AI, theo dõi độ chính xác và tính giải thích được (Explainability) của AI.
+- **Quản trị dữ liệu:** Sao lưu, phục hồi dữ liệu và đảm bảo tính toàn vẹn của hồ sơ bệnh án điện tử.
+- **Tích hợp:** Cấu hình các cổng thanh toán (VNPAY, MoMo), dịch vụ SMS/Email và kết nối thiết bị IoT (máy đo HA, đường huyết).
 
 ---
 
-## 5. CLINIC MANAGER – Quản lý vận hành (Optional – nâng cấp)
+## Tóm tắt ma trận chức năng
 
-**👉 Role này giúp đồ án "đội trình".**
-
-### Chức năng
-
-- Xem báo cáo:
-  - Thời gian chờ trung bình
-  - Số bệnh nhân/ngày
-- So sánh: Trước khi có AI vs Sau khi có AI
-- Đánh giá hiệu quả nhân sự
-
----
-
-## Tóm tắt so sánh
-
-| Role            | Tiếp nhận BN | Phân loại / AI | Hàng chờ        | Cấu hình / Báo cáo |
-|-----------------|-------------|----------------|-----------------|---------------------|
-| **Admin**       | —           | AI audit       | Cấu hình queue | Tenant, user, role  |
-| **Receptionist**| ✅ Tìm, đăng ký, check-in, walk-in | — | Xem trạng thái  | —                   |
-| **Triage Nurse**| Tìm (phục vụ phân loại) | ✅ Thu thập + AI + override | ✅ Thêm theo ưu tiên | — |
-| **Doctor**      | Xem hồ sơ   | Xem kết quả    | ✅ Danh sách chờ, gọi số | —        |
-| **Clinic Manager** | —        | —             | —              | ✅ Báo cáo, so sánh AI |
+| Chức năng | Patient | Doctor | Clinic Manager | System Admin |
+|-----------|:-------:|:------:|:--------------:|:------------:|
+| Theo dõi sinh hiệu | ✅ Xem/Nhập | ✅ Giám sát | ✅ Báo cáo | — |
+| Tư vấn & Chat | ✅ Hỏi | ✅ Đáp | — | — |
+| Kê đơn & Phác đồ | ✅ Tuân thủ | ✅ Khởi tạo | — | — |
+| Quản lý nhân sự | — | — | ✅ Trực tiếp | ✅ Toàn hệ thống |
+| Doanh thu & Báo cáo | — | — | ✅ Chi tiết | ✅ Tổng hợp |
+| Cấu hình AI & Hệ thống | — | — | — | ✅ Tối cao |

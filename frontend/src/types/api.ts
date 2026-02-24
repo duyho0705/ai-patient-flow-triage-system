@@ -175,6 +175,7 @@ export interface UpdatePatientProfileRequest {
   ward?: string
   nationality?: string
   ethnicity?: string
+  cccd?: string
   isActive?: boolean
 }
 
@@ -343,6 +344,7 @@ export interface ConsultationDto {
   chiefComplaintSummary?: string
   aiExplanation?: string
   aiConfidenceScore?: number
+  aiInsights?: string
 }
 
 export interface CreateConsultationRequest {
@@ -419,7 +421,9 @@ export interface AppointmentDto {
 export interface PatientDashboardDto {
   patientId?: string
   branchId?: string
+  branchName?: string
   patientName: string
+  patientAvatar?: string
   activeQueues: number
   nextAppointment?: AppointmentDto
   recentVisits: ConsultationDto[]
@@ -427,6 +431,8 @@ export interface PatientDashboardDto {
   vitalHistory?: TriageVitalDto[]
   latestPrescription?: PrescriptionDto
   pendingInvoice?: InvoiceDto
+  medicationReminders?: MedicationReminderDto[]
+  healthAlerts?: string[]
 }
 
 export interface LabResultDto {
@@ -673,4 +679,89 @@ export interface PatientNotificationDto {
   relatedResourceId?: string
   isRead: boolean
   createdAt: string
+}
+
+export interface PatientChatMessageDto {
+  id: string
+  senderType: string // PATIENT or DOCTOR
+  content: string
+  sentAt: string
+}
+
+export interface PatientChatConversationDto {
+  id: string
+  patientId: string
+  patientName: string
+  lastMessage?: string
+  lastMessageAt?: string
+  status: string
+}
+
+export interface CdsWarning {
+  type: string
+  message: string
+  severity: 'INFO' | 'WARNING' | 'ERROR'
+}
+
+export interface CdsSuggestion {
+  title: string
+  reason: string
+  actionType: 'LAB_ORDER' | 'IMAGING' | 'MEDICATION_ADJUST'
+}
+
+export interface CdsAdviceDto {
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNKNOWN'
+  summary: string
+  warnings: CdsWarning[]
+  suggestions: CdsSuggestion[]
+  differentialDiagnoses: string[]
+  aiReasoning: string
+}
+
+export interface ClinicalEarlyWarningDto {
+  news2Score: number
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN'
+  monitoringFrequency: string
+  warnings: Array<{
+    vitalType: string
+    value: string
+    pointsContributed: number
+    trend: 'STABLE' | 'WORSENING' | 'IMPROVING'
+  }>
+  aiClinicalAssessment: string
+  escalationProtocol: string
+}
+
+export interface MedicationReminderDto {
+  id: string
+  medicineName: string
+  reminderTime: string
+  dosage: string
+  isActive: boolean
+  notes?: string
+}
+
+export interface MedicationReminderRequest {
+  medicineName: string
+  reminderTime: string
+  dosage: string
+  notes?: string
+}
+
+export interface PatientVitalLogDto {
+  id?: string
+  vitalType: string
+  valueNumeric: number
+  unit?: string
+  recordedAt?: string
+  imageUrl?: string
+  notes?: string
+}
+
+export interface MedicationDosageLogDto {
+  id?: string
+  medicationReminderId?: string
+  medicineName: string
+  dosageInstruction?: string
+  takenAt?: string
 }

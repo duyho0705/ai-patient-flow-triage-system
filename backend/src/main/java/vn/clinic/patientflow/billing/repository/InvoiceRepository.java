@@ -18,6 +18,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
         java.util.List<Invoice> findByPatientIdOrderByCreatedAtDesc(UUID patientId);
 
+        org.springframework.data.domain.Page<Invoice> findByPatientIdOrderByCreatedAtDesc(UUID patientId,
+                        org.springframework.data.domain.Pageable pageable);
+
         Optional<Invoice> findByConsultationId(UUID consultationId);
 
         long countByTenantIdAndCreatedAtBetween(UUID tenantId, java.time.Instant from, java.time.Instant to);

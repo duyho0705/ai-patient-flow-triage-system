@@ -23,7 +23,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Filter xác thực JWT – đọc Bearer token, validate, set SecurityContext và TenantContext.
+ * Filter xác thực JWT – đọc Bearer token, validate, set SecurityContext và
+ * TenantContext.
  */
 @Component
 @RequiredArgsConstructor
@@ -81,9 +82,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest request) {
+        // 1. Check Authorization header
         String header = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(header) && header.startsWith(BEARER_PREFIX)) {
             return header.substring(BEARER_PREFIX.length()).trim();
+        }
+
+        // 2. Check Cookies
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ("jwt".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
         }
         return null;
     }

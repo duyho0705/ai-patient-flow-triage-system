@@ -6,9 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import vn.clinic.patientflow.scheduling.domain.SchedulingAppointment;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.UUID;
 
 @Data
@@ -16,42 +14,25 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AppointmentDto {
-
     private UUID id;
-    private UUID tenantId;
-    private UUID branchId;
-    private String branchName;
     private UUID patientId;
     private String patientName;
-    private LocalDate appointmentDate;
-    private LocalTime slotStartTime;
-    private LocalTime slotEndTime;
+    private LocalDate date;
+    private String startTime;
     private String status;
-    private String appointmentType;
-    private String notes;
-    private UUID createdByUserId;
-    private Instant createdAt;
-    private Instant updatedAt;
+    private String type;
 
-    public static AppointmentDto fromEntity(SchedulingAppointment e) {
-        if (e == null)
+    public static AppointmentDto fromEntity(SchedulingAppointment a) {
+        if (a == null)
             return null;
         return AppointmentDto.builder()
-                .id(e.getId())
-                .tenantId(e.getTenant() != null ? e.getTenant().getId() : null)
-                .branchId(e.getBranch() != null ? e.getBranch().getId() : null)
-                .branchName(e.getBranch() != null ? e.getBranch().getNameVi() : null)
-                .patientId(e.getPatient() != null ? e.getPatient().getId() : null)
-                .patientName(e.getPatient() != null ? e.getPatient().getFullNameVi() : null)
-                .appointmentDate(e.getAppointmentDate())
-                .slotStartTime(e.getSlotStartTime())
-                .slotEndTime(e.getSlotEndTime())
-                .status(e.getStatus())
-                .appointmentType(e.getAppointmentType())
-                .notes(e.getNotes())
-                .createdByUserId(e.getCreatedByUser() != null ? e.getCreatedByUser().getId() : null)
-                .createdAt(e.getCreatedAt())
-                .updatedAt(e.getUpdatedAt())
+                .id(a.getId())
+                .patientId(a.getPatient() != null ? a.getPatient().getId() : null)
+                .patientName(a.getPatient() != null ? a.getPatient().getFullNameVi() : null)
+                .date(a.getAppointmentDate())
+                .startTime(a.getSlotStartTime() != null ? a.getSlotStartTime().toString() : "")
+                .status(a.getStatus())
+                .type(a.getAppointmentType())
                 .build();
     }
 }

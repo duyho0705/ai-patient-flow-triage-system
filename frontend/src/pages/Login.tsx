@@ -1,25 +1,53 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useTenant } from '@/context/TenantContext'
 import { listTenants, getBranches } from '@/api/tenants'
 import { useQuery } from '@tanstack/react-query'
-import { X, LogIn, Mail, Lock, Building2, MapPin, AlertCircle, Loader2, Stethoscope, ChevronRight } from 'lucide-react'
+import {
+  X, LogIn, Mail, Lock, Building2, MapPin, AlertCircle, Loader2,
+  BriefcaseMedical, ChevronRight, User, Eye, EyeOff, ShieldCheck, Heart,
+  Activity, ArrowLeft,
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { LoginRequest, RegisterRequest } from '@/types/api'
-
-interface LoginFormProps {
-  onSuccess: () => void;
-}
-
 import { CustomSelect } from '@/components/CustomSelect'
 
-function LoginForm({ onSuccess }: LoginFormProps) {
+/* ─────────── helpers ─────────── */
+
+function getPasswordStrength(pw: string) {
+  if (!pw) return { level: 0, label: '', color: 'transparent' }
+  let score = 0
+  if (pw.length >= 8) score++
+  if (/[A-Z]/.test(pw)) score++
+  if (/[a-z]/.test(pw)) score++
+  if (/[0-9]/.test(pw)) score++
+  if (/[^A-Za-z0-9]/.test(pw)) score++
+  if (score <= 2) return { level: 1, label: 'Yếu', color: '#ef4444' }
+  if (score <= 3) return { level: 2, label: 'Trung bình', color: '#f59e0b' }
+  if (score <= 4) return { level: 3, label: 'Mạnh', color: '#22c55e' }
+  return { level: 4, label: 'Rất mạnh', color: '#059669' }
+}
+
+const HERO_IMG =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAxurL_0mHkDSA7Xy8Ivzc16G0mL0tuBC-qzP2L6nAylR1tH6aJySP9Xn-h53lyWhTu0qDM3g7pHesLDfwkHbBck-H6ydTV0PNaAVqhWN9i5nv2I-CWCsMsPBEp1n_bN4FS3-FLfKSK5t0aJ5HIvpsYUxAxgiIv0bxmfQs6BqHY50b4qblQuxhm_of6WK5KgtBV4D-yb4o4vHDXodAgXHfj5xaNOCNpM1xNjEn2vkrm286YzltEXIO8pbuqOE8a2jQ-lyWDOUQLI3bx'
+
+/* ═══════════════════════════════════════
+   LoginForm — shared by page & modal
+   ═══════════════════════════════════════ */
+
+interface LoginFormProps {
+  onSuccess?: () => void
+  redirectTo?: { pathname?: string; search?: string }
+}
+
+function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [step, setStep] = useState(1)
   const { login, register } = useAuth()
   const { setTenant } = useTenant()
   const navigate = useNavigate()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullNameVi, setFullNameVi] = useState('')
@@ -27,107 +55,55 @@ function LoginForm({ onSuccess }: LoginFormProps) {
   const [branchId, setBranchId] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
-  const { data: tenants = [] } = useQuery({
-    queryKey: ['tenants'],
-    queryFn: listTenants,
-  })
-
+  const { data: tenants = [] } = useQuery({ queryKey: ['tenants'], queryFn: listTenants })
   const { data: branches = [] } = useQuery({
     queryKey: ['branches', tenantId],
     queryFn: () => getBranches(tenantId),
     enabled: !!tenantId,
   })
 
-  // Set default tenant if only one exists
   useEffect(() => {
-    if (tenants.length === 1 && !tenantId) {
-      setTenantId(tenants[0].id)
-    }
+    if (tenants.length === 1 && !tenantId) setTenantId(tenants[0].id)
   }, [tenants])
 
+  const pwStrength = useMemo(() => getPasswordStrength(password), [password])
+
+  /* ── validation + submit ── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    // Basic Validation
-    if (!email) {
-      setError('Vui lòng nhập email.')
-      setStep(1)
-      return
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email.trim())) {
-      setError('Định dạng email không hợp lệ.')
-      setStep(1)
-      return
-    }
-
-    if (!password) {
-      setError('Vui lòng nhập mật khẩu.')
-      setStep(1)
-      return
-    }
+    if (!email) { setError('Vui lòng nhập email.'); setStep(1); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Định dạng email không hợp lệ.'); setStep(1); return }
+    if (!password) { setError('Vui lòng nhập mật khẩu.'); setStep(1); return }
 
     if (mode === 'register') {
-      if (!fullNameVi.trim()) {
-        setError('Vui lòng nhập họ và tên.')
-        setStep(1)
-        return
-      }
-      if (password.length < 8) {
-        setError('Mật khẩu đăng ký phải có ít nhất 8 ký tự.')
-        setStep(1)
-        return
-      }
+      if (!fullNameVi.trim()) { setError('Vui lòng nhập họ và tên.'); setStep(1); return }
+      if (password.length < 8) { setError('Mật khẩu phải có ít nhất 8 ký tự.'); setStep(1); return }
       if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/.test(password)) {
         setError('Mật khẩu phải bao gồm chữ hoa, chữ thường và số.')
-        setStep(1)
-        return
+        setStep(1); return
       }
     }
 
-    if (step === 1) {
-      setStep(2)
-      return
-    }
+    if (step === 1) { setStep(2); return }
+    if (!tenantId) { setError('Vui lòng chọn phòng khám.'); return }
 
-    if (!tenantId) {
-      setError('Vui lòng chọn phòng khám.')
-      return
-    }
     setSubmitting(true)
     try {
-      if (mode === 'login') {
-        const req: LoginRequest = {
-          email: email.trim(),
-          password,
-          tenantId,
-          branchId: branchId || undefined,
-        }
-        await login(req)
-      } else {
-        const req: RegisterRequest = {
-          email: email.trim(),
-          password,
-          fullNameVi: fullNameVi.trim(),
-          tenantId,
-          branchId: branchId || undefined,
-        }
+      if (mode === 'register') {
+        const req: RegisterRequest = { email: email.trim(), password, fullNameVi: fullNameVi.trim(), tenantId, branchId: branchId || undefined }
         await register(req)
       }
-      // Success logic - we need to login after registration, but context register might do it or we do it here.
-      // Based on code line 86, it calls login again. 
-      const res = await login({ email: email.trim(), password, tenantId, branchId: branchId || undefined })
+      const loginReq: LoginRequest = { email: email.trim(), password, tenantId, branchId: branchId || undefined }
+      const res = await login(loginReq)
       setTenant(res.user.tenantId, res.user.branchId ?? undefined)
 
-      const isPatient = res.user.roles.includes('patient');
-      if (isPatient) {
-        navigate('/patient', { replace: true })
-      } else {
-        navigate('/dashboard', { replace: true })
-      }
-      onSuccess()
+      const target = res.user.roles.includes('patient') ? '/patient' : '/dashboard'
+      navigate(redirectTo?.pathname ? redirectTo : target, { replace: true })
+      onSuccess?.()
     } catch (err: any) {
       setError(err?.message || 'Thao tác thất bại. Vui lòng kiểm tra lại thông tin.')
       setStep(1)
@@ -136,251 +112,318 @@ function LoginForm({ onSuccess }: LoginFormProps) {
     }
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -20 }
-  }
+  const switchMode = () => { setMode(m => m === 'login' ? 'register' : 'login'); setStep(1); setError('') }
 
   return (
-    <div className="relative overflow-hidden">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <AnimatePresence mode="wait">
+    <>
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mb-5">
+        {[1, 2].map(s => (
+          <motion.div
+            key={s}
+            className="w-2 h-2 rounded-full"
+            animate={{
+              scale: step === s ? 1.3 : 1,
+              backgroundColor: step === s ? '#4ade80' : step > s ? '#22c55e' : '#e2e8f0',
+            }}
+          />
+        ))}
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+          {step === 1 ? 'Thông tin đăng nhập' : 'Chọn hệ thống'}
+        </span>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Error message */}
+        <AnimatePresence>
           {error && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="rounded-xl bg-red-50 border border-red-100 p-4 text-sm text-red-600 flex items-start gap-3"
+              initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -8, height: 0 }}
+              className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600"
             >
-              <AlertCircle className="w-5 h-5 shrink-0" />
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <p>{error}</p>
             </motion.div>
           )}
+        </AnimatePresence>
 
+        <AnimatePresence mode="wait">
           {step === 1 ? (
-            <motion.div
-              key="step1"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="space-y-5"
-            >
+            /* ── Step 1: Credentials ── */
+            <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              {/* Full name (register only) */}
               {mode === 'register' && (
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Họ và tên</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2b8cee] transition-colors">
-                      <LogIn className="w-5 h-5" />
-                    </div>
-                    <input
-                      type="text"
-                      value={fullNameVi}
-                      onChange={(e) => setFullNameVi(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-[#2b8cee]/10 focus:border-[#2b8cee] focus:bg-white outline-none transition-all placeholder:text-slate-300 shadow-sm"
-                      placeholder="Nguyễn Văn A"
-                      required
-                    />
-                  </div>
-                </div>
+                <Field label="Họ và tên" icon={<User />} value={fullNameVi} onChange={setFullNameVi} placeholder="Nguyễn Văn A" />
               )}
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Email</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2b8cee] transition-colors">
-                    <Mail className="w-5 h-5" />
-                  </div>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-[#2b8cee]/10 focus:border-[#2b8cee] focus:bg-white outline-none transition-all placeholder:text-slate-300 shadow-sm"
-                    placeholder="admin@patientflow.vn"
-                    required
-                  />
-                </div>
-              </div>
+              {/* Email */}
+              <Field label="Email" icon={<Mail />} type="email" value={email} onChange={setEmail} placeholder="name@example.com" />
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Mật khẩu</label>
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Mật khẩu</label>
                 <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2b8cee] transition-colors">
-                    <Lock className="w-5 h-5" />
-                  </div>
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 group-focus-within:text-[#4ade80] transition-colors pointer-events-none" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-[#2b8cee]/10 focus:border-[#2b8cee] focus:bg-white outline-none transition-all placeholder:text-slate-300 shadow-sm"
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-800 placeholder:text-slate-300 outline-none focus:bg-white focus:border-[#4ade80] focus:ring-[3px] focus:ring-[#4ade80]/10 transition-all"
                     placeholder="••••••••"
                     required
                   />
+                  <button
+                    type="button" tabIndex={-1}
+                    onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+
+                {/* Password strength (register) */}
+                {mode === 'register' && password && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2.5 mt-1">
+                    <div className="flex-1 h-1 rounded-full bg-slate-200 overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full"
+                        animate={{ width: `${(pwStrength.level / 4) * 100}%`, backgroundColor: pwStrength.color }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: pwStrength.color }}>
+                      {pwStrength.label}
+                    </span>
+                  </motion.div>
+                )}
               </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full group bg-[#2d3436] text-white py-4 rounded-2xl font-bold hover:bg-black transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2"
-                >
-                  Tiếp tục
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-                  className="text-sm font-medium text-[#2b8cee] hover:underline"
-                >
-                  {mode === 'login' ? 'Chưa có tài khoản? Đăng ký ngay' : 'Đã có tài khoản? Đăng nhập'}
-                </button>
-              </div>
+              {/* Next button */}
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-[#4ade80] to-[#2fb344] text-slate-900 text-sm font-bold shadow-lg shadow-[#4ade80]/20 hover:shadow-xl hover:shadow-[#4ade80]/30 transition-shadow"
+              >
+                Tiếp tục <ChevronRight className="w-4 h-4" />
+              </motion.button>
             </motion.div>
           ) : (
-            <motion.div
-              key="step2"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="space-y-5"
-            >
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Phòng khám</label>
+            /* ── Step 2: Tenant / Branch ── */
+            <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Phòng khám</label>
                 <CustomSelect
-                  options={tenants}
-                  value={tenantId}
-                  onChange={(val) => {
-                    setTenantId(val)
-                    setBranchId('')
-                  }}
-                  labelKey="nameVi"
-                  valueKey="id"
+                  options={tenants} value={tenantId}
+                  onChange={v => { setTenantId(v); setBranchId('') }}
+                  labelKey="nameVi" valueKey="id"
                   placeholder="Chọn phòng khám"
                   icon={<Building2 className="w-5 h-5" />}
                 />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Chi nhánh</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Chi nhánh</label>
                 <CustomSelect
-                  options={branches}
-                  value={branchId}
-                  onChange={setBranchId}
-                  labelKey="nameVi"
-                  valueKey="id"
-                  disabled={!tenantId}
+                  options={branches} value={branchId}
+                  onChange={setBranchId} disabled={!tenantId}
+                  labelKey="nameVi" valueKey="id"
                   placeholder="Chọn chi nhánh (Tùy chọn)"
                   icon={<MapPin className="w-5 h-5" />}
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="flex-[1] bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all border border-slate-200"
+              <div className="flex gap-3 pt-1">
+                <motion.button
+                  type="button" onClick={() => setStep(1)}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  className="flex items-center justify-center gap-1.5 px-5 py-3.5 rounded-full border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors"
                 >
-                  Quay lại
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-[2] bg-[#2b8cee] text-white py-4 rounded-2xl font-bold hover:bg-[#2b8cee]/90 transition-all shadow-xl shadow-[#2b8cee]/20 flex items-center justify-center gap-2 disabled:opacity-70"
+                  <ArrowLeft className="w-4 h-4" /> Quay lại
+                </motion.button>
+                <motion.button
+                  type="submit" disabled={submitting}
+                  whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-[#4ade80] to-[#2fb344] text-slate-900 text-sm font-bold shadow-lg shadow-[#4ade80]/20 disabled:opacity-60 transition-shadow"
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
                   {mode === 'login' ? 'Đăng nhập' : 'Hoàn tất Đăng ký'}
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </form>
 
-      <div className="mt-8 pt-6 border-t border-slate-100">
-        <div className="bg-slate-50/50 backdrop-blur-sm rounded-2xl p-4 border border-slate-200/50 text-center">
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Thông tin dùng thử</p>
-          <p className="text-xs font-mono text-slate-500">
-            Email: <span className="text-[#2b8cee]">admin@patientflow.vn</span><br />
-            Pass: <span className="text-[#2b8cee]">password</span>
-          </p>
+      {/* Footer: switch mode */}
+      <div className="mt-8 pt-6 border-t border-slate-100/60 text-center">
+        <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] mb-4">
+          {mode === 'login' ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
+        </p>
+        <button
+          type="button"
+          onClick={switchMode}
+          className="w-full py-3.5 rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 hover:border-[#4ade80]/40 hover:text-[#4ade80] transition-all active:scale-[0.98] shadow-sm hover:shadow-md hover:shadow-[#4ade80]/5"
+        >
+          {mode === 'login' ? 'Đăng ký thành viên mới' : 'Quay lại Đăng nhập'}
+        </button>
+      </div>
+    </>
+  )
+}
+
+/* ─── reusable input field ─── */
+function Field({ label, icon, type = 'text', value, onChange, placeholder }: {
+  label: string; icon: React.ReactNode; type?: string; value: string; onChange: (v: string) => void; placeholder?: string
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">{label}</label>
+      <div className="relative group">
+        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 group-focus-within:text-[#4ade80] transition-colors pointer-events-none">
+          {icon}
         </div>
+        <input
+          type={type} value={value}
+          onChange={e => onChange(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-800 placeholder:text-slate-300 outline-none focus:bg-white focus:border-[#4ade80] focus:ring-[3px] focus:ring-[#4ade80]/10 transition-all"
+          placeholder={placeholder} required
+        />
       </div>
     </div>
   )
 }
 
+/* ═══════════════════════════════════════
+   Login — full‑page (split‑screen)
+   ═══════════════════════════════════════ */
+
 export function Login() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f6f7f8] px-4 relative overflow-hidden">
-      {/* Abstract Background Decorations */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-[#2b8cee]/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-teal-500/5 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
+    <div className="flex min-h-screen bg-slate-50 font-sans">
+      {/* ── Left: Hero ── */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden">
+        <img src={HERO_IMG} alt="Sống Khỏe" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-white/10" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[440px] z-10"
-      >
-        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white/50 relative overflow-hidden">
-          <div className="text-center mb-10">
-            <div className="inline-flex w-16 h-16 bg-[#2b8cee]/10 rounded-2xl items-center justify-center mb-6">
-              <Stethoscope className="w-8 h-8 text-[#2b8cee]" />
-            </div>
-            <h1 className="text-3xl font-black text-[#2d3436] tracking-tight">ModernClinic</h1>
-            <p className="text-slate-400 mt-2 font-medium">Hệ thống Phân loại Y tế AI</p>
+        <motion.div
+          className="relative z-10 flex flex-col justify-end h-full p-10"
+          initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          <div className="inline-flex items-center gap-3 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white text-xs font-bold w-fit mb-5">
+            <BriefcaseMedical className="w-5 h-5 text-[#4ade80]" strokeWidth={2.5} /> Sống Khỏe
           </div>
-          <LoginForm onSuccess={() => { }} />
-        </div>
-      </motion.div>
+
+          <h2 className="text-3xl xl:text-4xl font-black text-white leading-tight mb-3 shadow-md">
+            Quản lý bệnh<br />
+            <span className="bg-gradient-to-r from-green-300 to-emerald-300 bg-clip-text text-transparent">
+              Mãn tính Toàn diện
+            </span>
+          </h2>
+          <p className="text-white/85 text-sm max-w-md font-medium leading-relaxed mb-8 shadow-md">
+            Giải pháp y tế số tiên phong — kết nối bệnh nhân, chuyên gia và công nghệ để nâng tầm chất lượng sống mỗi ngày.
+          </p>
+
+          {/* Stats */}
+          <div className="flex gap-4">
+            <StatCard icon={<Heart className="w-5 h-5" />} value="10,000+" label="Bệnh nhân" />
+            <StatCard icon={<ShieldCheck className="w-5 h-5" />} value="99.9%" label="Uptime" />
+            <StatCard icon={<Activity className="w-5 h-5" />} value="24/7" label="Hỗ trợ" />
+          </div>
+        </motion.div>
+      </div>
+
+      {/* ── Right: Form ── */}
+      <div className="flex-1 flex items-center justify-center p-6 relative overflow-hidden bg-white">
+        {/* Decorative blurs */}
+        <div className="absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-[#4ade80]/25 blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] left-[-8%] w-[50vw] h-[50vw] rounded-full bg-emerald-400/20 blur-[120px] pointer-events-none" />
+
+        <motion.div
+          className="w-full max-w-[420px] relative z-10"
+          initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45 }}
+        >
+          {/* Logo + heading */}
+          <div className="mb-8">
+            <Link to="/">
+              <motion.div
+                whileHover={{ rotate: 12, scale: 1.05 }}
+                className="mb-4"
+              >
+                <BriefcaseMedical className="w-12 h-12 text-[#4ade80]" strokeWidth={2.5} />
+              </motion.div>
+            </Link>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Chào mừng trở lại</h1>
+            <p className="text-sm text-slate-500 font-semibold italic">Đăng nhập để truy cập hệ thống</p>
+          </div>
+
+          <LoginForm />
+        </motion.div>
+      </div>
     </div>
   )
 }
 
-export function LoginModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+/* ─── hero stat card ─── */
+function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[.08] backdrop-blur-md border border-white/10">
+      <div className="w-9 h-9 rounded-lg bg-[#4ade80]/20 flex items-center justify-center text-[#4ade80]">{icon}</div>
+      <div>
+        <p className="text-base font-extrabold text-white">{value}</p>
+        <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wide">{label}</p>
+      </div>
+    </div>
+  )
+}
 
+/* ═══════════════════════════════════════
+   LoginModal — popup overlay
+   ═══════════════════════════════════════ */
+
+export function LoginModal({
+  isOpen,
+  onClose,
+  redirectTo,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  redirectTo?: { pathname?: string; search?: string }
+}) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-[#2d3436]/10 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
           />
 
+          {/* card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.92, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-[440px] bg-white rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] overflow-hidden"
+            exit={{ opacity: 0, scale: 0.92, y: 24 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+            className="relative w-full max-w-[440px] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden"
           >
             <button
               onClick={onClose}
-              className="absolute right-6 top-6 p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all z-20"
+              className="absolute right-5 top-5 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <div className="p-10 pt-12">
-              <div className="text-center mb-10">
-                <div className="inline-flex w-14 h-14 bg-[#2b8cee]/10 rounded-2xl items-center justify-center mb-6">
-                  <Stethoscope className="w-7 h-7 text-[#2b8cee]" />
-                </div>
-                <h2 className="text-3xl font-black text-[#2d3436] tracking-tight">Chào mừng</h2>
-                <p className="text-slate-400 mt-2 font-medium">Đăng nhập hoặc Đăng ký để vào hệ thống</p>
+            <div className="p-8 pt-10">
+              {/* Header */}
+              <div className="text-center mb-6">
+                <Link to="/" className="inline-flex items-center justify-center mb-4">
+                  <BriefcaseMedical className="w-10 h-10 text-[#4ade80]" strokeWidth={2.5} />
+                </Link>
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Chào mừng đến Sống Khỏe</h2>
               </div>
 
-              <LoginForm onSuccess={() => {
-                onClose()
-              }} />
+              <LoginForm onSuccess={onClose} redirectTo={redirectTo} />
             </div>
           </motion.div>
         </div>

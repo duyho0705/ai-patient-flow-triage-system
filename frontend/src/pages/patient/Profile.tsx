@@ -8,7 +8,6 @@ import {
     ShieldCheck,
     Camera,
     Save,
-    Calendar,
     Globe,
     Loader2,
     Lock,
@@ -77,13 +76,19 @@ function CustomSelect({ value, onChange, options, placeholder, className = '' }:
     )
 }
 
+const genderMap: Record<string, string> = {
+    'MALE': 'Nam',
+    'FEMALE': 'Nữ',
+    'OTHER': 'Khác'
+}
+
 export default function PatientProfile() {
     const { headers } = useTenant()
     const queryClient = useQueryClient()
     const [formData, setFormData] = useState<UpdatePatientProfileRequest>({
         fullNameVi: '',
         dateOfBirth: '',
-        gender: 'Khác',
+        gender: 'OTHER',
         phone: '',
         email: '',
         addressLine: '',
@@ -91,7 +96,8 @@ export default function PatientProfile() {
         district: '',
         ward: '',
         nationality: 'Việt Nam',
-        ethnicity: 'Kinh'
+        ethnicity: 'Kinh',
+        cccd: ''
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -114,7 +120,7 @@ export default function PatientProfile() {
             setFormData({
                 fullNameVi: profile.fullNameVi || '',
                 dateOfBirth: profile.dateOfBirth || '',
-                gender: profile.gender || 'Khác',
+                gender: profile.gender || 'OTHER',
                 phone: profile.phone || '',
                 email: profile.email || '',
                 addressLine: profile.addressLine || '',
@@ -122,7 +128,8 @@ export default function PatientProfile() {
                 district: profile.district || '',
                 ward: profile.ward || '',
                 nationality: profile.nationality || 'Việt Nam',
-                ethnicity: profile.ethnicity || 'Kinh'
+                ethnicity: profile.ethnicity || 'Kinh',
+                cccd: profile.cccd || ''
             })
         }
     }, [profile])
@@ -139,6 +146,7 @@ export default function PatientProfile() {
         if (formData.dateOfBirth) {
             const dob = new Date(formData.dateOfBirth)
             if (dob > new Date()) newErrors.dateOfBirth = 'Ngày sinh không thể ở tương lai'
+            if (isNaN(dob.getTime())) newErrors.dateOfBirth = 'Ngày sinh không hợp lệ'
         }
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
@@ -175,7 +183,16 @@ export default function PatientProfile() {
             setErrors({})
         },
         onError: (err: any) => {
-            toast.error(err.message || 'Có lỗi xảy ra khi cập nhật.')
+            if (err.details?.errors) {
+                const newErrors: Record<string, string> = {}
+                err.details.errors.forEach((e: any) => {
+                    newErrors[e.field] = e.message
+                })
+                setErrors(newErrors)
+                toast.error('Vui lòng kiểm tra lại các trường thông tin.')
+            } else {
+                toast.error(err.message || 'Có lỗi xảy ra khi cập nhật.')
+            }
         }
     })
 
@@ -235,11 +252,7 @@ export default function PatientProfile() {
     if (isLoading) return <div className="p-12 text-center text-slate-400 font-bold">Đang tải hồ sơ...</div>
 
     return (
-        <div className="px-4 py-8 space-y-8 pb-12">
-            <header>
-                <h1 className="text-4xl font-black text-slate-900 tracking-tight">Hồ sơ cá nhân</h1>
-                <p className="text-slate-500 font-medium">Quản lý thông tin và bảo mật tài khoản</p>
-            </header>
+        <div className="px-4 py-4 space-y-8 pb-12">
 
             <div className="grid lg:grid-cols-3 gap-8">
                 {/* Left: Avatar & Quick Info */}
@@ -285,8 +298,8 @@ export default function PatientProfile() {
                                     <ShieldCheck className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-300 uppercase leading-none">Mã định danh</p>
-                                    <p className="text-xs font-bold text-slate-600">#{profile?.id?.slice(0, 8).toUpperCase()}</p>
+                                    <p className="text-[10px] font-black text-slate-300 uppercase leading-none">Mã hồ sơ</p>
+                                    <p className="text-xs font-bold text-slate-600">ID-{profile?.id?.slice(0, 8).toUpperCase()}</p>
                                 </div>
                             </div>
                             <button
@@ -309,14 +322,18 @@ export default function PatientProfile() {
                                     <Globe className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter mb-0.5">Quốc tịch</p>
-                                    <input
-                                        type="text"
-                                        value={formData.nationality}
-                                        onChange={e => setFormData({ ...formData, nationality: e.target.value })}
-                                        className="w-full bg-transparent border-none font-bold text-slate-700 focus:outline-none"
-                                        placeholder="Nhập quốc tịch..."
-                                    />
+                                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter mb-0.5">Quốc tịch {profile?.nationality ? '(Cố định)' : ''}</p>
+                                    {profile?.nationality ? (
+                                        <p className="font-bold text-slate-700">{profile.nationality}</p>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={formData.nationality}
+                                            onChange={e => setFormData({ ...formData, nationality: e.target.value })}
+                                            className="w-full bg-transparent border-none font-bold text-slate-700 focus:outline-none"
+                                            placeholder="Nhập quốc tịch..."
+                                        />
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 transition-all hover:translate-x-1 group">
@@ -324,14 +341,18 @@ export default function PatientProfile() {
                                     <User className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter mb-0.5">Dân tộc</p>
-                                    <input
-                                        type="text"
-                                        value={formData.ethnicity}
-                                        onChange={e => setFormData({ ...formData, ethnicity: e.target.value })}
-                                        className="w-full bg-transparent border-none font-bold text-slate-700 focus:outline-none"
-                                        placeholder="Nhập dân tộc..."
-                                    />
+                                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter mb-0.5">Dân tộc {profile?.ethnicity ? '(Cố định)' : ''}</p>
+                                    {profile?.ethnicity ? (
+                                        <p className="font-bold text-slate-700">{profile.ethnicity}</p>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={formData.ethnicity}
+                                            onChange={e => setFormData({ ...formData, ethnicity: e.target.value })}
+                                            className="w-full bg-transparent border-none font-bold text-slate-700 focus:outline-none"
+                                            placeholder="Nhập dân tộc..."
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -366,11 +387,28 @@ export default function PatientProfile() {
 
                         <div className="grid sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Số CCCD / Passport (Cố định)</label>
-                                <div className="flex items-center gap-3 p-4 bg-slate-100 rounded-2xl border border-slate-200 opacity-60">
-                                    <ShieldCheck className="w-5 h-5 text-slate-400" />
-                                    <span className="font-bold text-slate-500">{profile?.cccd || 'N/A'}</span>
-                                </div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Số CCCD / Hộ chiếu {profile?.cccd ? '(Cố định)' : ''}</label>
+                                {profile?.cccd ? (
+                                    <div className="flex items-center gap-3 p-4 bg-slate-100 rounded-2xl border border-slate-200 opacity-60">
+                                        <ShieldCheck className="w-5 h-5 text-slate-400" />
+                                        <span className="font-bold text-slate-500">{profile.cccd}</span>
+                                    </div>
+                                ) : (
+                                    <div className={`flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border transition-all ${errors.cccd ? 'border-rose-300 bg-rose-50' : 'border-slate-100 focus-within:border-blue-400'}`}>
+                                        <ShieldCheck className={`w-5 h-5 ${errors.cccd ? 'text-rose-400' : 'text-slate-300'}`} />
+                                        <input
+                                            type="text"
+                                            value={formData.cccd}
+                                            onChange={e => {
+                                                setFormData({ ...formData, cccd: e.target.value })
+                                                if (errors.cccd) setErrors({ ...errors, cccd: '' })
+                                            }}
+                                            placeholder="Nhập số CCCD của bạn"
+                                            className="w-full bg-transparent border-none font-bold text-slate-700 focus:outline-none placeholder:text-slate-300"
+                                        />
+                                    </div>
+                                )}
+                                {errors.cccd && <p className="text-[10px] font-bold text-rose-500 ml-2">{errors.cccd}</p>}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Họ và tên</label>
@@ -393,11 +431,11 @@ export default function PatientProfile() {
                                 <div className="flex gap-3">
                                     {/* Day Custom Select */}
                                     <CustomSelect
-                                        value={formData.dateOfBirth ? new Date(formData.dateOfBirth).getDate().toString() : ''}
+                                        value={formData.dateOfBirth ? (formData.dateOfBirth.split('-')[2]?.replace(/^0/, '') || '') : ''}
                                         onChange={(val: string) => {
-                                            const d = new Date(formData.dateOfBirth || new Date());
-                                            d.setDate(parseInt(val));
-                                            setFormData({ ...formData, dateOfBirth: d.toISOString().split('T')[0] });
+                                            const parts = (formData.dateOfBirth || '1990-01-01').split('-');
+                                            parts[2] = val.padStart(2, '0');
+                                            setFormData({ ...formData, dateOfBirth: parts.join('-') });
                                         }}
                                         options={Array.from({ length: 31 }, (_, i) => ({ value: (i + 1).toString(), label: (i + 1).toString() }))}
                                         placeholder="Ngày"
@@ -406,11 +444,11 @@ export default function PatientProfile() {
 
                                     {/* Month Custom Select */}
                                     <CustomSelect
-                                        value={formData.dateOfBirth ? (new Date(formData.dateOfBirth).getMonth() + 1).toString() : ''}
+                                        value={formData.dateOfBirth ? (formData.dateOfBirth.split('-')[1]?.replace(/^0/, '') || '') : ''}
                                         onChange={(val: string) => {
-                                            const d = new Date(formData.dateOfBirth || new Date());
-                                            d.setMonth(parseInt(val) - 1);
-                                            setFormData({ ...formData, dateOfBirth: d.toISOString().split('T')[0] });
+                                            const parts = (formData.dateOfBirth || '1990-01-01').split('-');
+                                            parts[1] = val.padStart(2, '0');
+                                            setFormData({ ...formData, dateOfBirth: parts.join('-') });
                                         }}
                                         options={Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toString(), label: `Tháng ${i + 1}` }))}
                                         placeholder="Tháng"
@@ -419,11 +457,11 @@ export default function PatientProfile() {
 
                                     {/* Year Custom Select */}
                                     <CustomSelect
-                                        value={formData.dateOfBirth ? new Date(formData.dateOfBirth).getFullYear().toString() : ''}
+                                        value={formData.dateOfBirth ? (formData.dateOfBirth.split('-')[0] || '') : ''}
                                         onChange={(val: string) => {
-                                            const d = new Date(formData.dateOfBirth || new Date());
-                                            d.setFullYear(parseInt(val));
-                                            setFormData({ ...formData, dateOfBirth: d.toISOString().split('T')[0] });
+                                            const parts = (formData.dateOfBirth || '1990-01-01').split('-');
+                                            parts[0] = val;
+                                            setFormData({ ...formData, dateOfBirth: parts.join('-') });
                                         }}
                                         options={Array.from({ length: 100 }, (_, i) => ({ value: (new Date().getFullYear() - i).toString(), label: (new Date().getFullYear() - i).toString() }))}
                                         placeholder="Năm"
@@ -436,14 +474,15 @@ export default function PatientProfile() {
                             <div className="space-y-3 group">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-blue-600">Giới tính</label>
                                 <div className="flex p-1.5 bg-slate-100/50 rounded-2xl border border-slate-100 relative w-full sm:w-80">
-                                    {['Nam', 'Nữ', 'Khác'].map((option) => (
+                                    {Object.entries(genderMap).map(([value, label]) => (
                                         <button
-                                            key={option}
-                                            onClick={() => setFormData({ ...formData, gender: option })}
-                                            className={`relative flex-1 py-3 text-sm font-black transition-all z-10 ${formData.gender === option ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                            key={value}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, gender: value })}
+                                            className={`relative flex-1 py-3 text-sm font-black transition-all z-10 ${formData.gender === value ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
                                         >
-                                            {option}
-                                            {formData.gender === option && (
+                                            {label}
+                                            {formData.gender === value && (
                                                 <motion.div
                                                     layoutId="activeGender"
                                                     className="absolute inset-0 bg-white rounded-xl shadow-md border border-slate-200/50 z-[-1]"

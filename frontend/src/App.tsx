@@ -2,20 +2,14 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { Layout } from '@/components/Layout'
 import { RequireAuth } from '@/components/RequireAuth'
+import { PermissionGate } from '@/components/PermissionGate'
+import { RequirePatient } from '@/components/RequirePatient'
+import { RequireStaff } from '@/components/RequireStaff'
 
 import { LandingPage } from '@/pages/LandingPage'
-import { Login } from '@/pages/Login'
 import { Dashboard } from '@/pages/Dashboard'
-import { Patients } from '@/pages/Patients'
-import { Billing } from '@/pages/Billing'
-import { Inventory } from '@/pages/Inventory'
-import { DisplayPage } from '@/pages/DisplayPage'
-import { KioskPage } from '@/pages/KioskPage'
-import { PharmacyDispensing } from '@/pages/PharmacyDispensing'
 import { Scheduling } from '@/pages/Scheduling'
-import { Triage } from '@/pages/Triage'
-import { Queue } from '@/pages/Queue'
-import { AiAudit } from '@/pages/AiAudit'
+
 import { Analytics } from '@/pages/Analytics'
 import { Reports } from '@/pages/Reports'
 import { Admin } from '@/pages/Admin'
@@ -31,9 +25,13 @@ import PatientAppointments from '@/pages/patient/Appointments'
 import PatientBooking from '@/pages/patient/Booking'
 import PatientProfile from '@/pages/patient/Profile'
 import PatientBilling from '@/pages/patient/Billing'
+import PatientPaymentReturn from '@/pages/patient/PaymentReturn'
 import PatientInsurance from '@/pages/patient/Insurance'
 import PatientChatDoctor from '@/pages/patient/ChatDoctor'
+import AiAssistant from '@/pages/patient/AiAssistant'
 import PatientFamily from '@/pages/patient/Family'
+import DoctorChat from '@/pages/doctor/Chat'
+import { DoctorConsultation } from '@/pages/DoctorConsultation'
 import { Outlet } from 'react-router-dom'
 
 function App() {
@@ -51,39 +49,61 @@ function App() {
       />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/display/:branchId" element={<DisplayPage />} />
-        <Route path="/kiosk/:branchId" element={<KioskPage />} />
+        <Route path="/login" element={<Navigate to="/" state={{ openLogin: true }} replace />} />
         <Route element={<RequireAuth />}>
-          <Route path="/portal/:patientId" element={<PatientPortal />} />
-          <Route path="/patient" element={<PatientLayout><Outlet /></PatientLayout>}>
-            <Route index element={<PatientDashboard />} />
-            <Route path="history" element={<PatientHistory />} />
-            <Route path="history/:id" element={<PatientHistoryDetail />} />
-            <Route path="appointments" element={<PatientAppointments />} />
-            <Route path="booking" element={<PatientBooking />} />
-            <Route path="billing" element={<PatientBilling />} />
-            <Route path="insurance" element={<PatientInsurance />} />
-            <Route path="chat" element={<PatientChatDoctor />} />
-            <Route path="family" element={<PatientFamily />} />
-            <Route path="profile" element={<PatientProfile />} />
+          {/* Patient Portal - chỉ cho role patient */}
+          <Route element={<RequirePatient />}>
+            <Route path="/portal/:patientId" element={<PatientPortal />} />
+            <Route path="/patient" element={<PatientLayout><Outlet /></PatientLayout>}>
+              <Route index element={<PatientDashboard />} />
+              <Route path="history" element={<PatientHistory />} />
+              <Route path="history/:id" element={<PatientHistoryDetail />} />
+              <Route path="appointments" element={<PatientAppointments />} />
+              <Route path="booking" element={<PatientBooking />} />
+              <Route path="billing" element={<PatientBilling />} />
+              <Route path="payment-return" element={<PatientPaymentReturn />} />
+              <Route path="insurance" element={<PatientInsurance />} />
+              <Route path="chat" element={<PatientChatDoctor />} />
+              <Route path="ai-assistant" element={<AiAssistant />} />
+              <Route path="family" element={<PatientFamily />} />
+              <Route path="profile" element={<PatientProfile />} />
+            </Route>
           </Route>
-          <Route element={<Layout />}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="reception" element={<Reception />} />
-            <Route path="patients" element={<Patients />} />
-            <Route path="patients/:patientId/ehr" element={<PatientEhr />} />
-            <Route path="consultation" element={<Consultation />} />
-            <Route path="triage" element={<Triage />} />
-            <Route path="queue" element={<Queue />} />
-            <Route path="scheduling" element={<Scheduling />} />
-            <Route path="billing" element={<Billing />} />
-            <Route path="inventory" element={<Inventory />} />
-            <Route path="dispensing" element={<PharmacyDispensing />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="ai-audit" element={<AiAudit />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="admin" element={<Admin />} />
+
+          {/* Staff Portal - chỉ cho staff (không patient) */}
+          <Route element={<RequireStaff />}>
+            <Route element={<Layout />}>
+              <Route path="dashboard" element={<Dashboard />} />
+
+              {/* Tiếp nhận BN: Receptionist & Admin */}
+              <Route element={<PermissionGate allowedRoles={['receptionist', 'admin']} />}>
+                <Route path="reception" element={<Reception />} />
+              </Route>
+
+              {/* Quản lý Điều trị & EHR: Doctor & Admin */}
+              <Route element={<PermissionGate allowedRoles={['doctor', 'admin']} />}>
+                <Route path="consultation" element={<Consultation />} />
+                <Route path="consultation/:consultationId" element={<DoctorConsultation />} />
+                <Route path="patients/:patientId/ehr" element={<PatientEhr />} />
+                <Route path="chat" element={<DoctorChat />} />
+              </Route>
+
+              {/* Theo dõi & Tái khám: Doctor, Receptionist & Admin */}
+              <Route element={<PermissionGate allowedRoles={['doctor', 'receptionist', 'admin']} />}>
+                <Route path="scheduling" element={<Scheduling />} />
+              </Route>
+
+              {/* Báo cáo & Phân tích CDM */}
+              <Route element={<PermissionGate allowedRoles={['clinic_manager', 'admin']} />}>
+                <Route path="reports" element={<Reports />} />
+                <Route path="analytics" element={<Analytics />} />
+              </Route>
+
+              {/* Admin Only */}
+              <Route element={<PermissionGate allowedRoles={['admin']} />}>
+                <Route path="admin" element={<Admin />} />
+              </Route>
+            </Route>
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

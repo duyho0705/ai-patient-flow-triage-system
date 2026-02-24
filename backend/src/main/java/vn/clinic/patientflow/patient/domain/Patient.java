@@ -71,6 +71,15 @@ public class Patient extends BaseAuditableEntity {
     @Column(name = "avatar_url", length = 1000)
     private String avatarUrl;
 
+    @Column(name = "blood_type", length = 10)
+    private String bloodType;
+
+    @Column(name = "allergies", columnDefinition = "text")
+    private String allergies;
+
+    @Column(name = "chronic_conditions", columnDefinition = "text")
+    private String chronicConditions;
+
     @Column(name = "identity_user_id")
     private UUID identityUserId;
 

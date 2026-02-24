@@ -1,7 +1,6 @@
 package vn.clinic.patientflow.queue.service;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,12 +53,42 @@ public class QueueService {
         public List<QueueEntry> getWaitingEntries(UUID branchId, UUID queueDefinitionId) {
                 List<QueueEntry> list = queueEntryRepository.findWaitingWithTriageByBranchAndQueue(
                                 branchId, queueDefinitionId, "WAITING");
-                list.sort(Comparator
-                                .comparing((QueueEntry e) -> e.getTriageSession() != null
-                                                ? e.getTriageSession().getAcuityLevel()
-                                                : "9")
-                                .thenComparing(QueueEntry::getJoinedAt));
+
+                // Enterprise Priority Scoring Algorithm
+                list.sort((e1, e2) -> {
+                        int p1 = calculatePriorityScore(e1);
+                        int p2 = calculatePriorityScore(e2);
+                        if (p1 != p2)
+                                return Integer.compare(p2, p1); // Higher score first
+                        return e1.getJoinedAt().compareTo(e2.getJoinedAt());
+                });
                 return list;
+        }
+
+        private int calculatePriorityScore(QueueEntry entry) {
+                int score = 0;
+
+                // 1. Acuity Weight
+                if (entry.getTriageSession() != null) {
+                        String acuity = entry.getTriageSession().getAcuityLevel();
+                        if ("EMERGENCY".equalsIgnoreCase(acuity))
+                                score += 1000;
+                        else if ("URGENT".equalsIgnoreCase(acuity))
+                                score += 500;
+                        else if ("PRIORITY".equalsIgnoreCase(acuity))
+                                score += 200;
+                }
+
+                // 2. Wait Time Weight (1 point per minute)
+                long waitMinutes = java.time.Duration.between(entry.getJoinedAt(), Instant.now()).toMinutes();
+                score += (int) waitMinutes;
+
+                // 3. Appointment Bonus
+                if (entry.getAppointment() != null) {
+                        score += 50; // Guaranteed slot priority
+                }
+
+                return score;
         }
 
         @Transactional
@@ -144,6 +173,12 @@ public class QueueService {
         }
 
         @Transactional(readOnly = true)
+        public List<QueueEntry> getAllActiveEntries() {
+                UUID tenantId = TenantContext.getTenantIdOrThrow();
+                return queueEntryRepository.findByTenantIdAndStatusIn(tenantId, List.of("WAITING", "CALLED"));
+        }
+
+        @Transactional(readOnly = true)
         public vn.clinic.patientflow.api.dto.PublicQueueDto getPublicQueueStatus(UUID branchId) {
                 var branch = tenantService.getBranchById(branchId);
                 List<QueueEntry> called = queueEntryRepository.findByBranch_IdAndStatusOrderByJoinedAtAsc(branchId,
@@ -157,8 +192,10 @@ public class QueueService {
                 for (int i = 0; i < nextWaiting.size(); i++) {
                         var dto = vn.clinic.patientflow.api.dto.QueueEntryDto.fromEntity(nextWaiting.get(i));
                         dto.setPatientName(maskName(dto.getPatientName()));
-                        dto.setPeopleAhead(i);
-                        dto.setEstimatedWaitMinutes(i * 10); // Mock: assume 10 mins per patient
+                        int avgTime = nextWaiting.get(i).getQueueDefinition().getAverageConsultationMinutes() != null
+                                        ? nextWaiting.get(i).getQueueDefinition().getAverageConsultationMinutes()
+                                        : 10;
+                        dto.setEstimatedWaitMinutes(i * avgTime);
                         waitingDtos.add(dto);
                 }
 

@@ -82,7 +82,7 @@ export function DoctorConsultation() {
                 </div>
                 <div className="flex items-center gap-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold ${consultation.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                        {consultation.status}
+                        {consultation.status === 'COMPLETED' ? 'HOÀN TẤT' : 'ĐANG KHÁM'}
                     </span>
                 </div>
             </header>
@@ -220,7 +220,7 @@ export function DoctorConsultation() {
                                                     {new Date(h.startedAt).toLocaleString('vi-VN')}
                                                 </span>
                                             </div>
-                                            <span className="rounded-full bg-slate-200 px-2 py-1 text-xs">{h.status}</span>
+                                            <span className="rounded-full bg-slate-200 px-2 py-1 text-xs">{h.status === 'COMPLETED' ? 'Hoàn tất' : 'Chưa xong'}</span>
                                         </div>
                                         <p className="text-sm text-slate-600">
                                             <strong>BS:</strong> {h.doctorName || '—'}

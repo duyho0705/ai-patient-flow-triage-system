@@ -1,217 +1,296 @@
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\admin\AdminService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\domain\AiModelVersion.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\domain\AiTriageAudit.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\repository\AiModelVersionRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\repository\AiTriageAuditRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\service\AiAuditService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\AdminController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\AiAuditController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\AnalyticsController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\AuthController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\BillingController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\ClinicalController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AddPatientInsuranceRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AddPatientRelativeRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AdminUserDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiChatRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiChatResponse.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiEffectivenessDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiTriageAuditDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AppointmentDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AuditLogDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AuthUserDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ChangePasswordRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ConsultationDetailDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ConsultationDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateAppointmentRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateBranchRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateConsultationRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateInvoiceRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreatePatientRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreatePrescriptionRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreatePrescriptionTemplateRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateTenantRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateTriageSessionRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateUserRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\DailyVolumeDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\DiagnosticImageDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\DoctorInfoDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\InventoryTransactionDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\InvoiceDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\InvoiceItemDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\KioskRegistrationRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LabResultDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LoginRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LoginResponse.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\MedicalServiceDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PagedResponse.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientChatMessageDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientDashboardDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientEventDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientInsuranceDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientNotificationDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientPortalStatusDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientRelativeDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PharmacyInventoryDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PharmacyProductDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PrescriptionDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PrescriptionItemDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PrescriptionTemplateDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PublicDisplayDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PublicQueueDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\QueueDefinitionDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\QueueEntryDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RegisterDeviceTokenRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RegisterFcmTokenRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RegisterRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RevenueByDayDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RevenueReportDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RoleDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SendChatMessageRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SetPasswordRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SlotAvailabilityDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SlotTemplateDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SuggestAcuityRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TenantBranchDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TenantDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TimelineItemDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageComplaintDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageSessionDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageSuggestionDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageVitalDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateAppointmentStatusRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdatePatientProfileRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdatePatientRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateQueueEntryRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateTenantSettingsRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateUserRequest.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UserRoleAssignmentDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\WaitTimeSummaryDto.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\EhrController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\HealthController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\MasterDataController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\PatientController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\PatientNotificationController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\PatientPortalController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\PharmacyController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\PrescriptionController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\PublicDisplayController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\PublicKioskController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\QueueController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\ReportController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\SchedulingController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\TenantController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\TriageController.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\auth\AuthPrincipal.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\auth\AuthService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\auth\BadCredentialsException.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\domain\Invoice.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\domain\InvoiceItem.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\repository\InvoiceRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\service\BillingService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\ClinicalConsultation.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\ClinicalVital.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\DiagnosticImage.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\LabResult.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\Prescription.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\PrescriptionItem.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\PrescriptionTemplate.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\PrescriptionTemplateItem.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\ClinicalConsultationRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\ClinicalVitalRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\DiagnosticImageRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\LabResultRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\PrescriptionRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\PrescriptionTemplateItemRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\PrescriptionTemplateRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\PrescriptionTemplateService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\domain\AuditLog.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\domain\BaseAuditableEntity.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\domain\BaseEntity.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\exception\ApiError.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\exception\GlobalExceptionHandler.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\exception\ResourceNotFoundException.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\notification\NotificationService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\repository\AuditLogRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\AuditLogService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\FileStorageService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\tenant\TenantContext.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\FirebaseConfig.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\JpaConfig.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\JwtAuthFilter.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\JwtProperties.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\JwtUtil.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\OpenApiConfig.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\SecurityConfig.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\TenantFilter.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\WebConfig.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\WebSocketConfig.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\domain\IdentityRole.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\domain\IdentityUser.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\domain\IdentityUserRole.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\repository\IdentityRoleRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\repository\IdentityUserRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\repository\IdentityUserRoleRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\service\IdentityService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\masters\domain\MedicalService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\masters\repository\MedicalServiceRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\masters\service\MasterDataService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\Patient.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientChatConversation.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientChatMessage.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientDeviceToken.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientInsurance.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientNotification.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientRelative.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientChatConversationRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientChatMessageRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientDeviceTokenRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientInsuranceRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientNotificationRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientRelativeRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientAiChatService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientChatService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientNotificationService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\PatientFlowApplication.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\domain\InventoryTransaction.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\domain\PharmacyInventory.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\domain\PharmacyProduct.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\repository\InventoryTransactionRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\repository\PharmacyInventoryRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\repository\PharmacyProductRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\service\PharmacyService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\domain\QueueDefinition.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\domain\QueueEntry.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\repository\QueueDefinitionRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\repository\QueueEntryRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\service\QueueBroadcastService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\service\QueueService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\report\ReportExportService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\report\ReportService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\domain\SchedulingAppointment.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\domain\SchedulingCalendarDay.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\domain\SchedulingSlotTemplate.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\repository\SchedulingAppointmentRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\repository\SchedulingCalendarDayRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\repository\SchedulingSlotTemplateRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\service\SchedulingService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\domain\Tenant.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\domain\TenantBranch.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\repository\TenantBranchRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\repository\TenantRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\service\TenantService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\ai\AiTriageProvider.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\ai\AiTriageService.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\ai\HttpAiTriageProvider.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\ai\RuleBasedTriageProvider.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\domain\TriageComplaint.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\domain\TriageSession.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\domain\TriageVital.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\repository\TriageComplaintRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\repository\TriageSessionRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\repository\TriageVitalRepository.java
-E:\Use Cursor\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\service\TriageService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\admin\AdminService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\admin\AiSystemHealthService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\domain\AiAuditLog.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\domain\AiModelVersion.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\domain\AiTriageAudit.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\repository\AiAuditLogRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\repository\AiModelVersionRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\repository\AiTriageAuditRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\service\AiAuditService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\aiaudit\service\AiAuditServiceV2.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\admin\AdminController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\admin\AiAuditController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\admin\AnalyticsController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\admin\ReportController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\admin\TenantController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\AuthController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AddPatientInsuranceRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AddPatientRelativeRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AdminUserDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiAuditDetailDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiChatRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiChatResponse.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiEffectivenessDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiOperationalInsightDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiSystemHealthDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AiTriageAuditDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ApiResponse.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AppointmentDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AuditLogDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\AuthUserDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\BranchOperationalHeatmapDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CdmReportDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CdsAdviceDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ChangePasswordRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ClinicalChecklistDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ClinicalEarlyWarningDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ComplicationRiskDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ConsultationDetailDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ConsultationDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ConsultationFeedbackRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\ConsultationSummaryPdfDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateAppointmentRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateBranchRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateConsultationRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateInvoiceRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreatePatientRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreatePrescriptionRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreatePrescriptionTemplateRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateTenantRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateTriageSessionRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\CreateUserRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\DailyVolumeDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\DiagnosticImageDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\DifferentialDiagnosisDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\DoctorDashboardDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\DoctorInfoDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\FollowUpSuggestionDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\Icd10CodeDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\InventoryTransactionDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\InvoiceDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\InvoiceItemDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\KioskRegistrationRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LabResultDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LoginRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LoginResponse.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\MedicalServiceDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\MedicationReminderDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\MedicationReminderRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PagedResponse.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientChatConversationDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientChatMessageDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientCrmInsightDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientDashboardDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientEventDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientInsuranceDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientNotificationDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientPortalStatusDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientRelativeDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PharmacyInventoryDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PharmacyProductDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PrescriptionDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PrescriptionItemDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PrescriptionTemplateDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PrescriptionVerificationDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PublicDisplayDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PublicQueueDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\QueueDefinitionDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\QueueEntryDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RegisterDeviceTokenRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RegisterFcmTokenRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RegisterRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RevenueByDayDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RevenueReportDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RoleDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SendChatMessageRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SetPasswordRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SlotAvailabilityDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SlotTemplateDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\StandardizedClinicalNoteDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SuggestAcuityRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TenantBranchDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TenantDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TimelineItemDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TreatmentEfficacyDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageComplaintDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageSessionDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageSuggestionDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\TriageVitalDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateAppointmentStatusRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdatePatientProfileRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdatePatientRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateQueueEntryRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateTenantSettingsRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UpdateUserRequest.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\UserRoleAssignmentDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\VitalHistoryDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\VitalTrendDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\WaitTimeSummaryDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\HealthController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\masters\MasterDataController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\doctor\DoctorAiSupportController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\doctor\DoctorConsultationController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\doctor\DoctorDashboardController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\doctor\DoctorMessagingController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\doctor\DoctorPatientController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\doctor\DoctorProfileController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientAiController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientAppointmentController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientBillingController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientBranchController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientClinicalController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientMedicationController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientMessagingController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientPortalNotificationController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientProfileController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\pharmacy\PharmacyPortalController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\public_display\PublicDisplayController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\public_kiosk\PublicKioskController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\BillingController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\ChronicManagementController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\ClinicalController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\EhrController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\PatientController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\PharmacyController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\PrescriptionController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\QueueController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\SchedulingController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\staff\TriageController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\auth\AuthPrincipal.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\auth\AuthService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\auth\BadCredentialsException.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\domain\Invoice.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\domain\InvoiceItem.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\repository\InvoiceRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\service\BillingService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\service\PaymentService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\ClinicalConsultation.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\ClinicalVital.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\ConsultationFeedback.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\DiagnosticImage.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\LabResult.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\Prescription.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\PrescriptionItem.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\PrescriptionTemplate.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\PrescriptionTemplateItem.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\event\ClinicalEventListener.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\event\ConsultationCompletedEvent.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\ClinicalConsultationRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\ClinicalVitalRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\ConsultationFeedbackRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\DiagnosticImageRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\LabResultRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\PrescriptionRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\PrescriptionTemplateItemRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\repository\PrescriptionTemplateRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\AiClinicalInsightListener.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\AiClinicalService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\CdsService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalBillingService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalContextService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalMapper.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalSimulationService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\EarlyWarningService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\PrescriptionTemplateService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\PromptRegistry.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\domain\AuditLog.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\domain\BaseAuditableEntity.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\domain\BaseEntity.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\exception\ApiError.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\exception\GlobalExceptionHandler.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\exception\ResourceNotFoundException.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\notification\NotificationService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\repository\AuditLogRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\AuditLogService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\EmailService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\FileStorageService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\OmniChannelService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\PdfService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\service\RateLimitService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\common\tenant\TenantContext.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\AiServiceHealthIndicator.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\AsyncConfig.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\CacheConfig.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\FirebaseConfig.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\JpaConfig.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\JwtAuthFilter.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\JwtProperties.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\JwtUtil.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\OpenApiConfig.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\RateLimitInterceptor.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\SecurityConfig.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\TenantFilter.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\WebConfig.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\config\WebSocketConfig.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\domain\IdentityRole.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\domain\IdentityUser.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\domain\IdentityUserRole.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\repository\IdentityRoleRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\repository\IdentityUserRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\repository\IdentityUserRoleRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\identity\service\IdentityService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\masters\domain\MedicalService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\masters\repository\MedicalServiceRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\masters\service\MasterDataService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\MedicationReminder.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\Patient.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientChatConversation.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientChatMessage.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientChronicCondition.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientDeviceToken.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientInsurance.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientNotification.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientRelative.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientVitalTarget.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\MedicationReminderRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientChatConversationRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientChatMessageRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientChronicConditionRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientDeviceTokenRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientInsuranceRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientNotificationRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientRelativeRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientVitalTargetRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\MedicationReminderScheduler.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\MedicationReminderService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientAiChatService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientChatService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientCrmService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientNotificationService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientPortalService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\PatientService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\PatientFlowApplication.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\domain\InventoryTransaction.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\domain\PharmacyInventory.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\domain\PharmacyProduct.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\repository\InventoryTransactionRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\repository\PharmacyInventoryRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\repository\PharmacyProductRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\service\PharmacyAiService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\pharmacy\service\PharmacyService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\domain\QueueDefinition.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\domain\QueueEntry.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\repository\QueueDefinitionRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\repository\QueueEntryRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\service\QueueBroadcastService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\queue\service\QueueService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\report\AiOperationalService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\report\AnalyticsService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\report\ReportExportService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\report\ReportService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\domain\SchedulingAppointment.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\domain\SchedulingCalendarDay.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\domain\SchedulingSlotTemplate.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\repository\SchedulingAppointmentRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\repository\SchedulingCalendarDayRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\repository\SchedulingSlotTemplateRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\scheduling\service\SchedulingService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\domain\Tenant.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\domain\TenantBranch.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\repository\TenantBranchRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\repository\TenantRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\tenant\service\TenantService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\ai\AiTriageProvider.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\ai\AiTriageService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\ai\HttpAiTriageProvider.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\ai\RuleBasedTriageProvider.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\domain\TriageComplaint.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\domain\TriageSession.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\domain\TriageVital.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\repository\TriageComplaintRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\repository\TriageSessionRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\repository\TriageVitalRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\triage\service\TriageService.java

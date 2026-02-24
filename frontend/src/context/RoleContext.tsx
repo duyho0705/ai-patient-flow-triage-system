@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 
 /** Role chính theo thực tế phòng khám VN */
-export type Role = 'admin' | 'receptionist' | 'triage_nurse' | 'doctor' | 'clinic_manager' | 'pharmacist'
+export type Role = 'admin' | 'receptionist' | 'triage_nurse' | 'doctor' | 'clinic_manager' | 'pharmacist' | 'patient'
 
 const ROLES: { value: Role; label: string }[] = [
   { value: 'admin', label: 'Quản trị hệ thống' },
@@ -10,11 +10,12 @@ const ROLES: { value: Role; label: string }[] = [
   { value: 'doctor', label: 'Bác sĩ' },
   { value: 'clinic_manager', label: 'Quản lý phòng khám' },
   { value: 'pharmacist', label: 'Dược sĩ' },
+  { value: 'patient', label: 'Bệnh nhân' },
 ]
 
 const STORAGE_KEY = 'patient-flow-role'
 
-const VALID_ROLES: Role[] = ['admin', 'receptionist', 'triage_nurse', 'doctor', 'clinic_manager', 'pharmacist']
+const VALID_ROLES: Role[] = ['admin', 'receptionist', 'triage_nurse', 'doctor', 'clinic_manager', 'pharmacist', 'patient']
 
 function loadRole(): Role {
   try {

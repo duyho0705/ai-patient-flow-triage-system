@@ -45,6 +45,7 @@ public class TriageService {
     private final IdentityService identityService;
     private final SchedulingAppointmentRepository schedulingAppointmentRepository;
     private final AiTriageService aiTriageService;
+    private final vn.clinic.patientflow.queue.service.QueueBroadcastService queueBroadcastService;
 
     @Transactional(readOnly = true)
     public TriageSession getById(UUID id) {
@@ -130,6 +131,16 @@ public class TriageService {
                 .overrideReason(request.getOverrideReason())
                 .build();
         session = triageSessionRepository.save(session);
+
+        // Enterprise: Real-time Urgent Alerting
+        if ("EMERGENCY".equalsIgnoreCase(session.getAcuityLevel())
+                || "URGENT".equalsIgnoreCase(session.getAcuityLevel())) {
+            queueBroadcastService.broadcastUrgentAlert(
+                    session.getBranch().getId(),
+                    session.getPatient().getFullNameVi(),
+                    session.getAcuityLevel(),
+                    session.getChiefComplaintText());
+        }
 
         if (Boolean.TRUE.equals(request.getUseAiSuggestion()) && aiInput != null && aiResult != null) {
             aiTriageService.recordAudit(session.getId(), aiInput, aiResult);

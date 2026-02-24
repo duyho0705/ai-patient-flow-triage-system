@@ -48,7 +48,7 @@ export function AuditLogs() {
 
                     <div className="flex items-center gap-2 w-full md:w-80">
                         <CustomSelect
-                            options={[{ id: '', name: 'Tất cả Tenant' }, ...tenants.map(t => ({ id: t.id, name: `${t.nameVi}` }))]}
+                            options={[{ id: '', name: 'Tất cả cơ sở' }, ...tenants.map(t => ({ id: t.id, name: `${t.nameVi}` }))]}
                             value={tenantFilter}
                             onChange={(val) => {
                                 setTenantFilter(val)

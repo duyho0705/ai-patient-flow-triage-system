@@ -54,3 +54,10 @@ export async function updatePatient(
 ): Promise<PatientDto> {
   return put<PatientDto>(`/patients/${id}`, body, tenant)
 }
+
+export async function getPatientCrmInsights(
+  id: string,
+  tenant: TenantHeaders | null
+): Promise<any> {
+  return get<any>(`/patients/${id}/crm-insights`, tenant)
+}

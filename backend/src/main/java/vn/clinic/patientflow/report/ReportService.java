@@ -39,6 +39,7 @@ public class ReportService {
         private final vn.clinic.patientflow.billing.repository.InvoiceRepository invoiceRepository;
 
         @Transactional(readOnly = true)
+        @org.springframework.cache.annotation.Cacheable(value = "dashboards", key = "'rev_' + #branchId + '_' + #fromDate + '_' + #toDate")
         public vn.clinic.patientflow.api.dto.RevenueReportDto getRevenueReport(UUID branchId, LocalDate fromDate,
                         LocalDate toDate) {
                 UUID tenantId = TenantContext.getTenantIdOrThrow();
@@ -98,6 +99,7 @@ public class ReportService {
         }
 
         @Transactional(readOnly = true)
+        @org.springframework.cache.annotation.Cacheable(value = "dashboards", key = "'wait_' + #branchId + '_' + #fromDate + '_' + #toDate")
         public WaitTimeSummaryDto getWaitTimeSummary(UUID branchId, LocalDate fromDate, LocalDate toDate) {
                 UUID tenantId = TenantContext.getTenantIdOrThrow();
                 TenantBranch branch = tenantBranchRepository.findById(branchId)
@@ -122,6 +124,7 @@ public class ReportService {
         }
 
         @Transactional(readOnly = true)
+        @org.springframework.cache.annotation.Cacheable(value = "dashboards", key = "'vol_' + #branchId + '_' + #fromDate + '_' + #toDate")
         public List<DailyVolumeDto> getDailyVolume(UUID branchId, LocalDate fromDate, LocalDate toDate) {
                 UUID tenantId = TenantContext.getTenantIdOrThrow();
                 TenantBranch branch = tenantBranchRepository.findById(branchId)
@@ -154,6 +157,7 @@ public class ReportService {
         }
 
         @Transactional(readOnly = true)
+        @org.springframework.cache.annotation.Cacheable(value = "dashboards", key = "'ai_eff_' + #branchId + '_' + #fromDate + '_' + #toDate")
         public AiEffectivenessDto getAiEffectiveness(UUID branchId, LocalDate fromDate, LocalDate toDate) {
                 UUID tenantId = TenantContext.getTenantIdOrThrow();
                 TenantBranch branch = tenantBranchRepository.findById(branchId)
@@ -189,14 +193,79 @@ public class ReportService {
                                 .build();
         }
 
+        @Transactional(readOnly = true)
+        @org.springframework.cache.annotation.Cacheable(value = "dashboards", key = "'heatmap_' + #branchId")
+        public vn.clinic.patientflow.api.dto.BranchOperationalHeatmapDto getOperationalHeatmap(UUID branchId) {
+                TenantBranch branch = tenantBranchRepository.findById(branchId)
+                                .orElseThrow(() -> new NoSuchElementException("Branch not found"));
+
+                List<Object[]> countsByQueue = queueEntryRepository.countActivePatientsByQueue(branchId);
+                Map<String, Long> density = new HashMap<>();
+                long total = 0;
+                for (Object[] row : countsByQueue) {
+                        String name = (String) row[0];
+                        long count = ((Number) row[1]).longValue();
+                        density.put(name, count);
+                        total += count;
+                }
+
+                String load = total > 50 ? "CRITICAL" : (total > 30 ? "HIGH" : (total > 15 ? "NORMAL" : "LOW"));
+                String insight = load.equals("CRITICAL")
+                                ? "CẢNH BÁO: Phòng khám đang quá tải. Cần điều phối thêm nhân sự tại các khu vực mật độ cao."
+                                : "Hệ thống vận hành ổn định. Lưu lượng bệnh nhân trong tầm kiểm soát.";
+
+                return vn.clinic.patientflow.api.dto.BranchOperationalHeatmapDto.builder()
+                                .branchName(branch.getNameVi())
+                                .queueDensity(density)
+                                .totalActivePatients(total)
+                                .systemLoadLevel(load)
+                                .predictiveInsight(insight)
+                                .build();
+        }
+
+        @Transactional(readOnly = true)
+        public List<vn.clinic.patientflow.api.dto.AiAuditDetailDto> getAiAuditLogs(UUID branchId, LocalDate fromDate,
+                        LocalDate toDate) {
+                Instant from = fromDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+                Instant to = toDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+
+                return triageSessionRepository.findOverridesByBranchAndStartedAtBetween(branchId, from, to)
+                                .stream()
+                                .map(ts -> vn.clinic.patientflow.api.dto.AiAuditDetailDto.builder()
+                                                .sessionId(ts.getId())
+                                                .patientName(ts.getPatient().getFullNameVi())
+                                                .symptoms(ts.getChiefComplaintText())
+                                                .aiSuggestedAcuity(ts.getAiSuggestedAcuity())
+                                                .humanAcuity(ts.getAcuityLevel())
+                                                .overrideReason(ts.getOverrideReason())
+                                                .timestamp(ts.getStartedAt())
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
         private static Map<LocalDate, Long> toDateCountMap(List<Object[]> rows) {
                 Map<LocalDate, Long> map = new HashMap<>();
+                if (rows == null)
+                        return map;
                 for (Object[] row : rows) {
-                        LocalDate d = row[0] instanceof java.sql.Date
-                                        ? ((java.sql.Date) row[0]).toLocalDate()
-                                        : (LocalDate) row[0];
-                        long count = row[1] instanceof Number ? ((Number) row[1]).longValue() : 0L;
-                        map.put(d, count);
+                        if (row == null || row.length < 2 || row[0] == null)
+                                continue;
+                        Object dateObj = row[0];
+                        LocalDate d = null;
+                        if (dateObj instanceof java.sql.Date) {
+                                d = ((java.sql.Date) dateObj).toLocalDate();
+                        } else if (dateObj instanceof java.util.Date) {
+                                d = new java.sql.Date(((java.util.Date) dateObj).getTime()).toLocalDate();
+                        } else if (dateObj instanceof LocalDate) {
+                                d = (LocalDate) dateObj;
+                        } else if (dateObj instanceof java.time.LocalDateTime) {
+                                d = ((java.time.LocalDateTime) dateObj).toLocalDate();
+                        }
+
+                        if (d != null) {
+                                long count = row[1] instanceof Number ? ((Number) row[1]).longValue() : 0L;
+                                map.put(d, count);
+                        }
                 }
                 return map;
         }

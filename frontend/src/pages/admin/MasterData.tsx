@@ -334,7 +334,7 @@ function ServiceForm({ initialData, onSubmit, onCancel, isPending }: {
                                 key={c.id}
                                 type="button"
                                 onClick={() => setForm({ ...form, category: c.id })}
-                                className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${form.category === c.id
+                                className={`h-full px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all text-center flex items-center justify-center ${form.category === c.id
                                     ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-200'
                                     : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'
                                     }`}

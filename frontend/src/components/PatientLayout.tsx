@@ -11,11 +11,14 @@ import {
     User,
     LogOut,
     Bell,
+    MessageSquare,
+    Search,
+    Settings,
+    ShieldCheck,
     X,
     Circle,
-    Wallet,
-    Users,
-    ShieldCheck
+    Activity,
+    LifeBuoy
 } from 'lucide-react'
 import { getPortalNotifications, markPortalNotificationAsRead, markPortalAllNotificationsAsRead, getPortalProfile, getPortalInvoices } from '@/api/portal'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -59,8 +62,8 @@ export function PatientLayout({ children }: PatientLayoutProps) {
     // Global Real-time Listener
     usePatientRealtime(profile?.id, undefined)
 
-    const unreadCount = notifications.filter(n => !n.isRead).length
-    const hasPendingInvoice = invoices.some(inv => inv.status === 'PENDING')
+    const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.isRead).length : 0
+    const hasPendingInvoice = Array.isArray(invoices) && invoices.some(inv => inv.status === 'PENDING')
 
     useEffect(() => {
         if (!user || !headers?.tenantId) return
@@ -98,35 +101,30 @@ export function PatientLayout({ children }: PatientLayoutProps) {
     }
 
     const navItems = [
-        { path: '/patient', label: 'Trang chủ', icon: Home },
+        { path: '/patient', label: 'Bảng điều khiển', icon: Home },
+        { path: '/patient/history', label: 'Đơn thuốc', icon: History },
+        { path: '/patient/vitals', label: 'Chỉ số sức khỏe', icon: Activity },
         { path: '/patient/appointments', label: 'Lịch hẹn', icon: Calendar },
-        { path: '/patient/history', label: 'Lịch sử khám', icon: History },
-        { path: '/patient/family', label: 'Người thân', icon: Users },
-        { path: '/patient/insurance', label: 'Bảo hiểm', icon: ShieldCheck },
-        { path: '/patient/billing', label: 'Thanh toán', icon: Wallet },
-        { path: '/patient/profile', label: 'Cá nhân', icon: User },
+        { path: '/patient/chat', label: 'Tin nhắn bác sĩ', icon: MessageSquare },
+        { path: '/patient/profile', label: 'Hồ sơ cá nhân', icon: User },
     ]
 
     const handleLogout = () => {
         logout()
-        navigate('/login')
+        navigate('/', { replace: true, state: { openLogin: true } })
     }
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 lg:pb-0 lg:pl-64">
             {/* Sidebar for Desktop */}
-            <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 p-6 z-50">
-                <div className="flex items-center gap-3 mb-12">
-                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg shadow-blue-200 overflow-hidden">
-                        {profile?.avatarUrl ? (
-                            <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                            profile?.fullNameVi?.charAt(0)
-                        )}
+            <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-6 z-50">
+                <div className="p-6 flex items-center gap-3 mb-6">
+                    <div className="bg-emerald-500 rounded-lg p-2 flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                        <ShieldCheck className="w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="font-black text-slate-900 tracking-tight">PatientPortal</h1>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">v1.0.0</p>
+                        <h1 className="font-bold text-lg leading-none text-slate-900 dark:text-white">Sống Khỏe</h1>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Quản lý sức khỏe thông minh</p>
                     </div>
                 </div>
 
@@ -139,8 +137,8 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                                 key={item.path}
                                 to={item.path}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${isActive
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200'
+                                    : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                                     }`}
                             >
                                 <div className="relative">
@@ -155,10 +153,14 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                     })}
                 </nav>
 
-                <div className="pt-6 border-t border-slate-50">
+                <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+                    <button className="w-full bg-emerald-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-600 transition-colors">
+                        <LifeBuoy className="w-5 h-5" />
+                        Cần trợ giúp?
+                    </button>
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-slate-400 font-bold hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all group"
+                        className="flex items-center gap-3 w-full px-4 py-3 mt-2 text-slate-400 font-bold hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all group"
                     >
                         <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
                         <span className="text-sm">Đăng xuất</span>
@@ -166,33 +168,60 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                 </div>
             </aside>
 
-            {/* Top Bar for Mobile */}
-            <header className="lg:hidden bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-                        <Bell className="w-5 h-5" />
+            {/* Header for Desktop & Mobile */}
+            <header className="fixed top-0 right-0 left-0 lg:left-64 h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 flex items-center justify-between z-40">
+                <div className="hidden md:flex flex-1 max-w-xl">
+                    <div className="relative w-full">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm thông tin y tế..."
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium"
+                        />
                     </div>
-                    <span className="font-black text-slate-900 tracking-tight">Patient Portal</span>
                 </div>
-                <button
-                    onClick={() => setIsNotifOpen(true)}
-                    className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-black text-xs relative overflow-hidden shadow-sm"
-                >
-                    {profile?.avatarUrl ? (
-                        <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                        profile?.fullNameVi?.charAt(0) || user?.fullNameVi?.charAt(0) || 'P'
-                    )}
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">
-                            {unreadCount}
-                        </span>
-                    )}
-                </button>
+
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setIsNotifOpen(true)}
+                        className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 relative group transition-all"
+                    >
+                        <Bell className="w-5 h-5 text-slate-500 group-hover:text-emerald-500" />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900" />
+                        )}
+                    </button>
+
+                    <button className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 group transition-all">
+                        <Settings className="w-5 h-5 text-slate-500 group-hover:text-emerald-500" />
+                    </button>
+
+                    <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 mx-2" />
+
+                    <div className="flex items-center gap-3">
+                        <div className="text-right hidden sm:block">
+                            <p className="text-sm font-black text-slate-900 dark:text-white leading-none">
+                                {profile?.fullNameVi || 'Người dùng'}
+                            </p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                ID: {profile?.id?.slice(0, 8).toUpperCase() || 'BN-XXXX'}
+                            </p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white dark:border-slate-800 shadow-sm overflow-hidden">
+                            {profile?.avatarUrl ? (
+                                <img src={profile.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-black">
+                                    {profile?.fullNameVi?.charAt(0) || 'P'}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </header>
 
             {/* Main Content */}
-            <main className="p-4 sm:p-10 lg:p-14 animate-in fade-in duration-500">
+            <main className="pt-20 px-4 lg:px-6 pb-12">
                 {children}
             </main>
 
@@ -216,7 +245,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                         >
                             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
                                         <Bell className="w-6 h-6" />
                                     </div>
                                     <h2 className="text-xl font-black text-slate-900">Thông báo</h2>
@@ -225,7 +254,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                                     {unreadCount > 0 && (
                                         <button
                                             onClick={handleMarkAllAsRead}
-                                            className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-2 rounded-xl"
+                                            className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl"
                                         >
                                             Đọc tất cả
                                         </button>
@@ -254,13 +283,13 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                                             onClick={() => !notif.isRead && handleMarkAsRead(notif.id)}
                                             className={`p-5 rounded-[2rem] border transition-all cursor-pointer group hover:scale-[1.02] active:scale-95 ${notif.isRead
                                                 ? 'bg-white border-slate-100 text-slate-500'
-                                                : 'bg-blue-50/50 border-blue-100 text-slate-900 shadow-sm'
+                                                : 'bg-emerald-50/50 border-emerald-100 text-slate-900 shadow-sm'
                                                 }`}
                                         >
                                             <div className="flex justify-between items-start mb-2">
                                                 <div className="flex items-center gap-2">
-                                                    {!notif.isRead && <Circle className="w-2 h-2 fill-blue-600 text-blue-600" />}
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${notif.isRead ? 'text-slate-300' : 'text-blue-600'}`}>
+                                                    {!notif.isRead && <Circle className="w-2 h-2 fill-emerald-600 text-emerald-600" />}
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${notif.isRead ? 'text-slate-300' : 'text-emerald-600'}`}>
                                                         {notif.type}
                                                     </span>
                                                 </div>
@@ -268,7 +297,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                                                     {new Date(notif.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
-                                            <h3 className={`font-black tracking-tight mb-1 group-hover:text-blue-600 transition-colors ${notif.isRead ? 'text-slate-700' : 'text-slate-900'}`}>
+                                            <h3 className={`font-black tracking-tight mb-1 group-hover:text-emerald-600 transition-colors ${notif.isRead ? 'text-slate-700' : 'text-slate-900'}`}>
                                                 {notif.title}
                                             </h3>
                                             <p className="text-xs leading-relaxed opacity-80">{notif.content}</p>
@@ -294,10 +323,10 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                         <Link
                             key={item.path}
                             to={item.path}
-                            className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-blue-600' : 'text-slate-400'
+                            className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-emerald-600' : 'text-slate-400'
                                 }`}
                         >
-                            <div className={`p-2 rounded-xl transition-all relative ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : ''}`}>
+                            <div className={`p-2 rounded-xl transition-all relative ${isActive ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : ''}`}>
                                 <item.icon className="w-5 h-5" />
                                 {isBilling && hasPendingInvoice && (
                                     <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white" />

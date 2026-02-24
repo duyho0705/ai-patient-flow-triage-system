@@ -10,7 +10,7 @@ export async function getRevenueReport(
     sp.set('branchId', params.branchId)
     if (params.fromDate) sp.set('fromDate', params.fromDate)
     if (params.toDate) sp.set('toDate', params.toDate)
-    return get<RevenueReportDto>(`/reports/revenue?${sp}`, tenant)
+    return get<RevenueReportDto>(`/admin/reports/revenue?${sp}`, tenant)
 }
 
 export async function getWaitTimeSummary(
@@ -21,7 +21,7 @@ export async function getWaitTimeSummary(
     sp.set('branchId', params.branchId)
     if (params.fromDate) sp.set('fromDate', params.fromDate)
     if (params.toDate) sp.set('toDate', params.toDate)
-    return get<WaitTimeSummaryDto>(`/reports/wait-time?${sp}`, tenant)
+    return get<WaitTimeSummaryDto>(`/admin/reports/wait-time?${sp}`, tenant)
 }
 
 export async function getDailyVolume(
@@ -32,7 +32,7 @@ export async function getDailyVolume(
     sp.set('branchId', params.branchId)
     if (params.fromDate) sp.set('fromDate', params.fromDate)
     if (params.toDate) sp.set('toDate', params.toDate)
-    return get<DailyVolumeDto[]>(`/reports/daily-volume?${sp}`, tenant)
+    return get<DailyVolumeDto[]>(`/admin/reports/daily-volume?${sp}`, tenant)
 }
 
 export async function getAiEffectiveness(
@@ -43,7 +43,7 @@ export async function getAiEffectiveness(
     sp.set('branchId', params.branchId)
     if (params.fromDate) sp.set('fromDate', params.fromDate)
     if (params.toDate) sp.set('toDate', params.toDate)
-    return get<AiEffectivenessDto>(`/reports/ai-effectiveness?${sp}`, tenant)
+    return get<AiEffectivenessDto>(`/admin/reports/ai-effectiveness?${sp}`, tenant)
 }
 
 export async function exportDailyVolumeExcel(
@@ -54,7 +54,7 @@ export async function exportDailyVolumeExcel(
     sp.set('branchId', params.branchId)
     if (params.fromDate) sp.set('fromDate', params.fromDate)
     if (params.toDate) sp.set('toDate', params.toDate)
-    return downloadFile(`/reports/daily-volume/excel?${sp}`, tenant, 'daily-volume.xlsx')
+    return downloadFile(`/admin/reports/daily-volume/excel?${sp}`, tenant, 'daily-volume.xlsx')
 }
 
 export async function exportAiEffectivenessPdf(
@@ -65,7 +65,7 @@ export async function exportAiEffectivenessPdf(
     sp.set('branchId', params.branchId)
     if (params.fromDate) sp.set('fromDate', params.fromDate)
     if (params.toDate) sp.set('toDate', params.toDate)
-    return downloadFile(`/reports/ai-effectiveness/pdf?${sp}`, tenant, 'ai-effectiveness.pdf')
+    return downloadFile(`/admin/reports/ai-effectiveness/pdf?${sp}`, tenant, 'ai-effectiveness.pdf')
 }
 
 export async function exportWaitTimeExcel(
@@ -76,5 +76,34 @@ export async function exportWaitTimeExcel(
     sp.set('branchId', params.branchId)
     if (params.fromDate) sp.set('fromDate', params.fromDate)
     if (params.toDate) sp.set('toDate', params.toDate)
-    return downloadFile(`/reports/wait-time/excel?${sp}`, tenant, 'wait-time.xlsx')
+    return downloadFile(`/admin/reports/wait-time/excel?${sp}`, tenant, 'wait-time.xlsx')
+}
+
+export async function getOperationalHeatmap(
+    branchId: string,
+    tenant: TenantHeaders | null
+): Promise<any> {
+    return get<any>(`/admin/reports/operational-heatmap?branchId=${branchId}`, tenant)
+}
+
+export async function getAiAuditLogs(
+    params: { branchId: string; fromDate?: string; toDate?: string },
+    tenant: TenantHeaders | null
+): Promise<any[]> {
+    const sp = new URLSearchParams()
+    sp.set('branchId', params.branchId)
+    if (params.fromDate) sp.set('fromDate', params.fromDate)
+    if (params.toDate) sp.set('toDate', params.toDate)
+    return get<any[]>(`/admin/reports/ai-audit-logs?${sp}`, tenant)
+}
+
+export async function getAiOperationalInsights(
+    params: { branchId: string; fromDate: string; toDate: string },
+    tenant: TenantHeaders | null
+): Promise<any> {
+    const sp = new URLSearchParams()
+    sp.set('branchId', params.branchId)
+    sp.set('fromDate', params.fromDate)
+    sp.set('toDate', params.toDate)
+    return get<any>(`/admin/reports/ai-operational-insights?${sp}`, tenant)
 }

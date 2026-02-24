@@ -1,4 +1,21 @@
 {
   "css.lint.unknownAtRules": "ignore",
-  "java.debug.settings.onBuildFailureProceed": true
+  "java.debug.settings.onBuildFailureProceed": true,
+  "java.project.referencedLibraries": [
+    "lib/**/*.jar"
+  ],
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.import.maven.enabled": true,
+  "java.project.sourcePaths": [
+    "backend/src/main/java",
+    "backend/src/test/java"
+  ],
+  "java.project.outputPath": "backend/target/classes",
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.metadata/**",
+    "**/archetype-resources/**",
+    "**/META-INF/maven/**",
+    "**/frontend/**"
+  ]
 }

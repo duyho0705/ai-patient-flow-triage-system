@@ -1,4 +1,4 @@
-import { getPortalInvoices, payPortalInvoice } from '@/api/portal'
+import { getPortalInvoices, payPortalInvoice, getVnpayPaymentUrl } from '@/api/portal'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import {
@@ -34,20 +34,33 @@ export default function PatientBilling() {
     })
 
     const mutation = useMutation({
-        mutationFn: ({ id, method }: { id: string, method: string }) => payPortalInvoice(id, method, headers),
+        mutationFn: async ({ id, method }: { id: string, method: string }) => {
+            if (method === 'VNPAY') {
+                const returnUrl = `${window.location.origin}/patient/payment-return`
+                const paymentUrl = await getVnpayPaymentUrl(id, returnUrl, headers)
+                window.location.href = paymentUrl
+                return null
+            }
+            return payPortalInvoice(id, method, headers)
+        },
         onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ['portal-invoices'] })
-            queryClient.invalidateQueries({ queryKey: ['portal-dashboard'] })
-            setSelectedInvoice(data)
-            toast.success('Thanh toán thành công!')
+            if (data) {
+                queryClient.invalidateQueries({ queryKey: ['portal-invoices'] })
+                queryClient.invalidateQueries({ queryKey: ['portal-dashboard'] })
+                setSelectedInvoice(data)
+                toast.success('Thanh toán thành công!')
+            }
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Thanh toán thất bại')
         }
     })
 
-    const filteredInvoices = invoices?.filter(inv => {
+    const filteredInvoices = Array.isArray(invoices) ? invoices.filter(inv => {
         const matchesSearch = inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesTab = activeTab === 'ALL' || inv.status === activeTab
         return matchesSearch && matchesTab
-    })
+    }) : []
 
     // VietQR Generator Logic (Demo Simple)
     const generateVietQR = (amount: number, content: string) => {

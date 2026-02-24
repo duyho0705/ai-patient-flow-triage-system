@@ -40,6 +40,10 @@ public class QueueDefinition extends BaseAuditableEntity {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "average_consultation_minutes")
+    @Builder.Default
+    private Integer averageConsultationMinutes = 15;
+
     public QueueDefinition(UUID id) {
         super(id);
     }

@@ -1,36 +1,74 @@
 package vn.clinic.patientflow.clinical.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.clinic.patientflow.clinical.domain.ClinicalConsultation;
-import vn.clinic.patientflow.clinical.domain.ClinicalVital;
-import vn.clinic.patientflow.clinical.repository.ClinicalConsultationRepository;
-import vn.clinic.patientflow.clinical.repository.ClinicalVitalRepository;
+import vn.clinic.patientflow.api.dto.ConsultationSummaryPdfDto;
+import vn.clinic.patientflow.api.dto.CreatePrescriptionRequest;
+import vn.clinic.patientflow.api.dto.PrescriptionDto;
+import vn.clinic.patientflow.api.dto.PrescriptionItemDto;
+import vn.clinic.patientflow.billing.service.BillingService;
+import vn.clinic.patientflow.clinical.domain.*;
+import vn.clinic.patientflow.clinical.event.ConsultationCompletedEvent;
+import vn.clinic.patientflow.clinical.repository.*;
 import vn.clinic.patientflow.common.exception.ResourceNotFoundException;
+import vn.clinic.patientflow.common.service.AuditLogService;
 import vn.clinic.patientflow.common.tenant.TenantContext;
+import vn.clinic.patientflow.identity.service.IdentityService;
+import vn.clinic.patientflow.pharmacy.repository.PharmacyInventoryRepository;
+import vn.clinic.patientflow.pharmacy.repository.PharmacyProductRepository;
+import vn.clinic.patientflow.pharmacy.service.PharmacyService;
+import vn.clinic.patientflow.queue.repository.QueueEntryRepository;
+import vn.clinic.patientflow.queue.service.QueueBroadcastService;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+/**
+ * Enterprise Clinical Service Orchestrator.
+ * Handles the core medical encounter lifecycle.
+ * Refactored for modularity, SRP, and high maintainability.
+ */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClinicalService {
 
+    // Repositories
     private final ClinicalConsultationRepository consultationRepository;
     private final ClinicalVitalRepository vitalRepository;
-    private final vn.clinic.patientflow.queue.repository.QueueEntryRepository queueEntryRepository;
-    private final vn.clinic.patientflow.identity.service.IdentityService identityService;
-    private final vn.clinic.patientflow.billing.service.BillingService billingService;
-    private final vn.clinic.patientflow.clinical.repository.PrescriptionRepository prescriptionRepository;
-    private final vn.clinic.patientflow.pharmacy.repository.PharmacyProductRepository productRepository;
-    private final vn.clinic.patientflow.pharmacy.service.PharmacyService pharmacyService;
-    private final vn.clinic.patientflow.pharmacy.repository.PharmacyInventoryRepository inventoryRepository;
-    private final vn.clinic.patientflow.queue.service.QueueBroadcastService queueBroadcastService;
+    private final QueueEntryRepository queueEntryRepository;
+    private final PrescriptionRepository prescriptionRepository;
+    private final PharmacyProductRepository productRepository;
+    private final PharmacyInventoryRepository inventoryRepository;
+    private final LabResultRepository labResultRepository;
+    private final DiagnosticImageRepository diagnosticImageRepository;
+
+    // Services
+    private final IdentityService identityService;
+    private final BillingService billingService;
+    private final PharmacyService pharmacyService;
+    private final QueueBroadcastService queueBroadcastService;
+    private final AuditLogService auditLogService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    // Refactored Components
+    private final ClinicalBillingService clinicalBillingService;
+    private final ClinicalSimulationService simulationService;
+    private final ClinicalMapper clinicalMapper;
 
     @Transactional(readOnly = true)
     public ClinicalConsultation getById(UUID id) {
+        log.debug("Fetching consultation by id: {}", id);
         UUID tenantId = TenantContext.getTenantIdOrThrow();
         return consultationRepository.findById(id)
                 .filter(c -> c.getTenant().getId().equals(tenantId))
@@ -42,12 +80,6 @@ public class ClinicalService {
         return consultationRepository.findByPatientIdOrderByStartedAtDesc(patientId);
     }
 
-    @Transactional(readOnly = true)
-    public List<ClinicalVital> getVitals(UUID consultationId) {
-        getById(consultationId);
-        return vitalRepository.findByConsultationIdOrderByRecordedAtAsc(consultationId);
-    }
-
     @Transactional
     public ClinicalConsultation startConsultation(UUID queueEntryId, UUID doctorId) {
         var queueEntry = queueEntryRepository.findById(queueEntryId)
@@ -57,25 +89,25 @@ public class ClinicalService {
             throw new IllegalStateException("Queue entry not in WAITING or CALLED state");
         }
 
-        // Create new consultation
         ClinicalConsultation consultation = ClinicalConsultation.builder()
                 .tenant(queueEntry.getTenant())
                 .branch(queueEntry.getBranch())
                 .patient(queueEntry.getPatient())
                 .queueEntry(queueEntry)
                 .doctorUser(doctorId != null ? identityService.getUserById(doctorId) : null)
-                .startedAt(java.time.Instant.now())
+                .startedAt(Instant.now())
                 .status("IN_PROGRESS")
-                .chiefComplaintSummary(
-                        queueEntry.getTriageSession() != null ? queueEntry.getTriageSession().getChiefComplaintText()
-                                : null)
+                .chiefComplaintSummary(queueEntry.getTriageSession() != null
+                        ? queueEntry.getTriageSession().getChiefComplaintText()
+                        : null)
                 .build();
 
         consultation = consultationRepository.save(consultation);
+        auditLogService.log("START_CONSULTATION", "CLINICAL_CONSULTATION", consultation.getId().toString(),
+                "Bắt đầu phiên khám: " + consultation.getPatient().getFullNameVi());
 
-        // Update queue entry
         queueEntry.setStatus("COMPLETED");
-        queueEntry.setCompletedAt(java.time.Instant.now());
+        queueEntry.setCompletedAt(Instant.now());
         queueEntryRepository.save(queueEntry);
 
         return consultation;
@@ -84,9 +116,6 @@ public class ClinicalService {
     @Transactional
     public ClinicalConsultation updateConsultation(UUID id, String diagnosis, String prescription) {
         var cons = getById(id);
-        if (!"IN_PROGRESS".equals(cons.getStatus())) {
-            // throw new IllegalStateException("Consultation is not in progress");
-        }
         cons.setDiagnosisNotes(diagnosis);
         cons.setPrescriptionNotes(prescription);
         return consultationRepository.save(cons);
@@ -96,77 +125,45 @@ public class ClinicalService {
     public ClinicalConsultation completeConsultation(UUID id) {
         var cons = getById(id);
         cons.setStatus("COMPLETED");
-        cons.setEndedAt(java.time.Instant.now());
+        cons.setEndedAt(Instant.now());
         cons = consultationRepository.save(cons);
 
-        // Create default invoice for Consultation Fee
-        vn.clinic.patientflow.billing.domain.Invoice invoice = vn.clinic.patientflow.billing.domain.Invoice.builder()
-                .tenant(cons.getTenant())
-                .branch(cons.getBranch())
-                .patient(cons.getPatient())
-                .consultation(cons)
-                .status("PENDING")
-                .items(new java.util.ArrayList<>())
-                .discountAmount(BigDecimal.ZERO)
-                .build();
+        auditLogService.log("COMPLETE_CONSULTATION", "CLINICAL_CONSULTATION", cons.getId().toString(),
+                "Hoàn thành phiên khám: " + cons.getPatient().getFullNameVi());
 
-        invoice.getItems().add(vn.clinic.patientflow.billing.domain.InvoiceItem.builder()
-                .invoice(invoice)
-                .itemName("Phí khám bệnh / Consultation Fee")
-                .quantity(BigDecimal.ONE)
-                .unitPrice(new BigDecimal("150000")) // Default fee
-                .lineTotal(new BigDecimal("150000"))
-                .build());
+        // 1. Enterprise Billing
+        var invoice = clinicalBillingService.generateConsultationInvoice(cons);
 
-        // Add Prescription items if exists
-        prescriptionRepository.findByConsultationId(cons.getId()).ifPresent(prescription -> {
-            for (var item : prescription.getItems()) {
-                String name = item.getProductNameCustom();
-                if (item.getProduct() != null) {
-                    name = item.getProduct().getNameVi();
-                }
+        // 2. Simulation (Demo/R&D data)
+        simulationService.generateSimulatedData(cons);
 
-                BigDecimal price = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
-
-                invoice.getItems().add(vn.clinic.patientflow.billing.domain.InvoiceItem.builder()
-                        .invoice(invoice)
-                        .itemName("Thuốc: " + name)
-                        .quantity(item.getQuantity())
-                        .unitPrice(price)
-                        .lineTotal(price.multiply(item.getQuantity()))
-                        .build());
-            }
-        });
-
-        vn.clinic.patientflow.billing.domain.Invoice savedInvoice = billingService.createInvoice(invoice);
-
-        // Notify patient
+        // 3. Communications
         queueBroadcastService.notifyBillingReady(
                 cons.getPatient().getId(),
-                savedInvoice.getId(),
-                savedInvoice.getFinalAmount().stripTrailingZeros().toPlainString());
+                invoice.getId(),
+                invoice.getFinalAmount().stripTrailingZeros().toPlainString());
 
+        // 4. Async Post-processing
+        eventPublisher.publishEvent(new ConsultationCompletedEvent(this, cons));
+
+        log.info("Successfully completed consultation process for id: {}", id);
         return cons;
     }
 
     @Transactional
-    public vn.clinic.patientflow.clinical.domain.Prescription createPrescription(
-            vn.clinic.patientflow.api.dto.CreatePrescriptionRequest request) {
+    public Prescription createPrescription(CreatePrescriptionRequest request) {
         var cons = getById(request.getConsultationId());
-
-        vn.clinic.patientflow.clinical.domain.Prescription prescription = vn.clinic.patientflow.clinical.domain.Prescription
-                .builder()
+        Prescription prescription = Prescription.builder()
                 .consultation(cons)
                 .patient(cons.getPatient())
                 .doctorUserId(cons.getDoctorUser() != null ? cons.getDoctorUser().getId() : null)
-                .status(vn.clinic.patientflow.clinical.domain.Prescription.PrescriptionStatus.ISSUED)
+                .status(Prescription.PrescriptionStatus.ISSUED)
                 .notes(request.getNotes())
-                .items(new java.util.ArrayList<>())
+                .items(new ArrayList<>())
                 .build();
 
-        for (var itemReq : request.getItems()) {
-            vn.clinic.patientflow.clinical.domain.PrescriptionItem item = vn.clinic.patientflow.clinical.domain.PrescriptionItem
-                    .builder()
+        request.getItems().forEach(itemReq -> {
+            var item = PrescriptionItem.builder()
                     .prescription(prescription)
                     .quantity(itemReq.getQuantity())
                     .dosageInstruction(itemReq.getDosageInstruction())
@@ -175,16 +172,21 @@ public class ClinicalService {
                     .build();
 
             if (itemReq.getProductId() != null) {
-                var product = productRepository.findById(itemReq.getProductId()).orElse(null);
-                item.setProduct(product);
-                if (item.getUnitPrice() == null && product != null) {
-                    item.setUnitPrice(product.getStandardPrice());
-                }
+                productRepository.findById(itemReq.getProductId()).ifPresent(p -> {
+                    item.setProduct(p);
+                    if (item.getUnitPrice() == null)
+                        item.setUnitPrice(p.getStandardPrice());
+                });
             }
             prescription.getItems().add(item);
-        }
+        });
 
-        return prescriptionRepository.save(prescription);
+        var saved = prescriptionRepository.save(prescription);
+        auditLogService.log("CREATE_PRESCRIPTION", "PRESCRIPTION", saved.getId().toString(),
+                String.format("Tạo đơn thuốc cho BN: %s (Gồm %d mục)", cons.getPatient().getFullNameVi(),
+                        saved.getItems().size()));
+        log.info("Prescription created for consultation: {}", cons.getId());
+        return saved;
     }
 
     @Transactional
@@ -192,51 +194,38 @@ public class ClinicalService {
         var prescription = prescriptionRepository.findById(prescriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription", prescriptionId));
 
-        if (prescription
-                .getStatus() == vn.clinic.patientflow.clinical.domain.Prescription.PrescriptionStatus.DISPENSED) {
+        if (prescription.getStatus() == Prescription.PrescriptionStatus.DISPENSED) {
             throw new IllegalStateException("Prescription already dispensed");
         }
 
-        // Check if invoice is paid
         boolean isPaid = billingService.getInvoiceByConsultation(prescription.getConsultation().getId())
                 .map(inv -> "PAID".equalsIgnoreCase(inv.getStatus()))
                 .orElse(false);
 
         if (!isPaid) {
-            throw new IllegalStateException("Invoice for this prescription has not been paid yet");
+            throw new IllegalStateException("Invoice not paid yet");
         }
 
-        for (var item : prescription.getItems()) {
-            if (item.getProduct() != null) {
-                pharmacyService.dispenseStock(
+        prescription.getItems().stream()
+                .filter(i -> i.getProduct() != null)
+                .forEach(i -> pharmacyService.dispenseStock(
                         prescription.getConsultation().getBranch().getId(),
-                        item.getProduct().getId(),
-                        item.getQuantity(),
+                        i.getProduct().getId(),
+                        i.getQuantity(),
                         prescription.getId(),
                         performedByUserId,
-                        "Dispensed for prescription " + prescription.getId());
-            }
-        }
+                        "Prescription " + prescription.getId()));
 
-        prescription.setStatus(vn.clinic.patientflow.clinical.domain.Prescription.PrescriptionStatus.DISPENSED);
+        prescription.setStatus(Prescription.PrescriptionStatus.DISPENSED);
+        prescription.setDispensedAt(Instant.now());
+        prescription.setDispenserUserId(performedByUserId);
         prescriptionRepository.save(prescription);
 
-        // Notify patient
-        queueBroadcastService.notifyPharmacyReady(
-                prescription.getPatient().getId(),
-                prescription.getId());
-    }
+        auditLogService.log("DISPENSE_PRESCRIPTION", "PRESCRIPTION", prescriptionId.toString(),
+                "Xác nhận cấp phát thuốc cho đơn: " + prescriptionId);
+        log.info("Prescription dispensed: {} by user: {}", prescriptionId, performedByUserId);
 
-    @Transactional(readOnly = true)
-    public List<vn.clinic.patientflow.clinical.domain.Prescription> getPendingPrescriptions(UUID branchId) {
-        return prescriptionRepository.findByStatusAndConsultationBranchIdOrderByCreatedAtDesc(
-                vn.clinic.patientflow.clinical.domain.Prescription.PrescriptionStatus.ISSUED, branchId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ClinicalConsultation> getRecentConsultationsByPatient(UUID patientId, int limit) {
-        return consultationRepository.findByPatientIdOrderByStartedAtDesc(patientId)
-                .stream().limit(limit).collect(java.util.stream.Collectors.toList());
+        queueBroadcastService.notifyPharmacyReady(prescription.getPatient().getId(), prescription.getId());
     }
 
     @Transactional(readOnly = true)
@@ -245,48 +234,98 @@ public class ClinicalService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.Optional<vn.clinic.patientflow.clinical.domain.Prescription> getPrescriptionByConsultation(
-            UUID consultationId) {
+    public Page<ClinicalConsultation> getConsultationsByPatientPageable(UUID patientId, Pageable pageable) {
+        return consultationRepository.findByPatientIdOrderByStartedAtDesc(patientId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClinicalConsultation> getRecentConsultationsByPatient(UUID patientId, int limit) {
+        return consultationRepository.findByPatientIdOrderByStartedAtDesc(patientId)
+                .stream().limit(limit).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Prescription> getPrescriptionByConsultation(UUID consultationId) {
         return prescriptionRepository.findByConsultationId(consultationId);
     }
 
-    public vn.clinic.patientflow.api.dto.PrescriptionDto mapPrescriptionToDto(
-            vn.clinic.patientflow.clinical.domain.Prescription p) {
+    @Transactional(readOnly = true)
+    public List<Prescription> getPendingPrescriptions(UUID branchId) {
+        return prescriptionRepository.findByStatusAndConsultationBranchIdOrderByCreatedAtDesc(
+                Prescription.PrescriptionStatus.ISSUED, branchId);
+    }
+
+    @Transactional(readOnly = true)
+    public ConsultationSummaryPdfDto getConsultationSummaryForPdf(UUID id) {
+        var cons = getById(id);
+        var vitals = vitalRepository.findByConsultationIdOrderByRecordedAtAsc(id);
+        var labs = labResultRepository.findByConsultation(cons);
+        var images = diagnosticImageRepository.findByConsultation(cons);
+        var prescription = prescriptionRepository.findByConsultationId(id).orElse(null);
+        var pDto = prescription != null ? mapPrescriptionToDto(prescription) : null;
+
+        return clinicalMapper.toPdfDto(cons, vitals, labs, images, prescription, pDto);
+    }
+
+    // --- Helper Methods ---
+
+    public PrescriptionDto mapPrescriptionToDto(Prescription p) {
         String invoiceStatus = billingService.getInvoiceByConsultation(p.getConsultation().getId())
-                .map(vn.clinic.patientflow.billing.domain.Invoice::getStatus)
+                .map(inv -> inv.getStatus())
                 .orElse("UNKNOWN");
 
-        return vn.clinic.patientflow.api.dto.PrescriptionDto.builder()
+        return PrescriptionDto.builder()
                 .id(p.getId())
                 .consultationId(p.getConsultation().getId())
                 .patientId(p.getPatient().getId())
                 .patientName(p.getPatient().getFullNameVi())
-                .doctorUserId(p.getDoctorUserId())
                 .status(p.getStatus().name())
                 .notes(p.getNotes())
                 .invoiceStatus(invoiceStatus)
-                .items(p.getItems().stream().map(item -> {
-                    java.math.BigDecimal stock = java.math.BigDecimal.ZERO;
-                    if (item.getProduct() != null) {
-                        stock = inventoryRepository
-                                .findByBranchIdAndProductId(p.getConsultation().getBranch().getId(),
-                                        item.getProduct().getId())
-                                .map(vn.clinic.patientflow.pharmacy.domain.PharmacyInventory::getCurrentStock)
-                                .orElse(java.math.BigDecimal.ZERO);
-                    }
-
-                    return vn.clinic.patientflow.api.dto.PrescriptionItemDto.builder()
-                            .id(item.getId())
-                            .productId(item.getProduct() != null ? item.getProduct().getId() : null)
-                            .productName(
-                                    item.getProduct() != null ? item.getProduct().getNameVi()
-                                            : item.getProductNameCustom())
-                            .quantity(item.getQuantity())
-                            .dosageInstruction(item.getDosageInstruction())
-                            .unitPrice(item.getUnitPrice())
-                            .availableStock(stock)
-                            .build();
-                }).collect(java.util.stream.Collectors.toList()))
+                .items(p.getItems().stream().map(this::mapItemToDto).collect(Collectors.toList()))
                 .build();
+    }
+
+    private PrescriptionItemDto mapItemToDto(PrescriptionItem item) {
+        BigDecimal stock = item.getProduct() != null
+                ? inventoryRepository.findByBranchIdAndProductId(
+                        item.getPrescription().getConsultation().getBranch().getId(),
+                        item.getProduct().getId())
+                        .map(inv -> inv.getCurrentStock()).orElse(BigDecimal.ZERO)
+                : BigDecimal.ZERO;
+
+        return PrescriptionItemDto.builder()
+                .id(item.getId())
+                .productId(item.getProduct() != null ? item.getProduct().getId() : null)
+                .productName(item.getProduct() != null ? item.getProduct().getNameVi() : item.getProductNameCustom())
+                .quantity(item.getQuantity())
+                .dosageInstruction(item.getDosageInstruction())
+                .unitPrice(item.getUnitPrice())
+                .availableStock(stock)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClinicalVital> getVitals(UUID consultationId) {
+        return vitalRepository.findByConsultationIdOrderByRecordedAtAsc(consultationId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<LabResult> getLabResults(UUID consultationId) {
+        return labResultRepository.findByConsultation(getById(consultationId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<DiagnosticImage> getDiagnosticImages(UUID consultationId) {
+        return diagnosticImageRepository.findByConsultation(getById(consultationId));
+    }
+
+    @Transactional
+    public void orderDiagnosticImage(UUID consultationId, String title) {
+        diagnosticImageRepository.save(DiagnosticImage.builder()
+                .consultation(getById(consultationId))
+                .title(title)
+                .description("Yêu cầu chụp: " + title)
+                .build());
     }
 }

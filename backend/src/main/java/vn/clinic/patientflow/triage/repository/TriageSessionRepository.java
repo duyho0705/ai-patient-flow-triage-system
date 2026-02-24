@@ -20,25 +20,40 @@ public interface TriageSessionRepository extends JpaRepository<TriageSession, UU
 
     /** Đếm phiên theo chi nhánh và khoảng thời gian. */
     @Query("SELECT COUNT(ts) FROM TriageSession ts WHERE ts.branch.id = :branchId AND ts.startedAt >= :from AND ts.startedAt <= :to")
-    long countByBranchIdAndStartedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from, @Param("to") Instant to);
+    long countByBranchIdAndStartedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from,
+            @Param("to") Instant to);
 
     /** Đếm phiên có dùng AI (acuity_source AI hoặc HYBRID). */
     @Query("SELECT COUNT(ts) FROM TriageSession ts WHERE ts.branch.id = :branchId AND ts.startedAt >= :from AND ts.startedAt <= :to AND (ts.acuitySource = 'AI' OR ts.acuitySource = 'HYBRID')")
-    long countAiSessionsByBranchAndStartedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from, @Param("to") Instant to);
+    long countAiSessionsByBranchAndStartedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from,
+            @Param("to") Instant to);
 
-    /** Đếm phiên có gợi ý AI khớp với quyết định (ai_suggested_acuity = acuity_level). */
+    /**
+     * Đếm phiên có gợi ý AI khớp với quyết định (ai_suggested_acuity =
+     * acuity_level).
+     */
     @Query("SELECT COUNT(ts) FROM TriageSession ts WHERE ts.branch.id = :branchId AND ts.startedAt >= :from AND ts.startedAt <= :to AND ts.aiSuggestedAcuity IS NOT NULL AND ts.aiSuggestedAcuity = ts.acuityLevel")
-    long countMatchByBranchAndStartedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from, @Param("to") Instant to);
+    long countMatchByBranchAndStartedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from,
+            @Param("to") Instant to);
 
     /** Đếm phiên có ghi override (override_reason not null). */
     @Query("SELECT COUNT(ts) FROM TriageSession ts WHERE ts.branch.id = :branchId AND ts.startedAt >= :from AND ts.startedAt <= :to AND ts.overrideReason IS NOT NULL AND ts.overrideReason <> ''")
-    long countOverrideByBranchAndStartedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from, @Param("to") Instant to);
+    long countOverrideByBranchAndStartedAtBetween(@Param("branchId") UUID branchId, @Param("from") Instant from,
+            @Param("to") Instant to);
 
-    /** Số phiên phân loại theo từng ngày (date, count) – native để GROUP BY date. */
+    /**
+     * Số phiên phân loại theo từng ngày (date, count) – native để GROUP BY date.
+     */
     @Query(value = "SELECT (ts.started_at AT TIME ZONE 'UTC')::date AS d, COUNT(*) FROM triage_session ts WHERE ts.branch_id = :branchId AND ts.started_at >= :from AND ts.started_at <= :to GROUP BY (ts.started_at AT TIME ZONE 'UTC')::date ORDER BY d", nativeQuery = true)
-    List<Object[]> countTriageByDay(@Param("branchId") UUID branchId, @Param("from") Instant from, @Param("to") Instant to);
+    List<Object[]> countTriageByDay(@Param("branchId") UUID branchId, @Param("from") Instant from,
+            @Param("to") Instant to);
 
     /** Count sessions by tenant (across all branches). */
     @Query("SELECT COUNT(ts) FROM TriageSession ts WHERE ts.tenant.id = :tenantId AND ts.startedAt >= :from AND ts.startedAt <= :to")
-    long countByTenantIdAndStartedAtBetween(@Param("tenantId") UUID tenantId, @Param("from") Instant from, @Param("to") Instant to);
+    long countByTenantIdAndStartedAtBetween(@Param("tenantId") UUID tenantId, @Param("from") Instant from,
+            @Param("to") Instant to);
+
+    @Query("SELECT ts FROM TriageSession ts WHERE ts.branch.id = :branchId AND ts.startedAt >= :from AND ts.startedAt <= :to AND ts.overrideReason IS NOT NULL AND ts.overrideReason <> '' ORDER BY ts.startedAt DESC")
+    List<TriageSession> findOverridesByBranchAndStartedAtBetween(@Param("branchId") UUID branchId,
+            @Param("from") Instant from, @Param("to") Instant to);
 }

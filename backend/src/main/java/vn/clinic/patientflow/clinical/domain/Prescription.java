@@ -39,6 +39,12 @@ public class Prescription extends BaseAuditableEntity {
     @Builder.Default
     private List<PrescriptionItem> items = new ArrayList<>();
 
+    @Column(name = "dispensed_at")
+    private java.time.Instant dispensedAt;
+
+    @Column(name = "dispenser_user_id")
+    private UUID dispenserUserId;
+
     public enum PrescriptionStatus {
         DRAFT, ISSUED, DISPENSED, CANCELLED
     }

@@ -105,7 +105,7 @@ export function AiConfig() {
                         </div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Cấu hình AI <span className="text-[#2b8cee]">(Triage Intelligence)</span></h1>
                     </div>
-                    <p className="text-slate-500 font-medium">Tùy chỉnh thông số vận hành và engine xử lý phân loại tự động thông minh.</p>
+                    <p className="text-slate-500 font-medium">Tùy chỉnh thông số vận hành và engine xử lý phân loại tự động.</p>
                 </div>
 
                 <div className="w-full md:w-80 space-y-2">
@@ -229,7 +229,7 @@ export function AiConfig() {
                                     <RefreshCw className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-slate-900 text-sm">Cơ chế Fallback thông minh</h4>
+                                    <h4 className="font-bold text-slate-900 text-sm">Cơ chế Fallback tự động</h4>
                                     <p className="text-xs text-slate-500 font-medium">Tự động dùng quy tắc (Rule-based) nếu Model chính gặp sự cố.</p>
                                 </div>
                             </div>

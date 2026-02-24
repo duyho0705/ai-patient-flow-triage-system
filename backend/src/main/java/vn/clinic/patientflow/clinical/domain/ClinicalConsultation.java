@@ -62,6 +62,9 @@ public class ClinicalConsultation extends BaseAuditableEntity {
     @Column(name = "prescription_notes", columnDefinition = "text")
     private String prescriptionNotes;
 
+    @Column(name = "ai_insights", columnDefinition = "text")
+    private String aiInsights;
+
     public ClinicalConsultation(UUID id) {
         super(id);
     }

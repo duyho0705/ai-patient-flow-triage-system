@@ -1,5 +1,8 @@
 package vn.clinic.patientflow.patient.service;
 
+import vn.clinic.patientflow.api.dto.PatientChatConversationDto;
+import vn.clinic.patientflow.patient.repository.PatientRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,7 @@ public class PatientChatService {
         private final PatientChatConversationRepository conversationRepository;
         private final PatientChatMessageRepository messageRepository;
         private final IdentityUserRepository identityUserRepository;
+        private final PatientRepository patientRepository;
 
         @Transactional(readOnly = true)
         public List<DoctorInfoDto> getAvailableDoctors() {
@@ -90,5 +94,41 @@ public class PatientChatService {
                                                         .build();
                                         return conversationRepository.save(newConv);
                                 });
+        }
+
+        @Transactional(readOnly = true)
+        public List<PatientChatConversationDto> getDoctorConversations(UUID doctorUserId) {
+                return conversationRepository.findByDoctorUserId(doctorUserId).stream()
+                                .map(c -> PatientChatConversationDto.builder()
+                                                .id(c.getId())
+                                                .patientId(c.getPatient().getId())
+                                                .patientName(c.getPatient().getFullNameVi())
+                                                .status(c.getStatus())
+                                                .lastMessageAt(c.getCreatedAt()) // Should ideally be last message time
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
+        @Transactional
+        public PatientChatMessageDto doctorSendMessage(UUID doctorUserId, UUID patientId, String content) {
+                Patient patient = patientRepository.findById(patientId)
+                                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                var conv = getOrCreateConversation(patient, doctorUserId);
+
+                PatientChatMessage msg = PatientChatMessage.builder()
+                                .conversation(conv)
+                                .senderType("DOCTOR")
+                                .content(content)
+                                .sentAt(Instant.now())
+                                .build();
+
+                messageRepository.save(msg);
+
+                return PatientChatMessageDto.builder()
+                                .id(msg.getId())
+                                .senderType(msg.getSenderType())
+                                .content(msg.getContent())
+                                .sentAt(msg.getSentAt())
+                                .build();
         }
 }

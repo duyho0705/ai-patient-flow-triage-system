@@ -15,7 +15,7 @@ import type {
 } from '@/types/api'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Filter, KeyRound, Pencil, Plus, Shield, UserPlus, X } from 'lucide-react'
+import { Filter, KeyRound, Pencil, Plus, Shield, UserPlus, X } from 'lucide-react'
 import { useState } from 'react'
 
 const PAGE_SIZE = 10
@@ -44,15 +44,15 @@ export function UserManagement() {
     })
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Quản trị người dùng</h1>
-                    <p className="text-slate-500 font-medium text-sm">Quản lý tài khoản, phân quyền và truy cập chi nhánh.</p>
+        <div className="space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div>
+                    <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Quản trị người dùng</h1>
+                    <p className="text-slate-500 text-xs">Quản lý tài khoản, phân quyền và truy cập chi nhánh.</p>
                 </div>
                 <button
                     type="button"
-                    className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3.5 rounded-2xl font-black text-sm tracking-tight hover:bg-[#2b8cee] hover:shadow-xl hover:shadow-[#2b8cee]/20 transition-all active:scale-95"
+                    className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-xs tracking-wide hover:bg-[#2b8cee] transition-all active:scale-95"
                     onClick={() => {
                         setEditUser(null)
                         setPasswordUser(null)
@@ -60,20 +60,20 @@ export function UserManagement() {
                     }}
                 >
                     <UserPlus className="w-4 h-4" />
-                    Tạo User mới
+                    Tạo tài khoản
                 </button>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
-                <div className="p-8 border-b border-slate-50 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <Filter className="w-5 h-5 text-[#2b8cee]" />
-                        <h2 className="text-lg font-black text-slate-900 tracking-tight">Danh sách tài khoản</h2>
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-50 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-[#2b8cee]" />
+                        <h2 className="text-sm font-bold text-slate-900">Danh sách tài khoản</h2>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full md:w-80">
+                    <div className="flex items-center gap-2 w-full md:w-72">
                         <CustomSelect
-                            options={[{ id: '', name: 'Tất cả Tenant' }, ...tenants.map(t => ({ id: t.id, name: `${t.nameVi} (${t.code})` }))]}
+                            options={[{ id: '', name: 'Tất cả cơ sở' }, ...tenants.map(t => ({ id: t.id, name: `${t.nameVi} (${t.code})` }))]}
                             value={tenantFilter}
                             onChange={(val) => {
                                 setTenantFilter(val)
@@ -129,7 +129,7 @@ export function UserManagement() {
                                                         .join(', ')
                                                     : '—'}
                                             </td>
-                                            <td className="p-6">
+                                            <td className="table-td">
                                                 <div className="flex gap-2">
                                                     <button
                                                         type="button"
@@ -163,27 +163,13 @@ export function UserManagement() {
                             </table>
                         </div>
                         {data && data.totalPages > 1 && (
-                            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-                                <p className="text-sm text-slate-500">
-                                    Trang {data.page + 1} / {data.totalPages} ({data.totalElements} user)
+                            <div className="px-5 py-3 flex items-center justify-between border-t border-slate-100">
+                                <p className="text-xs text-slate-500">
+                                    Trang {data.page + 1} / {data.totalPages} ({data.totalElements} tài khoản)
                                 </p>
                                 <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        className="btn-secondary"
-                                        disabled={data.first}
-                                        onClick={() => setPage((p) => Math.max(0, p - 1))}
-                                    >
-                                        Trước
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn-secondary"
-                                        disabled={data.last}
-                                        onClick={() => setPage((p) => p + 1)}
-                                    >
-                                        Sau
-                                    </button>
+                                    <button type="button" className="btn-secondary text-xs px-3 py-1.5" disabled={data.first} onClick={() => setPage((p) => Math.max(0, p - 1))}>Trước</button>
+                                    <button type="button" className="btn-secondary text-xs px-3 py-1.5" disabled={data.last} onClick={() => setPage((p) => p + 1)}>Sau</button>
                                 </div>
                             </div>
                         )}
@@ -279,114 +265,64 @@ function CreateUserForm({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl overflow-hidden"
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
             >
-                <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[#2b8cee]/10 rounded-xl text-[#2b8cee]">
-                            <UserPlus className="w-5 h-5" />
+                <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-[#2b8cee]/10 rounded-lg text-[#2b8cee]">
+                            <UserPlus className="w-4 h-4" />
                         </div>
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Tạo User mới</h3>
+                        <h3 className="text-base font-extrabold text-slate-900">Tạo tài khoản mới</h3>
                     </div>
-                    <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 transition-colors">
-                        <ChevronLeft className="w-6 h-6" />
+                    <button onClick={onCancel} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-all">
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
 
-                <form onSubmit={submit} className="p-8 space-y-6">
-                    {error && <p className="text-sm text-red-500 font-bold bg-red-50 p-4 rounded-2xl">{error}</p>}
+                <form onSubmit={submit} className="p-5 space-y-4">
+                    {error && <p className="text-xs text-red-500 font-medium bg-red-50 p-3 rounded-lg">{error}</p>}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Email *</label>
-                            <input
-                                type="email"
-                                className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-[#2b8cee]/10 focus:border-[#2b8cee] outline-none transition-all font-medium"
-                                value={form.email}
-                                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                                required
-                            />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email *</label>
+                            <input type="email" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2b8cee]/20 focus:border-[#2b8cee] outline-none transition-all text-sm" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} required />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Họ tên *</label>
-                            <input
-                                className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-[#2b8cee]/10 focus:border-[#2b8cee] outline-none transition-all font-medium"
-                                value={form.fullNameVi}
-                                onChange={(e) => setForm((f) => ({ ...f, fullNameVi: e.target.value }))}
-                                required
-                            />
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Họ tên *</label>
+                            <input className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2b8cee]/20 focus:border-[#2b8cee] outline-none transition-all text-sm" value={form.fullNameVi} onChange={(e) => setForm((f) => ({ ...f, fullNameVi: e.target.value }))} required />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Mật khẩu *</label>
-                            <input
-                                type="password"
-                                className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-[#2b8cee]/10 focus:border-[#2b8cee] outline-none transition-all font-medium"
-                                value={form.password}
-                                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                                required
-                                minLength={6}
-                            />
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mật khẩu *</label>
+                            <input type="password" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2b8cee]/20 focus:border-[#2b8cee] outline-none transition-all text-sm" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} required minLength={6} />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Số điện thoại</label>
-                            <input
-                                className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-[#2b8cee]/10 focus:border-[#2b8cee] outline-none transition-all font-medium"
-                                value={form.phone ?? ''}
-                                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value || undefined }))}
-                            />
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SĐT</label>
+                            <input className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2b8cee]/20 focus:border-[#2b8cee] outline-none transition-all text-sm" value={form.phone ?? ''} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value || undefined }))} />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Tenant *</label>
-                            <CustomSelect
-                                options={tenants.map(t => ({ id: t.id, name: `${t.nameVi} (${t.code})` }))}
-                                value={form.tenantId}
-                                onChange={(val) => setForm((f) => ({ ...f, tenantId: val, branchId: '' }))}
-                                labelKey="name"
-                                valueKey="id"
-                                placeholder="Chọn Tenant..."
-                            />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cơ sở *</label>
+                            <CustomSelect options={tenants.map(t => ({ id: t.id, name: `${t.nameVi} (${t.code})` }))} value={form.tenantId} onChange={(val) => setForm((f) => ({ ...f, tenantId: val, branchId: '' }))} labelKey="name" valueKey="id" placeholder="Chọn cơ sở..." size="sm" />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Role *</label>
-                            <CustomSelect
-                                options={roles.map(r => ({ code: r.code, name: `${r.nameVi} (${r.code})` }))}
-                                value={form.roleCode}
-                                onChange={(val) => setForm((f) => ({ ...f, roleCode: val }))}
-                                labelKey="name"
-                                valueKey="code"
-                                placeholder="Chọn Vai trò..."
-                            />
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Vai trò *</label>
+                            <CustomSelect options={roles.map(r => ({ code: r.code, name: `${r.nameVi} (${r.code})` }))} value={form.roleCode} onChange={(val) => setForm((f) => ({ ...f, roleCode: val }))} labelKey="name" valueKey="code" placeholder="Chọn vai trò..." size="sm" />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Chi nhánh</label>
-                            <CustomSelect
-                                options={[{ id: '', name: '-- Toàn Tenant --' }, ...branches.map(b => ({ id: b.id, name: b.nameVi }))]}
-                                value={form.branchId || ''}
-                                onChange={(val) => setForm((f) => ({ ...f, branchId: val || undefined }))}
-                                labelKey="name"
-                                valueKey="id"
-                                placeholder="Toàn bộ hệ thống"
-                                disabled={!form.tenantId}
-                            />
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chi nhánh</label>
+                            <CustomSelect options={[{ id: '', name: '-- Toàn cơ sở --' }, ...branches.map(b => ({ id: b.id, name: b.nameVi }))]} value={form.branchId || ''} onChange={(val) => setForm((f) => ({ ...f, branchId: val || undefined }))} labelKey="name" valueKey="id" placeholder="Toàn bộ" size="sm" disabled={!form.tenantId} />
                         </div>
                     </div>
 
-                    <div className="flex gap-4 pt-4">
-                        <button
-                            type="submit"
-                            disabled={createMutation.isPending}
-                            className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-sm tracking-tight hover:bg-[#2b8cee] shadow-xl hover:shadow-[#2b8cee]/20 transition-all disabled:opacity-50"
-                        >
-                            {createMutation.isPending ? 'Đang xử lý...' : 'Xác nhận Tạo'}
+                    <div className="flex gap-3 pt-2">
+                        <button type="submit" disabled={createMutation.isPending} className="flex-1 bg-slate-900 text-white py-2.5 rounded-xl font-bold text-xs tracking-wide hover:bg-[#2b8cee] transition-all disabled:opacity-50">
+                            {createMutation.isPending ? 'Đang xử lý...' : 'Xác nhận tạo'}
                         </button>
-                        <button type="button" className="px-8 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-sm hover:bg-slate-100 transition-all" onClick={onCancel}>
-                            Hủy
-                        </button>
+                        <button type="button" className="px-5 py-2.5 bg-slate-100 text-slate-500 rounded-xl font-bold text-xs hover:bg-slate-200 transition-all" onClick={onCancel}>Hủy</button>
                     </div>
                 </form>
             </motion.div>
@@ -590,14 +526,14 @@ function AssignmentRow({ assignment, tenants, roles, onChange, onDelete }: {
             className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] items-end gap-4 p-6 bg-slate-50/50 border border-slate-100 rounded-[2rem] group"
         >
             <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Cơ sở (Tenant) *</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Cơ sở *</label>
                 <CustomSelect
                     options={tenants.map(t => ({ id: t.id, name: t.nameVi }))}
                     value={assignment.tenantId}
                     onChange={(val) => onChange('tenantId', val)}
                     labelKey="name"
                     valueKey="id"
-                    placeholder="Chọn Tenant..."
+                    placeholder="Chọn cơ sở..."
                     size="sm"
                 />
             </div>
@@ -609,7 +545,7 @@ function AssignmentRow({ assignment, tenants, roles, onChange, onDelete }: {
                     onChange={(val) => onChange('roleCode', val)}
                     labelKey="name"
                     valueKey="code"
-                    placeholder="Chọn Role..."
+                    placeholder="Chọn vai trò..."
                     size="sm"
                 />
             </div>

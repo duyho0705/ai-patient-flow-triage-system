@@ -3,9 +3,11 @@ package vn.clinic.patientflow.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import vn.clinic.patientflow.api.dto.ApiResponse;
 
 import java.util.Map;
 
@@ -19,7 +21,7 @@ public class HealthController {
 
     @GetMapping("/health")
     @Operation(summary = "API liveness")
-    public Map<String, String> health() {
-        return Map.of("status", "UP", "service", "patient-flow-triage");
+    public ResponseEntity<ApiResponse<Map<String, String>>> health() {
+        return ResponseEntity.ok(ApiResponse.success(Map.of("status", "UP", "service", "patient-flow-triage")));
     }
 }

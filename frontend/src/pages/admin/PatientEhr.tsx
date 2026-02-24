@@ -5,7 +5,7 @@ import { useTenant } from '@/context/TenantContext'
 import {
     Activity, Clock, ChevronLeft,
     ArrowUpRight, Heart, Thermometer,
-    Wind, Droplets, Calendar, User,
+    Wind, Droplets, User,
     FileText, Pill, CreditCard, Search,
     Filter, Download, MoreHorizontal
 } from 'lucide-react'
@@ -17,7 +17,7 @@ export function PatientEhr() {
     const { headers } = useTenant()
     const [activeTab, setActiveTab] = useState<'TIMELINE' | 'VITALS'>('TIMELINE')
 
-    const { data: vitals, isLoading: isLoadingVitals } = useQuery({
+    const { data: vitals, isLoading: isLoadingVitals } = useQuery<any[]>({
         queryKey: ['ehr-vitals', patientId],
         queryFn: () => getVitalsHistory(patientId!, headers),
         enabled: !!patientId && !!headers?.tenantId
@@ -170,9 +170,9 @@ export function PatientEhr() {
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                             <div className="flex gap-6">
                                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform ${item.type === 'TRIAGE' ? 'bg-blue-50 text-blue-600 shadow-blue-100/50' :
-                                                        item.type === 'CONSULTATION' ? 'bg-emerald-50 text-emerald-600 shadow-emerald-100/50' :
-                                                            item.type === 'INVOICE' ? 'bg-rose-50 text-rose-600 shadow-rose-100/50' :
-                                                                'bg-amber-50 text-amber-600 shadow-amber-100/50'
+                                                    item.type === 'CONSULTATION' ? 'bg-emerald-50 text-emerald-600 shadow-emerald-100/50' :
+                                                        item.type === 'INVOICE' ? 'bg-rose-50 text-rose-600 shadow-rose-100/50' :
+                                                            'bg-amber-50 text-amber-600 shadow-amber-100/50'
                                                     }`}>
                                                     {item.type === 'TRIAGE' ? <Activity className="w-6 h-6" /> :
                                                         item.type === 'CONSULTATION' ? <FileText className="w-6 h-6" /> :
@@ -277,7 +277,11 @@ export function PatientEhr() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
-                                        {vitals?.slice(0, 10).map((v, i) => (
+                                        {isLoadingVitals ? (
+                                            Array.from({ length: 5 }).map((_, i) => (
+                                                <tr key={i} className="animate-pulse"><td colSpan={5} className="px-10 py-10 h-20 bg-slate-50/30" /></tr>
+                                            ))
+                                        ) : vitals?.slice(0, 10).map((v, i) => (
                                             <tr key={i} className="hover:bg-slate-50/50 transition-all">
                                                 <td className="px-10 py-6">
                                                     <div className="flex items-center gap-3">

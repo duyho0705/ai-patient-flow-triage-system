@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface ClinicalVitalRepository extends JpaRepository<ClinicalVital, UUID> {
 
     List<ClinicalVital> findByConsultationIdOrderByRecordedAtAsc(UUID consultationId);
+
+    List<ClinicalVital> findTop10ByConsultationPatientIdOrderByRecordedAtDesc(UUID patientId);
 }

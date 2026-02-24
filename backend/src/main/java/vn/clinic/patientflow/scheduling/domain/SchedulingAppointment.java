@@ -58,6 +58,10 @@ public class SchedulingAppointment extends BaseAuditableEntity {
     @JoinColumn(name = "created_by_user_id")
     private IdentityUser createdByUser;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "doctor_user_id")
+    private IdentityUser doctorUser;
+
     public SchedulingAppointment(UUID id) {
         super(id);
     }

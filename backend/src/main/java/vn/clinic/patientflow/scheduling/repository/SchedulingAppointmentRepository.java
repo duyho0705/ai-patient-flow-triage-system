@@ -21,4 +21,8 @@ public interface SchedulingAppointmentRepository extends JpaRepository<Schedulin
 
         List<SchedulingAppointment> findByPatientIdAndStatusInAndAppointmentDateGreaterThanEqualOrderByAppointmentDateAsc(
                         UUID patientId, List<String> statuses, LocalDate date);
+
+        List<SchedulingAppointment> findByBranchIdAndAppointmentDate(UUID branchId, LocalDate date);
+
+        List<SchedulingAppointment> findByDoctorUserIdAndAppointmentDate(UUID doctorUserId, LocalDate date);
 }
