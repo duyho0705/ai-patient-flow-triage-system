@@ -54,7 +54,7 @@ export default function PatientVitals() {
                 </div>
                 <button
                     onClick={handleAddVital}
-                    className="bg-emerald-400 hover:bg-emerald-500 text-slate-900 px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-emerald-400/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+                    className="bg-[#4ade80] hover:bg-[#4ade80]/90 text-slate-900 px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-[#4ade80]/20 flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
                     <Plus className="w-5 h-5" />
                     Nhập chỉ số mới
@@ -66,8 +66,8 @@ export default function PatientVitals() {
                 {['Ngày', 'Tuần', 'Tháng', 'Năm'].map((filter) => (
                     <button
                         key={filter}
-                        className={`px-6 py-2 text-sm font-bold transition-all rounded-xl ${filter === 'Tuần'
-                            ? 'bg-emerald-400 text-slate-900 shadow-sm'
+                        className={`px-6 py-3 text-sm font-bold transition-all rounded-xl ${filter === 'Tuần'
+                            ? 'bg-[#4ade80] text-slate-900 shadow-sm'
                             : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
                             }`}
                     >
@@ -79,19 +79,19 @@ export default function PatientVitals() {
             {/* Metric Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Blood Glucose */}
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border-2 border-emerald-400 shadow-xl shadow-emerald-400/5 transition-all hover:scale-[1.02]">
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border-2 border-[#4ade80] shadow-xl shadow-[#4ade80]/5 transition-all hover:scale-[1.02]">
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-emerald-50 text-emerald-500 rounded-2xl">
+                        <div className="p-2.5 bg-[#4ade80]/10 text-[#4ade80] rounded-2xl">
                             <Droplets className="w-6 h-6" />
                         </div>
-                        <span className="text-[10px] font-black px-2.5 py-1 bg-emerald-100 text-emerald-600 rounded-full tracking-widest">ỔN ĐỊNH</span>
+                        <span className="text-[10px] font-black px-2.5 py-1 bg-[#4ade80]/10 text-[#4ade80] rounded-full tracking-widest">ỔN ĐỊNH</span>
                     </div>
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Đường huyết</p>
                     <div className="flex items-baseline gap-1 mt-1">
                         <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">5.6</span>
                         <span className="text-xs font-bold text-slate-400 uppercase">mmol/L</span>
                     </div>
-                    <div className="mt-3 flex items-center gap-1 text-emerald-500 text-xs font-bold">
+                    <div className="mt-3 flex items-center gap-1 text-[#4ade80] text-xs font-bold">
                         <TrendingDown className="w-4 h-4" />
                         -2% so với hôm qua
                     </div>
@@ -148,7 +148,7 @@ export default function PatientVitals() {
                         <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">68.5</span>
                         <span className="text-xs font-bold text-slate-400 uppercase">kg</span>
                     </div>
-                    <div className="mt-3 flex items-center gap-1 text-emerald-500 text-xs font-bold">
+                    <div className="mt-3 flex items-center gap-1 text-[#4ade80] text-xs font-bold">
                         <TrendingDown className="w-4 h-4" />
                         -1% tuần này
                     </div>
@@ -204,11 +204,11 @@ export default function PatientVitals() {
                                 <div key={i} className="flex flex-col items-center gap-2 group/bar flex-1">
                                     <div className="relative w-full flex flex-col items-center justify-end h-48">
                                         <div
-                                            className="w-10 bg-emerald-400/20 rounded-t-xl transition-all group-hover/bar:bg-emerald-400/40 relative"
+                                            className="w-10 bg-[#4ade80]/20 rounded-t-xl transition-all group-hover/bar:bg-[#4ade80]/40 relative"
                                             style={{ height: `${(d.value / 7) * 100}%` }}
                                         >
                                             <div
-                                                className="absolute top-0 left-0 right-0 h-1 bg-emerald-400 rounded-full shadow-[0_0_10px_#4ade80]"
+                                                className="absolute top-0 left-0 right-0 h-1 bg-[#4ade80] rounded-full shadow-[0_0_10px_#4ade80]"
                                             />
                                             <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-black px-2 py-1 rounded-lg opacity-0 group-hover/bar:opacity-100 transition-opacity">
                                                 {d.value}
@@ -227,17 +227,17 @@ export default function PatientVitals() {
                 </div>
 
                 {/* AI / Doctor Analysis Section */}
-                <div className="bg-emerald-500/5 dark:bg-emerald-500/10 p-7 rounded-[2rem] border border-emerald-500/10 flex flex-col gap-6">
+                <div className="bg-[#4ade80]/5 dark:bg-[#4ade80]/10 p-7 rounded-[2rem] border border-[#4ade80]/10 flex flex-col gap-6">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-2xl">
-                            <Zap className="w-5 h-5 fill-emerald-600" />
+                        <div className="p-2.5 bg-[#4ade80]/10 text-[#4ade80] rounded-2xl">
+                            <Zap className="w-5 h-5 fill-[#4ade80]" />
                         </div>
                         <h3 className="font-black text-xl text-slate-900 dark:text-white tracking-tight">Phân tích chuyên sâu</h3>
                     </div>
 
                     <div className="space-y-5 flex-1">
                         <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-4 right-4 text-emerald-400/10 scale-150">
+                            <div className="absolute top-4 right-4 text-[#4ade80]/10 scale-150">
                                 <Activity className="w-16 h-16" />
                             </div>
                             <p className="text-sm text-slate-600 dark:text-slate-300 italic font-medium leading-relaxed relative z-10">
@@ -246,7 +246,7 @@ export default function PatientVitals() {
                                 nhẹ nhàng và giảm muối trong khẩu phần ăn."
                             </p>
                             <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-700 flex items-center gap-3">
-                                <div className="size-10 bg-emerald-400 rounded-2xl flex items-center justify-center text-xs font-black text-slate-900 border-2 border-white shadow-md">BS</div>
+                                <div className="size-10 bg-[#4ade80] rounded-2xl flex items-center justify-center text-xs font-black text-slate-900 border-2 border-white shadow-md">BS</div>
                                 <div>
                                     <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">BS. Trần Thị Thu</p>
                                     <p className="text-[10px] font-bold text-slate-400">Bác sĩ chuyên khoa CDM</p>
@@ -254,7 +254,7 @@ export default function PatientVitals() {
                             </div>
                         </div>
 
-                        <div className="bg-emerald-400 rounded-3xl p-6 shadow-lg shadow-emerald-400/20 group relative overflow-hidden">
+                        <div className="bg-[#4ade80] rounded-3xl p-6 shadow-lg shadow-[#4ade80]/20 group relative overflow-hidden">
                             <div className="absolute -bottom-2 -right-2 opacity-10 group-hover:scale-110 transition-transform duration-500">
                                 <Plus className="w-24 h-24 rotate-45" />
                             </div>
@@ -276,7 +276,7 @@ export default function PatientVitals() {
                         <h3 className="font-black text-xl text-slate-900 dark:text-white tracking-tight">Lịch sử nhập liệu gần đây</h3>
                         <p className="text-xs text-slate-500 font-bold mt-1">Dữ liệu từ thiết bị IoT và nhập thủ công</p>
                     </div>
-                    <button className="text-emerald-500 text-xs font-black uppercase tracking-widest hover:underline px-4 py-2 hover:bg-emerald-50 rounded-xl transition-all">Xem tất cả</button>
+                    <button className="text-[#4ade80] text-xs font-black uppercase tracking-widest hover:underline px-4 py-2 hover:bg-[#4ade80]/10 rounded-xl transition-all">Xem tất cả</button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
@@ -291,7 +291,7 @@ export default function PatientVitals() {
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                             {[
-                                { time: 'Hôm nay, 08:30', type: 'Đường huyết', val: '5.6 mmol/L', status: 'BÌNH THƯỜNG', note: 'Đo sau khi ăn sáng 1 tiếng.', icon: Droplets, color: 'text-emerald-500' },
+                                { time: 'Hôm nay, 08:30', type: 'Đường huyết', val: '5.6 mmol/L', status: 'BÌNH THƯỜNG', note: 'Đo sau khi ăn sáng 1 tiếng.', icon: Droplets, color: 'text-[#4ade80]' },
                                 { time: 'Hôm qua, 20:15', type: 'Huyết áp', val: '125/85 mmHg', status: 'HƠI CAO', note: 'Cảm thấy hơi chóng mặt nhẹ.', icon: Activity, color: 'text-orange-500' },
                                 { time: 'Hôm qua, 07:00', type: 'Cân nặng', val: '68.5 kg', status: 'ỔN ĐỊNH', note: 'Đo lúc vừa ngủ dậy.', icon: Scale, color: 'text-blue-500' },
                                 { time: '15 Thg 10, 10:00', type: 'Nhịp tim', val: '75 bpm', status: 'BÌNH THƯỜNG', note: 'Đo sau khi đi bộ 15 phút.', icon: Heart, color: 'text-red-500' },
@@ -312,7 +312,7 @@ export default function PatientVitals() {
                                         <div className="text-base font-black text-slate-900 dark:text-white tracking-tight">{row.val}</div>
                                     </td>
                                     <td className="px-8 py-5 whitespace-nowrap">
-                                        <span className={`px-2.5 py-1 text-[10px] font-black rounded-full tracking-widest ${row.status === 'HƠI CAO' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'
+                                        <span className={`px-2.5 py-1 text-[10px] font-black rounded-full tracking-widest ${row.status === 'HƠI CAO' ? 'bg-orange-100 text-orange-600' : 'bg-[#4ade80]/10 text-[#4ade80]'
                                             }`}>
                                             {row.status}
                                         </span>

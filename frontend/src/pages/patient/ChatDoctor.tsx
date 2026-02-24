@@ -1,6 +1,25 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { MessageSquare, Send, Search, Video, Phone, Paperclip, ShieldCheck, Clock, Loader2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+    MessageSquare,
+    Send,
+    Search,
+    Video,
+    Phone,
+    PlusCircle,
+    Image as ImageIcon,
+    Smile,
+    Info,
+    MoreVertical,
+    Star,
+    Verified,
+    Shield,
+    MapPin,
+    Clock,
+    Calendar,
+    ZoomIn,
+    Loader2
+} from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getPortalChatDoctors, getPortalChatHistory, sendPortalChatMessage } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
@@ -11,6 +30,7 @@ export default function PatientChatDoctor() {
     const queryClient = useQueryClient()
     const [selectedDoctor, setSelectedDoctor] = useState<any>(null)
     const [message, setMessage] = useState('')
+    const [searchTerm, setSearchTerm] = useState('')
 
     // Fetch available doctors
     const { data: doctors, isLoading: loadingDoctors } = useQuery({
@@ -31,7 +51,7 @@ export default function PatientChatDoctor() {
         queryKey: ['portal-chat-history', selectedDoctor?.id],
         queryFn: () => getPortalChatHistory(selectedDoctor.id, headers),
         enabled: !!selectedDoctor && !!headers?.tenantId,
-        refetchInterval: 3000 // Poll every 3 seconds for new messages
+        refetchInterval: 3000 // Poll for new messages
     })
 
     const sendMutation = useMutation({
@@ -50,163 +70,267 @@ export default function PatientChatDoctor() {
         sendMutation.mutate(message)
     }
 
-    if (loadingDoctors) return <div className="p-20 text-center font-black text-slate-400">Đang tìm bác sĩ trực tuyến...</div>
+    const filteredDoctors = doctors?.filter(d =>
+        d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.specialty.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || []
+
+    if (loadingDoctors) return (
+        <div className="h-[calc(100vh-120px)] flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+                <p className="text-slate-400 font-bold">Đang tìm bác sĩ trực tuyến...</p>
+            </div>
+        </div>
+    )
 
     return (
-        <div className="max-w-[1400px] mx-auto h-[calc(100vh-180px)] flex gap-4 md:gap-8 pb-10 flex-col md:flex-row">
-            {/* Sidebar: Doctor List */}
-            <aside className={`w-full md:w-[350px] bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/20 flex flex-col overflow-hidden ${selectedDoctor ? 'hidden md:flex' : 'flex'}`}>
-                <div className="p-8 border-b border-slate-50 space-y-6">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Bác sĩ tư vấn</h2>
+        <div className="h-[calc(100vh-80px)] flex gap-0 overflow-hidden -mx-4 lg:-mx-6 -mb-12 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+            {/* 1. Contact List Sidebar */}
+            <aside className="w-80 border-r border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 flex flex-col">
+                <div className="p-6">
+                    <h2 className="text-2xl font-bold mb-4">Tin nhắn</h2>
                     <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-emerald-500 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Tìm bác sĩ, chuyên khoa..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-blue-500/10 border border-transparent focus:border-blue-500 transition-all"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border-none bg-slate-100 dark:bg-slate-800 focus:ring-2 focus:ring-emerald-500/20 text-sm font-medium transition-all"
+                            placeholder="Tìm kiếm bác sĩ..."
                         />
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {doctors?.map((doc) => (
+                <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-2">
+                    {filteredDoctors.map((doc) => (
                         <button
                             key={doc.id}
                             onClick={() => setSelectedDoctor(doc)}
-                            className={`w-full p-4 rounded-3xl flex items-center gap-4 transition-all ${selectedDoctor?.id === doc.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' : 'hover:bg-slate-50'}`}
+                            className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all border ${selectedDoctor?.id === doc.id
+                                ? 'bg-[#4ade80]/10 border-[#4ade80]/20'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent'
+                                }`}
                         >
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black relative ${selectedDoctor?.id === doc.id ? 'bg-white/20' : 'bg-blue-50 text-blue-600'}`}>
-                                {doc.avatar}
+                            <div className="relative flex-shrink-0">
+                                <img src={doc.avatar} className="w-12 h-12 rounded-full object-cover shadow-sm" alt={doc.name} />
                                 {doc.online && (
-                                    <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
+                                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#4ade80] border-2 border-white dark:border-slate-900 rounded-full" />
                                 )}
                             </div>
-                            <div className="text-left">
-                                <p className={`text-sm font-black ${selectedDoctor?.id === doc.id ? 'text-white' : 'text-slate-900'}`}>{doc.name}</p>
-                                <p className={`text-[10px] font-bold uppercase tracking-widest ${selectedDoctor?.id === doc.id ? 'text-blue-100/60' : 'text-slate-400'}`}>{doc.specialty}</p>
+                            <div className="flex-1 overflow-hidden">
+                                <div className="flex justify-between items-center mb-0.5">
+                                    <h4 className="font-bold text-sm truncate text-slate-900 dark:text-white">{doc.name}</h4>
+                                    <span className="text-[10px] text-slate-400 font-medium">{doc.lastMessageTime || 'mới'}</span>
+                                </div>
+                                <p className={`text-xs truncate ${selectedDoctor?.id === doc.id ? 'text-[#4ade80]' : 'text-slate-500'}`}>
+                                    {doc.lastMessage || doc.specialty}
+                                </p>
                             </div>
                         </button>
                     ))}
                 </div>
-
-                <div className="p-6 bg-slate-900 text-white hidden md:block">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-600 rounded-xl">
-                            <ShieldCheck className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Security</p>
-                            <p className="text-xs font-bold">Mã hóa đầu cuối</p>
-                        </div>
-                    </div>
-                </div>
             </aside>
 
-            {/* Chat Area */}
-            {selectedDoctor ? (
-                <main className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/20 flex flex-col overflow-hidden relative">
-                    {/* Chat Header */}
-                    <header className="p-6 border-b border-slate-50 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => setSelectedDoctor(null)} className="md:hidden p-2 bg-slate-50 rounded-xl">
-                                <Search className="w-5 h-5 rotate-90" />
-                            </button>
-                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black text-xl">
-                                {selectedDoctor.avatar}
-                            </div>
-                            <div>
-                                <h3 className="font-black text-slate-900">{selectedDoctor.name}</h3>
-                                <div className="flex items-center gap-1.5">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${selectedDoctor.online ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            {/* 2. Chat Window Area */}
+            <main className="flex-1 flex flex-col bg-white dark:bg-slate-900 relative">
+                {selectedDoctor ? (
+                    <>
+                        {/* Chat Header */}
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-10">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <img src={selectedDoctor.avatar} className="w-10 h-10 rounded-full object-cover" alt={selectedDoctor.name} />
+                                    {selectedDoctor.online && (
+                                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#4ade80] border-2 border-white dark:border-slate-900 rounded-full" />
+                                    )}
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">{selectedDoctor.name}</h3>
+                                    <p className="text-[10px] text-[#4ade80] font-bold uppercase tracking-wider">
                                         {selectedDoctor.online ? 'Đang trực tuyến' : 'Ngoại tuyến'}
-                                    </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all">
+                                    <Video className="w-5 h-5" />
+                                </button>
+                                <button className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all">
+                                    <Phone className="w-5 h-5" />
+                                </button>
+                                <button className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all">
+                                    <Info className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Messages Area */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/20">
+                            <div className="flex justify-center">
+                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-[10px] text-slate-500 uppercase font-black tracking-widest">
+                                    Hôm nay, {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                            </div>
+
+                            <AnimatePresence>
+                                {chatHistory?.map((msg: any, idx: number) => (
+                                    <motion.div
+                                        key={idx}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className={`flex ${msg.senderType === 'PATIENT' ? 'justify-end' : 'justify-start'} items-end gap-3`}
+                                    >
+                                        {msg.senderType === 'DOCTOR' && (
+                                            <img src={selectedDoctor.avatar} className="w-8 h-8 rounded-full border border-slate-100" alt="Dr" />
+                                        )}
+                                        <div className={`max-w-[80%] flex flex-col ${msg.senderType === 'PATIENT' ? 'items-end' : 'items-start'} gap-1.5`}>
+                                            {msg.isImage ? (
+                                                <div className="bg-[#4ade80]/10 border border-[#4ade80]/20 p-2 rounded-2xl rounded-br-none group cursor-pointer relative">
+                                                    <img src={msg.imageUrl} className="rounded-xl w-64 h-40 object-cover" alt="attachment" />
+                                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center rounded-xl">
+                                                        <ZoomIn className="text-white w-6 h-6" />
+                                                    </div>
+                                                    <p className="text-[10px] mt-2 text-slate-500 px-1 italic">Kết quả đính kèm</p>
+                                                </div>
+                                            ) : (
+                                                <div className={`p-4 rounded-3xl text-sm font-medium shadow-sm leading-relaxed ${msg.senderType === 'PATIENT'
+                                                    ? 'bg-[#4ade80] text-slate-900 rounded-br-none shadow-[#4ade80]/20'
+                                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-bl-none border border-slate-100 dark:border-slate-700/50'
+                                                    }`}>
+                                                    {msg.content}
+                                                </div>
+                                            )}
+                                            <span className="text-[9px] text-slate-400 font-bold px-1">
+                                                {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-[1.5rem] p-1.5 transition-all focus-within:ring-4 focus-within:ring-emerald-500/10 focus-within:bg-white dark:focus-within:bg-slate-800">
+                                <button className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-500 transition-colors">
+                                    <PlusCircle className="w-5 h-5" />
+                                </button>
+                                <button className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-500 transition-colors">
+                                    <ImageIcon className="w-5 h-5" />
+                                </button>
+                                <button className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-500 transition-colors">
+                                    <Smile className="w-5 h-5" />
+                                </button>
+                                <input
+                                    type="text"
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                    className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 px-3 text-slate-700 dark:text-slate-200 font-medium"
+                                    placeholder="Nhập tin nhắn..."
+                                />
+                                <button
+                                    onClick={handleSend}
+                                    disabled={!message.trim() || sendMutation.isPending}
+                                    className="bg-[#4ade80] text-slate-900 p-2.5 rounded-xl shadow-lg shadow-[#4ade80]/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                                >
+                                    {sendMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin text-slate-900" /> : <Send className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-4 opacity-50">
+                        <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center">
+                            <MessageSquare className="w-10 h-10" />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900">Chọn bác sĩ để trò chuyện</h3>
+                    </div>
+                )}
+            </main>
+
+            {/* 3. Doctor Details Sidebar (xl only) */}
+            <aside className="hidden xl:flex w-80 bg-slate-50 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex-col overflow-y-auto">
+                {selectedDoctor && (
+                    <>
+                        <div className="p-8 text-center bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+                            <div className="relative inline-block mb-6">
+                                <img
+                                    src={selectedDoctor.avatar}
+                                    className="w-32 h-32 rounded-[2rem] object-cover shadow-2xl border-4 border-white dark:border-slate-800 transition-transform hover:scale-105 duration-500"
+                                    alt={selectedDoctor.name}
+                                />
+                                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-xl border-4 border-white dark:border-slate-900">
+                                    <Verified className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">{selectedDoctor.name}</h3>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2 px-4">{selectedDoctor.specialty}</p>
+
+                            <div className="grid grid-cols-2 gap-3 mt-6">
+                                <div className="bg-slate-100/50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/50 dark:border-slate-700">
+                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Kinh nghiệm</p>
+                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200">{selectedDoctor.experience || '10 năm'}</p>
+                                </div>
+                                <div className="bg-slate-100/50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/50 dark:border-slate-700">
+                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Đánh giá</p>
+                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1">
+                                        {selectedDoctor.rating || '4.9'} <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button className="p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-400 hover:text-blue-600">
-                                <Phone className="w-5 h-5" />
-                            </button>
-                            <button className="p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-400 hover:text-blue-600">
-                                <Video className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </header>
 
-                    {/* Messages Panel */}
-                    <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/30 flex flex-col">
-                        {loadingHistory ? (
-                            <div className="flex justify-center py-20">
-                                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                            </div>
-                        ) : chatHistory && chatHistory.length > 0 ? (
-                            chatHistory.map((m: any, i: number) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className={`flex ${m.senderType === 'PATIENT' ? 'justify-end' : 'justify-start'}`}
-                                >
-                                    <div className={`max-w-[70%] space-y-1 flex flex-col ${m.senderType === 'PATIENT' ? 'items-end' : 'items-start'}`}>
-                                        <div className={`p-5 rounded-[2rem] text-sm font-bold shadow-sm ${m.senderType === 'PATIENT'
-                                            ? 'bg-blue-600 text-white rounded-tr-none'
-                                            : 'bg-white text-slate-700 rounded-tl-none border border-slate-100'
-                                            }`}>
-                                            {m.content}
-                                        </div>
-                                        <div className="flex items-center gap-2 px-2">
-                                            <Clock className="w-2.5 h-2.5 text-slate-300" />
-                                            <span className="text-[9px] font-bold text-slate-400 italic">
-                                                {new Date(m.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))
-                        ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center text-center p-10 opacity-40">
-                                <MessageSquare className="w-16 h-16 mb-4 text-slate-200" />
-                                <p className="text-sm font-bold text-slate-500">Bắt đầu cuộc trò chuyện với bác sĩ của bạn.</p>
-                            </div>
-                        )}
-                    </div>
+                        <div className="p-6 space-y-8">
+                            <section>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Giới thiệu</h4>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                                    Chuyên gia điều trị các bệnh lý mãn tính, đặc biệt là tiểu đường tuýp 2 và cao huyết áp. Tốt nghiệp Đại học Y Dược TP.HCM.
+                                </p>
+                            </section>
 
-                    {/* Message Input Interface */}
-                    <footer className="p-6 bg-white border-t border-slate-50">
-                        <div className="flex items-center gap-4 bg-slate-50 rounded-3xl p-2 pl-6 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:bg-white focus-within:border-blue-500 border border-transparent transition-all">
-                            <button className="text-slate-400 hover:text-blue-600 transition-colors">
-                                <Paperclip className="w-5 h-5" />
-                            </button>
-                            <input
-                                type="text"
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                placeholder="Nhập nội dung tư vấn..."
-                                className="flex-1 bg-transparent py-4 text-xs font-bold outline-none text-slate-700 font-sans"
-                            />
-                            <button
-                                onClick={handleSend}
-                                disabled={!message.trim() || sendMutation.isPending}
-                                className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-                            >
-                                {sendMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                            </button>
+                            <section>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Thông tin liên hệ</h4>
+                                <ul className="space-y-4">
+                                    <li className="flex items-start gap-4">
+                                        <div className="mt-1 p-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                                            <MapPin className="text-emerald-500 w-3.5 h-3.5" />
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{selectedDoctor.location || 'Phòng khám Quận 1, TP.HCM'}</span>
+                                    </li>
+                                    <li className="flex items-start gap-4">
+                                        <div className="mt-1 p-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                                            <Clock className="text-emerald-500 w-3.5 h-3.5" />
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{selectedDoctor.schedule || '08:00 - 17:00 (T2 - T7)'}</span>
+                                    </li>
+                                </ul>
+                            </section>
+
+                            <div className="pt-4 space-y-3">
+                                <button className="w-full py-4 bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                                    <Calendar className="w-4 h-4" />
+                                    Đặt lịch hẹn ngay
+                                </button>
+                                <button className="w-full py-4 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all">
+                                    Xem hồ sơ chi tiết
+                                </button>
+                            </div>
                         </div>
-                    </footer>
-                </main>
-            ) : (
-                <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 flex flex-col items-center justify-center text-center p-12 space-y-4">
-                    <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center">
-                        <MessageSquare className="w-10 h-10" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-black text-slate-900">Chọn bác sĩ để bắt đầu</h3>
-                        <p className="text-sm font-medium text-slate-400 max-w-xs mx-auto">Vui lòng chọn một bác sĩ từ danh sách bên trái để nhận tư vấn trực tuyến.</p>
-                    </div>
-                </div>
-            )}
+
+                        <div className="mt-auto p-6 bg-emerald-50/30 dark:bg-emerald-500/5">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Shield className="text-emerald-500 w-4 h-4" />
+                                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Bảo mật thông tin</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-bold leading-relaxed px-1">
+                                Cuộc trò chuyện này được mã hóa đầu cuối để đảm bảo an toàn cho dữ liệu y tế của bạn.
+                            </p>
+                        </div>
+                    </>
+                )}
+            </aside>
         </div>
     )
 }
