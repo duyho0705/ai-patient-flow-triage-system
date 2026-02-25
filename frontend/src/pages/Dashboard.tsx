@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { DoctorDashboard } from './doctor/DoctorDashboard'
+import { ManagerDashboard } from './admin/ManagerDashboard'
 
 /* ─── role-based quick actions ─── */
 const ROLE_ACTIONS: Record<Role, { to: string; label: string; desc: string; icon: any; color: string }[]> = {
@@ -140,6 +141,7 @@ export function Dashboard() {
   const role = getPrimaryStaffRole(user?.roles)
 
   if (role === 'doctor') return <DoctorDashboard />
+  if (role === 'clinic_manager') return <ManagerDashboard />
 
   const config = ROLE_TITLES[role] || ROLE_TITLES.receptionist
   const actions = ROLE_ACTIONS[role] || ROLE_ACTIONS.receptionist

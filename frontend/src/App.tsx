@@ -35,6 +35,11 @@ import PatientFamily from '@/pages/patient/Family'
 import DoctorChat from '@/pages/doctor/Chat'
 import { DoctorConsultation } from '@/pages/DoctorConsultation'
 import { PatientList } from '@/pages/doctor/PatientList'
+import { ManageDoctor } from '@/pages/admin/ManageDoctor'
+import { PatientAllocation } from '@/pages/admin/PatientAllocation'
+import { FinancialReport } from '@/pages/admin/FinancialReport'
+import { MonthlyReport } from '@/pages/admin/MonthlyReport'
+import { DoctorPerformance } from '@/pages/admin/DoctorPerformance'
 import { Outlet } from 'react-router-dom'
 
 function App() {
@@ -111,6 +116,11 @@ function App() {
               {/* Báo cáo & Phân tích CDM */}
               <Route element={<PermissionGate allowedRoles={['clinic_manager', 'admin']} />}>
                 <Route path="reports" element={<Reports />} />
+                <Route path="reports/finance" element={<FinancialReport />} />
+                <Route path="reports/monthly" element={<MonthlyReport />} />
+                <Route path="reports/performance" element={<DoctorPerformance />} />
+                <Route path="admin/doctors" element={<ManageDoctor />} />
+                <Route path="admin/allocation" element={<PatientAllocation />} />
               </Route>
 
               {/* Admin Only */}

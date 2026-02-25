@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Báo cáo Hiệu suất Bác sĩ | Phòng khám Đa khoa</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1975d2",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111921",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside
+            class="w-64 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+            <div class="p-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+                        <span class="material-symbols-outlined">medical_services</span>
+                    </div>
+                    <div>
+                        <h1 class="text-sm font-bold leading-tight uppercase tracking-wider">Phòng khám Đa khoa</h1>
+                        <p class="text-xs text-slate-500">Quản lý Hệ thống</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="flex-1 px-4 space-y-1">
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span class="text-sm font-medium">Bảng điều khiển</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">person</span>
+                    <span class="text-sm font-medium">Quản lý Bác sĩ</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">bar_chart</span>
+                    <span class="text-sm font-medium">Báo cáo hiệu suất</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">calendar_today</span>
+                    <span class="text-sm font-medium">Lịch hẹn</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span class="text-sm font-medium">Cài đặt</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3 px-2">
+                    <div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700"
+                        data-alt="Ảnh đại diện người quản lý phòng khám"
+                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAeMIobQcrAwATI3jR5RE3K_xNXP7bh0Ak8ULmz0p-1ddThpL7JKUJgVMtcQhqwvJtKN-zcCqom2mY-HeErAVlfB2P9WwTf0m-8uwrFNK_w8IozKZZGRx4RvcMMgJVONBUOfbRMqOmwwkTHLZqCoS6oCzkJgfFy0cN2eba_5qvfh3sNgfYvKLyM0QsEGvFP1rDEzL0qRH4qYC8BesnbGEUBRLuKYHsxuKaoJUk-L131IAPvIQXh3YC10L4V-jVpNftonGn7OTYHpHs');">
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <p class="text-xs font-semibold truncate">Nguyễn Quản Lý</p>
+                        <p class="text-[10px] text-slate-500">Quản trị viên</p>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">logout</span>
+                </div>
+            </div>
+        </aside>
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-8">
+            <!-- Header Section -->
+            <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Báo cáo Hiệu suất Bác sĩ</h2>
+                    <p class="text-slate-500 text-sm">Phân tích và theo dõi chất lượng dịch vụ của đội ngũ y tế</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div
+                        class="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 shadow-sm">
+                        <span class="material-symbols-outlined text-slate-400 mr-2 text-sm">calendar_month</span>
+                        <span class="text-sm font-medium">01/10/2023 - 31/10/2023</span>
+                        <span class="material-symbols-outlined text-slate-400 ml-2 text-sm">expand_more</span>
+                    </div>
+                    <button
+                        class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors">
+                        <span class="material-symbols-outlined text-sm">download</span>
+                        Xuất báo cáo
+                    </button>
+                </div>
+            </header>
+            <!-- Summary Cards -->
+            <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div
+                    class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-primary/10 text-primary rounded-lg">
+                            <span class="material-symbols-outlined">groups</span>
+                        </div>
+                        <span class="text-green-600 text-xs font-bold bg-green-100 px-2 py-0.5 rounded-full">+12%</span>
+                    </div>
+                    <p class="text-slate-500 text-sm font-medium mb-1">Tổng số ca khám</p>
+                    <h3 class="text-2xl font-black">1,250</h3>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-yellow-500/10 text-yellow-600 rounded-lg">
+                            <span class="material-symbols-outlined">star</span>
+                        </div>
+                        <span class="text-green-600 text-xs font-bold bg-green-100 px-2 py-0.5 rounded-full">+0.2</span>
+                    </div>
+                    <p class="text-slate-500 text-sm font-medium mb-1">Đánh giá trung bình</p>
+                    <h3 class="text-2xl font-black">4.8/5</h3>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-blue-500/10 text-blue-600 rounded-lg">
+                            <span class="material-symbols-outlined">timer</span>
+                        </div>
+                        <span class="text-red-600 text-xs font-bold bg-red-100 px-2 py-0.5 rounded-full">-2m</span>
+                    </div>
+                    <p class="text-slate-500 text-sm font-medium mb-1">Thời gian khám TB</p>
+                    <h3 class="text-2xl font-black">15 phút</h3>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-purple-500/10 text-purple-600 rounded-lg">
+                            <span class="material-symbols-outlined">sentiment_satisfied</span>
+                        </div>
+                        <span class="text-green-600 text-xs font-bold bg-green-100 px-2 py-0.5 rounded-full">+5%</span>
+                    </div>
+                    <p class="text-slate-500 text-sm font-medium mb-1">Tỷ lệ hài lòng</p>
+                    <h3 class="text-2xl font-black">96%</h3>
+                </div>
+            </section>
+            <!-- Chart and Feedback Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <!-- Bar Chart -->
+                <div
+                    class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between mb-8">
+                        <h3 class="text-lg font-bold">So sánh số ca khám theo bác sĩ</h3>
+                        <select class="text-xs bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-primary">
+                            <option>7 ngày qua</option>
+                            <option>30 ngày qua</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end justify-between h-64 gap-2 px-4">
+                        <!-- Chart Bar 1 -->
+                        <div class="flex flex-col items-center flex-1 group">
+                            <div class="w-full bg-primary/20 rounded-t-lg relative flex items-end justify-center transition-all group-hover:bg-primary/40"
+                                style="height: 85%;">
+                                <div class="w-2/3 bg-primary rounded-t-lg" style="height: 100%;"></div>
+                                <div
+                                    class="absolute -top-8 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    210</div>
+                            </div>
+                            <p class="text-[10px] mt-4 font-bold text-slate-500 rotate-45 lg:rotate-0">BS. Nam</p>
+                        </div>
+                        <!-- Chart Bar 2 -->
+                        <div class="flex flex-col items-center flex-1 group">
+                            <div class="w-full bg-primary/20 rounded-t-lg relative flex items-end justify-center transition-all group-hover:bg-primary/40"
+                                style="height: 70%;">
+                                <div class="w-2/3 bg-primary rounded-t-lg" style="height: 100%;"></div>
+                                <div
+                                    class="absolute -top-8 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    185</div>
+                            </div>
+                            <p class="text-[10px] mt-4 font-bold text-slate-500 rotate-45 lg:rotate-0">BS. Lan</p>
+                        </div>
+                        <!-- Chart Bar 3 -->
+                        <div class="flex flex-col items-center flex-1 group">
+                            <div class="w-full bg-primary/20 rounded-t-lg relative flex items-end justify-center transition-all group-hover:bg-primary/40"
+                                style="height: 45%;">
+                                <div class="w-2/3 bg-primary rounded-t-lg" style="height: 100%;"></div>
+                                <div
+                                    class="absolute -top-8 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    120</div>
+                            </div>
+                            <p class="text-[10px] mt-4 font-bold text-slate-500 rotate-45 lg:rotate-0">BS. Minh</p>
+                        </div>
+                        <!-- Chart Bar 4 -->
+                        <div class="flex flex-col items-center flex-1 group">
+                            <div class="w-full bg-primary/20 rounded-t-lg relative flex items-end justify-center transition-all group-hover:bg-primary/40"
+                                style="height: 95%;">
+                                <div class="w-2/3 bg-primary rounded-t-lg" style="height: 100%;"></div>
+                                <div
+                                    class="absolute -top-8 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    240</div>
+                            </div>
+                            <p class="text-[10px] mt-4 font-bold text-slate-500 rotate-45 lg:rotate-0">BS. Tuấn</p>
+                        </div>
+                        <!-- Chart Bar 5 -->
+                        <div class="flex flex-col items-center flex-1 group">
+                            <div class="w-full bg-primary/20 rounded-t-lg relative flex items-end justify-center transition-all group-hover:bg-primary/40"
+                                style="height: 60%;">
+                                <div class="w-2/3 bg-primary rounded-t-lg" style="height: 100%;"></div>
+                                <div
+                                    class="absolute -top-8 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    160</div>
+                            </div>
+                            <p class="text-[10px] mt-4 font-bold text-slate-500 rotate-45 lg:rotate-0">BS. Linh</p>
+                        </div>
+                        <!-- Chart Bar 6 -->
+                        <div class="flex flex-col items-center flex-1 group">
+                            <div class="w-full bg-primary/20 rounded-t-lg relative flex items-end justify-center transition-all group-hover:bg-primary/40"
+                                style="height: 80%;">
+                                <div class="w-2/3 bg-primary rounded-t-lg" style="height: 100%;"></div>
+                                <div
+                                    class="absolute -top-8 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    205</div>
+                            </div>
+                            <p class="text-[10px] mt-4 font-bold text-slate-500 rotate-45 lg:rotate-0">BS. Đức</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Patient Feedback -->
+                <div
+                    class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                    <h3 class="text-lg font-bold mb-4">Phản hồi từ bệnh nhân</h3>
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-slate-500">Phân tích cảm xúc</span>
+                            <span class="text-xs font-bold text-green-600">Tích cực (88%)</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                            <div class="bg-green-500 h-full" style="width: 88%;"></div>
+                            <div class="bg-yellow-400 h-full" style="width: 8%;"></div>
+                            <div class="bg-red-500 h-full" style="width: 4%;"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-4 overflow-y-auto max-h-48 flex-1 pr-2">
+                        <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="size-2 rounded-full bg-green-500"></div>
+                                <p class="text-xs font-bold">Bệnh nhân: Nguyễn Văn A</p>
+                            </div>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 italic">"Bác sĩ Nam rất tận tâm, giải
+                                thích bệnh tình kỹ lưỡng..."</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="size-2 rounded-full bg-green-500"></div>
+                                <p class="text-xs font-bold">Bệnh nhân: Lê Thị B</p>
+                            </div>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 italic">"Thời gian chờ đợi nhanh hơn
+                                lần trước, dịch vụ rất tốt."</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="size-2 rounded-full bg-yellow-500"></div>
+                                <p class="text-xs font-bold">Bệnh nhân: Trần Văn C</p>
+                            </div>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 italic">"Bác sĩ khám nhanh nhưng cần tư
+                                vấn thêm về chế độ ăn."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Detailed Data Table -->
+            <section
+                class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div
+                    class="p-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h3 class="text-lg font-bold">Chi tiết hiệu suất bác sĩ</h3>
+                    <div class="flex gap-2">
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                            <input
+                                class="pl-9 pr-4 py-1.5 text-sm bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-primary w-full md:w-64"
+                                placeholder="Tìm tên bác sĩ..." type="text" />
+                        </div>
+                        <button class="p-2 border border-slate-200 dark:border-slate-800 rounded-lg">
+                            <span class="material-symbols-outlined text-sm">filter_list</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 font-bold">
+                                <th class="px-6 py-4">Tên bác sĩ</th>
+                                <th class="px-6 py-4">Chuyên khoa</th>
+                                <th class="px-6 py-4">Số ca đã khám</th>
+                                <th class="px-6 py-4">Tỷ lệ hoàn thành</th>
+                                <th class="px-6 py-4">Đánh giá trung bình</th>
+                                <th class="px-6 py-4">Thời gian khám TB</th>
+                                <th class="px-6 py-4">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="size-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-xs">
+                                            TN</div>
+                                        <span class="font-semibold text-slate-900 dark:text-slate-100">Nguyễn Văn
+                                            Nam</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-slate-500">Nội tổng quát</td>
+                                <td class="px-6 py-4 font-bold">210</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            class="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div class="bg-green-500 h-full" style="width: 98%;"></div>
+                                        </div>
+                                        <span>98%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex text-yellow-500 items-center">
+                                        <span class="material-symbols-outlined text-sm"
+                                            style="font-variation-settings: 'FILL' 1">star</span>
+                                        <span class="ml-1 font-bold">4.9</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">12 phút</td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold rounded-full uppercase">Thưởng</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="size-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-xs">
+                                            TL</div>
+                                        <span class="font-semibold text-slate-900 dark:text-slate-100">Trần Thị
+                                            Lan</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-slate-500">Nhi khoa</td>
+                                <td class="px-6 py-4 font-bold">185</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            class="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div class="bg-green-500 h-full" style="width: 94%;"></div>
+                                        </div>
+                                        <span>94%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex text-yellow-500 items-center">
+                                        <span class="material-symbols-outlined text-sm"
+                                            style="font-variation-settings: 'FILL' 1">star</span>
+                                        <span class="ml-1 font-bold">4.7</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">15 phút</td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold rounded-full uppercase">Thưởng</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="size-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-xs">
+                                            VM</div>
+                                        <span class="font-semibold text-slate-900 dark:text-slate-100">Vũ Văn
+                                            Minh</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-slate-500">Tai Mũi Họng</td>
+                                <td class="px-6 py-4 font-bold">120</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            class="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div class="bg-yellow-500 h-full" style="width: 82%;"></div>
+                                        </div>
+                                        <span>82%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex text-yellow-500 items-center">
+                                        <span class="material-symbols-outlined text-sm"
+                                            style="font-variation-settings: 'FILL' 1">star</span>
+                                        <span class="ml-1 font-bold">4.2</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">22 phút</td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] font-bold rounded-full uppercase">Cần
+                                        cải thiện</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="size-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-xs">
+                                            PT</div>
+                                        <span class="font-semibold text-slate-900 dark:text-slate-100">Phạm Minh
+                                            Tuấn</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-slate-500">Sản phụ khoa</td>
+                                <td class="px-6 py-4 font-bold">240</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            class="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div class="bg-green-500 h-full" style="width: 99%;"></div>
+                                        </div>
+                                        <span>99%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex text-yellow-500 items-center">
+                                        <span class="material-symbols-outlined text-sm"
+                                            style="font-variation-settings: 'FILL' 1">star</span>
+                                        <span class="ml-1 font-bold">5.0</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">10 phút</td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold rounded-full uppercase">Thưởng</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div
+                    class="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    <span>Đang hiển thị 4 trong số 12 bác sĩ</span>
+                    <div class="flex gap-2">
+                        <button
+                            class="p-2 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-colors">
+                            <span class="material-symbols-outlined text-sm">chevron_left</span>
+                        </button>
+                        <button
+                            class="p-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-700 text-primary">1</button>
+                        <button
+                            class="p-2 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-colors">2</button>
+                        <button
+                            class="p-2 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-colors">3</button>
+                        <button
+                            class="p-2 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-colors">
+                            <span class="material-symbols-outlined text-sm">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>
