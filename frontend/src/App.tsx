@@ -8,7 +8,6 @@ import { RequireStaff } from '@/components/RequireStaff'
 
 import { LandingPage } from '@/pages/LandingPage'
 import { Dashboard } from '@/pages/Dashboard'
-import { Scheduling } from '@/pages/Scheduling'
 
 import { Reports } from '@/pages/Reports'
 import { RiskAnalysis } from '@/pages/doctor/RiskAnalysis'
@@ -105,7 +104,6 @@ function App() {
               {/* Theo dõi & Tái khám: Doctor, Receptionist & Admin */}
               <Route element={<PermissionGate allowedRoles={['doctor', 'receptionist', 'admin']} />}>
                 <Route path="patients" element={<PatientList />} />
-                <Route path="scheduling" element={<Scheduling />} />
               </Route>
 
               {/* Báo cáo & Phân tích CDM */}
