@@ -1,31 +1,21 @@
 import {
     Users,
-    Bell,
-    Settings,
-    Search,
-    Filter,
     ClipboardList,
     Calendar,
     MessageSquare,
     AlertTriangle,
     CheckCircle2,
-    Send,
-    Megaphone,
-    MessageCircle,
     MoreVertical,
     BarChart3,
-    FileText,
     TrendingUp,
     ChevronRight,
-    Clock,
-    LayoutDashboard,
-    Activity,
+    Megaphone,
+    MessageCircle,
+    FileText
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
 
 export function DoctorDashboard() {
-    const [searchTerm, setSearchTerm] = useState('')
 
     // Patient Type
     type PatientData = {
@@ -83,257 +73,258 @@ export function DoctorDashboard() {
     ]
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700 bg-[#f8fafc] dark:bg-[#0f172a] -m-8 p-8 min-h-screen font-sans">
-            {/* Standard Header */}
-            <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Tổng quan</h1>
-                    <p className="text-slate-500 text-sm">Theo dõi trạng thái sức khỏe bệnh nhân trong thời gian thực</p>
-                </div>
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-96 group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-blue-600 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Tìm kiếm bệnh nhân..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-blue-600/20 shadow-sm outline-none"
-                        />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button className="p-2 text-slate-500 hover:bg-white dark:hover:bg-slate-800 rounded-lg relative border border-transparent hover:border-slate-200">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-                        </button>
-                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden md:block"></div>
-                        <div className="text-right hidden md:block px-2">
-                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Thứ 3, 24 Tháng 5</p>
-                            <p className="text-xs text-slate-500 font-medium">08:30 AM</p>
-                        </div>
-                    </div>
-                </div>
-            </header>
+        <div className="space-y-8 animate-in fade-in duration-700 font-sans">
+            <div>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Tổng quan</h1>
+                <p className="text-slate-500 text-sm">Theo dõi trạng thái sức khỏe bệnh nhân trong thời gian thực</p>
+            </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((s, i) => (
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {stats.map((stat, i) => (
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
+                        key={i}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        key={i}
-                        className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md"
+                        className="bg-white dark:bg-slate-900 p-6 rounded-[13px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
                     >
                         <div className="flex justify-between items-start mb-4">
-                            <div className={`p-2.5 ${s.bg} ${s.color} rounded-xl`}>
-                                <s.icon className="w-6 h-6" />
+                            <div className={`${stat.bg} ${stat.color} p-3 rounded-[13px] group-hover:scale-110 transition-transform`}>
+                                <stat.icon className="w-6 h-6" />
                             </div>
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${s.trend.startsWith('+') ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
-                                {s.trend}
+                            <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${stat.trend.startsWith('+') ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-400'}`}>
+                                {stat.trend}
                             </span>
                         </div>
-                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{s.label}</p>
-                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                            {s.value}
-                        </h3>
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">{stat.label}</p>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{stat.value}</h3>
                     </motion.div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-                {/* Critical Insights Box (Image 3 style) */}
-                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                        <h3 className="font-bold text-slate-800 dark:text-white text-base flex items-center gap-3">
-                            <div className="p-1.5 bg-red-50 rounded-lg">
-                                <TrendingUp className="w-5 h-5 text-red-500" />
-                            </div>
-                            Phân tích nguy cơ & Cảnh báo (Real-time)
-                        </h3>
-                        <button className="text-sm text-blue-600 font-semibold hover:underline">Xem tất cả</button>
-                    </div>
-                    <div className="p-6 space-y-4">
-                        {criticalInsights.map((insight, idx) => (
-                            <div
-                                key={idx}
-                                className={`flex items-center gap-4 p-4 rounded-2xl border ${insight.bgColor} ${insight.borderColor} transition-all`}
-                            >
-                                <img
-                                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                                    src={insight.avatar}
-                                    alt={insight.name}
-                                />
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">
-                                        {insight.name} <span className="text-xs font-medium text-slate-500 ml-1">(ID: {insight.id})</span>
-                                    </p>
-                                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 line-clamp-1">
-                                        {insight.message}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${insight.type === 'critical' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'}`}>
-                                        {insight.status}
-                                    </span>
-                                    <button className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-600/20">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Critical Analysis */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-white dark:bg-slate-900 rounded-[13px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden min-h-[400px] flex flex-col">
+                        <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center">
+                            <h3 className="font-black text-slate-900 dark:text-white flex items-center gap-3 tracking-tight">
+                                <span className="p-2 bg-red-50 text-red-500 rounded-xl">
+                                    <TrendingUp className="w-5 h-5" />
+                                </span>
+                                Phân tích & Cảnh báo thời gian thực
+                            </h3>
+                            <button className="text-xs font-black text-blue-600 uppercase tracking-widest hover:text-blue-700 transition-colors">Xem tất cả</button>
+                        </div>
+
+                        <div className="p-8 space-y-4 flex-1">
+                            {criticalInsights.map((alert, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.3 + (i * 0.1) }}
+                                    className={`${alert.bgColor} border ${alert.borderColor} p-5 rounded-3xl flex items-center gap-5 group hover:shadow-lg hover:shadow-red-500/5 transition-all cursor-pointer`}
+                                >
+                                    <div className="relative">
+                                        <img className="w-14 h-14 rounded-2xl object-cover shadow-md" src={alert.avatar} alt={alert.name} />
+                                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                            <div className={`w-3 h-3 rounded-full ${alert.type === 'critical' ? 'bg-red-500' : 'bg-amber-500'}`}></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <p className="font-black text-slate-900 text-sm tracking-tight">{alert.name} <span className="text-slate-400 font-bold ml-1 text-xs">{alert.id}</span></p>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${alert.type === 'critical' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'}`}>
+                                                {alert.status}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 font-medium leading-relaxed">{alert.message}</p>
+                                    </div>
+                                    <button className="bg-blue-600 text-white p-3 rounded-2xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0">
                                         <ChevronRight className="w-5 h-5" />
                                     </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
 
-                    {/* Chart (Image 3 style) */}
-                    <div className="p-6 pt-0 mt-auto">
-                        <div className="bg-[#f8fafc] dark:bg-slate-800/50 rounded-2xl p-6 flex flex-col border border-slate-100 dark:border-slate-800">
-                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-6">
-                                XU HƯỚNG CHỈ SỐ HUYẾT ÁP - BỆNH NHÂN TRẦN VĂN C
-                            </p>
-                            <div className="flex-1 flex items-end gap-3 px-2 h-40">
-                                <div className="flex-1 bg-blue-200 rounded-t-md h-[40%]" title="T2"></div>
-                                <div className="flex-1 bg-blue-200 rounded-t-md h-[45%]" title="T3"></div>
-                                <div className="flex-1 bg-blue-300 rounded-t-md h-[60%]" title="T4"></div>
-                                <div className="flex-1 bg-blue-400 rounded-t-md h-[55%]" title="T5"></div>
-                                <div className="flex-1 bg-blue-500 rounded-t-md h-[75%]" title="T6"></div>
-                                <div className="flex-1 bg-[#ff6b6b] rounded-t-md h-[95%]" title="T7"></div>
-                                <div className="flex-1 bg-[#ff4d4d] rounded-t-md h-[85%]" title="CN"></div>
-                            </div>
-                            <div className="flex justify-between text-[10px] mt-4 text-slate-400 font-bold px-2">
-                                <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+                        {/* Chart Area */}
+                        <div className="px-8 pb-8">
+                            <div className="bg-slate-50 dark:bg-slate-800/40 rounded-3xl p-6 h-56 flex flex-col">
+                                <div className="flex justify-between items-center mb-6">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Xu hướng chỉ số huyết áp (Tuần này)</p>
+                                    <div className="flex gap-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase">Bình thường</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase">Cảnh báo</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex-1 flex items-end gap-3 px-2">
+                                    {[40, 45, 60, 55, 75, 90, 85].map((h, i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ height: 0 }}
+                                            animate={{ height: `${h}%` }}
+                                            transition={{ delay: 0.5 + (i * 0.05), duration: 0.8 }}
+                                            className={`flex-1 rounded-t-xl transition-all duration-500 ${i > 4 ? 'bg-gradient-to-t from-red-400 to-red-500' : 'bg-gradient-to-t from-blue-400 to-blue-500 opacity-40 hover:opacity-100'}`}
+                                        ></motion.div>
+                                    ))}
+                                </div>
+                                <div className="flex justify-between text-[10px] font-black mt-4 text-slate-400 px-1 uppercase tracking-tighter">
+                                    <span>Thứ 2</span><span>Thứ 3</span><span>Thứ 4</span><span>Thứ 5</span><span>Thứ 6</span><span>Thứ 7</span><span>Chủ nhật</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Panel (Image 1 style) */}
-                <div className="space-y-6">
-                    {/* Thao tác nhanh card */}
-                    <div className="bg-[#1D70D6] rounded-3xl p-8 text-white shadow-xl shadow-blue-600/20 relative overflow-hidden">
-                        <h3 className="font-bold text-xl mb-2">Thao tác nhanh</h3>
-                        <p className="text-blue-100 text-xs mb-8">Gửi thông báo sức khỏe cho nhóm bệnh nhân mục tiêu</p>
-                        <div className="space-y-3 relative z-10">
-                            <button className="w-full bg-white/20 hover:bg-white/30 text-white py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-3 transition-all">
-                                <Megaphone className="w-5 h-5" />
-                                Gửi cảnh báo khẩn cấp
-                            </button>
-                            <button className="w-full bg-white text-blue-600 py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-3 transition-all hover:bg-slate-50 shadow-lg">
-                                <MessageCircle className="w-5 h-5" />
-                                Khuyến nghị sức khỏe
-                            </button>
+                {/* Right Column */}
+                <div className="space-y-8">
+                    {/* Quick Actions Card */}
+                    <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-blue-600/30 relative overflow-hidden group">
+                        <div className="relative z-10">
+                            <h3 className="font-black text-xl mb-2 tracking-tight">Thao tác nhanh</h3>
+                            <p className="text-blue-100 text-xs font-medium mb-8 leading-relaxed">Gửi thông báo sức khỏe và hướng dẫn cho nhóm bệnh nhân mục tiêu</p>
+                            <div className="space-y-4">
+                                <button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 border border-white/10">
+                                    <Megaphone className="w-5 h-5" />
+                                    Gửi cảnh báo khẩn
+                                </button>
+                                <button className="w-full bg-white hover:bg-blue-50 text-blue-600 py-4 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-blue-800/20">
+                                    <MessageCircle className="w-5 h-5" />
+                                    Khuyến nghị sức khỏe
+                                </button>
+                            </div>
                         </div>
-                        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                        <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
                     </div>
 
-                    {/* Lịch khám sắp tới */}
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-                        <h3 className="font-bold text-slate-800 dark:text-white text-sm flex items-center gap-3 mb-6">
-                            <div className="p-1.5 bg-blue-50 rounded-lg">
-                                <Calendar className="w-5 h-5 text-blue-600" />
-                            </div>
-                            Lịch khám sắp tới (3)
+                    {/* Upcoming Appointments */}
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
+                        <h3 className="font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3 tracking-tight">
+                            <span className="p-2 bg-amber-50 text-amber-500 rounded-xl">
+                                <Calendar className="w-5 h-5" />
+                            </span>
+                            Lịch khám hôm nay
                         </h3>
-                        <div className="space-y-6">
-                            {upcomingAppointments.map((app, i) => (
-                                <div key={i} className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-[#eff6ff] flex flex-col items-center justify-center border border-blue-50">
-                                        <span className="text-[9px] font-bold text-blue-600 uppercase leading-none mb-1">{app.month}</span>
-                                        <span className="text-lg font-bold text-slate-800 dark:text-slate-100 leading-none">{app.date}</span>
+                        <div className="space-y-5">
+                            {upcomingAppointments.map((apt, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 + (i * 0.1) }}
+                                    className="flex items-center gap-4 group cursor-pointer"
+                                >
+                                    <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex flex-col items-center justify-center border border-blue-100 dark:border-blue-900/30 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                                        <span className="text-[8px] font-black uppercase tracking-tighter opacity-60">{apt.month}</span>
+                                        <span className="text-sm font-black tracking-tighter">{apt.date}</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{app.name}</p>
-                                        <p className="text-[11px] text-slate-500 font-medium mt-0.5">{app.disease} • {app.time}</p>
+                                        <p className="text-sm font-black text-slate-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">{apt.name}</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{apt.disease} <span className="mx-1">•</span> {apt.time}</p>
                                     </div>
-                                    <button className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-md">
-                                        <MoreVertical className="w-5 h-5" />
+                                    <button className="p-2 text-slate-300 hover:text-slate-600">
+                                        <MoreVertical className="w-4 h-4" />
                                     </button>
-                                </div>
+                                </motion.div>
                             ))}
                         </div>
+                        <button className="w-full mt-8 py-3 rounded-2xl border-2 border-dashed border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-blue-200 hover:text-blue-600 transition-all">Xem toàn bộ lịch</button>
                     </div>
                 </div>
             </div>
 
-            {/* Patient Table (Image 2 style) */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-8">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            {/* Bottom Section: Patient Table */}
+            <div className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden mt-8">
+                <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-white font-display">Danh sách bệnh nhân đang quản lý</h3>
-                        <p className="text-xs text-slate-500 font-medium mt-0.5">Tổng cộng 1,250 bệnh nhân trong danh sách của bạn</p>
+                        <h3 className="font-black text-xl text-slate-900 dark:text-white tracking-tight">Danh sách bệnh nhân đang quản lý</h3>
+                        <p className="text-xs text-slate-400 font-bold uppercase mt-1 tracking-widest">Tổng cộng 1,250 bệnh nhân trong danh sách</p>
                     </div>
-                    <div className="flex gap-2">
-                        <button className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-slate-600 rounded-xl text-xs font-bold transition-all border border-slate-200 flex items-center gap-2">
-                            Lọc theo bệnh lý
-                        </button>
-                        <button className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-slate-600 rounded-xl text-xs font-bold transition-all border border-slate-200">
-                            Xuất báo cáo
-                        </button>
+                    <div className="flex gap-3 w-full md:w-auto">
+                        <button className="flex-1 md:flex-none px-6 py-3 bg-slate-50 dark:bg-slate-800 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all">Lọc nâng cao</button>
+                        <button className="flex-1 md:flex-none px-6 py-3 bg-slate-50 dark:bg-slate-800 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all">Xuất báo cáo</button>
                     </div>
                 </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="bg-[#f8fafc] dark:bg-slate-800/30 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                                <th className="px-6 py-4">Bệnh nhân</th>
-                                <th className="px-6 py-4">Bệnh lý chính</th>
-                                <th className="px-6 py-4">Chỉ số mới nhất</th>
-                                <th className="px-6 py-4 text-center">Mức độ nguy cơ</th>
-                                <th className="px-6 py-4 text-right">Hành động</th>
+                            <tr className="bg-slate-50/30 dark:bg-slate-800/30 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                                <th className="px-10 py-6">Bệnh nhân</th>
+                                <th className="px-10 py-6">Bệnh lý & Chỉ số</th>
+                                <th className="px-10 py-6">Phát hiện nguy cơ</th>
+                                <th className="px-10 py-6 text-right">Hành động nhanh</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {patients.map((p, i) => (
-                                <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all group">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs ${p.color === 'red' ? 'bg-red-50 text-red-600' : p.color === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
-                                                {p.initial}
+                        <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                            {patients.map((patient, i) => (
+                                <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all group">
+                                    <td className="px-10 py-6">
+                                        <div className="flex items-center gap-5">
+                                            <div className="relative">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black shadow-sm group-hover:scale-110 transition-transform ${patient.color === 'green' ? 'bg-green-50 text-green-600' :
+                                                    patient.color === 'red' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
+                                                    }`}>
+                                                    {patient.initial}
+                                                </div>
+                                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-white dark:border-slate-900 ${patient.color === 'green' ? 'bg-green-500' :
+                                                    patient.color === 'red' ? 'bg-red-500' : 'bg-amber-500'
+                                                    }`}></div>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-slate-900 dark:text-white uppercase leading-none mb-1">{p.name}</p>
-                                                <p className="text-[10px] font-medium text-slate-500">{p.id} • {p.age} tuổi</p>
+                                                <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{patient.name}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{patient.id} <span className="mx-1">•</span> {patient.age} tuổi</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {Array.isArray(p.disease) ? p.disease.map((d, di) => (
-                                                <span key={di} className="px-2 py-1 bg-slate-50 dark:bg-slate-800 text-slate-500 text-[10px] font-bold rounded-lg border border-slate-100 dark:border-slate-700">
-                                                    {d}
-                                                </span>
-                                            )) : (
-                                                <span className={`px-2 py-1 text-[10px] font-bold rounded-lg ${p.disease.includes('Tiểu đường') ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
-                                                    {p.disease}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className={`text-sm font-bold ${p.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>{p.metric}</p>
-                                        <p className="text-[10px] text-slate-400 font-medium italic">Cập nhật: {p.updated}</p>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col gap-2 items-center">
-                                            <div className="w-24 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                <div
-                                                    className={`h-full ${p.color === 'red' ? 'bg-red-500' : p.color === 'amber' ? 'bg-amber-500' : 'bg-green-500'}`}
-                                                    style={{ width: `${p.riskLevel}%` }}
-                                                ></div>
+                                    <td className="px-10 py-6">
+                                        <div className="flex flex-col gap-1.5">
+                                            <div className="flex flex-wrap gap-2">
+                                                {Array.isArray(patient.disease) ? patient.disease.map((d, idx) => (
+                                                    <span key={idx} className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg">{d}</span>
+                                                )) : (
+                                                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg">{patient.disease}</span>
+                                                )}
                                             </div>
-                                            <span className={`text-[10px] font-bold uppercase ${p.color === 'red' ? 'text-red-600' : p.color === 'amber' ? 'text-amber-600' : 'text-green-600'}`}>
-                                                {p.risk}
-                                            </span>
+                                            <p className="text-xs font-bold text-slate-600 dark:text-slate-300">{patient.metric}</p>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-3 opacity-60 group-hover:opacity-100 transition-all">
-                                            <button className="text-slate-600 hover:text-blue-600" title="Analytics">
+                                    <td className="px-10 py-6">
+                                        <div className="flex flex-col gap-2">
+                                            <div className="w-40 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${patient.riskLevel}%` }}
+                                                    transition={{ duration: 1, delay: 0.5 }}
+                                                    className={`h-full rounded-full ${patient.color === 'red' ? 'bg-red-500' :
+                                                        patient.color === 'amber' ? 'bg-amber-500' : 'bg-green-500'
+                                                        }`}
+                                                ></motion.div>
+                                            </div>
+                                            <div className="flex justify-between items-center w-40">
+                                                <span className={`text-[9px] font-black uppercase tracking-widest ${patient.color === 'red' ? 'text-red-600' :
+                                                    patient.color === 'amber' ? 'text-amber-600' : 'text-green-600'
+                                                    }`}>{patient.risk}</span>
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{patient.updated}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-10 py-6 text-right">
+                                        <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                                            <button className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-blue-600 hover:bg-white rounded-2xl shadow-sm transition-all" title="Phân tích">
                                                 <BarChart3 className="w-5 h-5" />
                                             </button>
-                                            <button className="text-slate-600 hover:text-blue-600" title="Message">
+                                            <button className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-blue-600 hover:bg-white rounded-2xl shadow-sm transition-all" title="Nhắn tin">
                                                 <MessageSquare className="w-5 h-5" />
                                             </button>
-                                            <button className="text-slate-600 hover:text-blue-600" title="Notes">
+                                            <button className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-blue-600 hover:bg-white rounded-2xl shadow-sm transition-all" title="Xử lý hồ sơ">
                                                 <FileText className="w-5 h-5" />
                                             </button>
                                         </div>
@@ -343,13 +334,15 @@ export function DoctorDashboard() {
                         </tbody>
                     </table>
                 </div>
-                <div className="p-4 bg-[#f8fafc] border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs font-semibold text-slate-500">
-                    <p>Hiển thị 10 trong 1,250 kết quả</p>
+
+                {/* Table Footer */}
+                <div className="p-10 bg-slate-50/30 dark:bg-slate-800/30 flex justify-between items-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trang 1 / 125</p>
                     <div className="flex gap-2">
-                        <button className="px-4 py-2 border border-slate-200 rounded-lg hover:bg-white text-slate-400 disabled:opacity-50" disabled>Trước</button>
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg">1</button>
-                        <button className="px-4 py-2 border border-slate-200 rounded-lg hover:bg-white">2</button>
-                        <button className="px-4 py-2 border border-slate-200 rounded-lg hover:bg-white">Sau</button>
+                        <button className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center font-black text-slate-400 hover:text-blue-600 transition-all shadow-sm active:scale-95">1</button>
+                        <button className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center font-black text-slate-400 hover:text-blue-600 transition-all shadow-sm active:scale-95">2</button>
+                        <button className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center font-black text-slate-400 hover:text-blue-600 transition-all shadow-sm active:scale-95">3</button>
+                        <button className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-600/20 active:scale-95 relative z-10">4</button>
                     </div>
                 </div>
             </div>

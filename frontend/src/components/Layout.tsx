@@ -3,12 +3,28 @@ import { useAuth } from '@/context/AuthContext'
 import { useTenant } from '@/context/TenantContext'
 import { TenantSelect } from './TenantSelect'
 
-import { LogOut, Menu, HeartPulse, Plus, X } from 'lucide-react'
-import { useState } from 'react'
+import { LogOut, Menu, HeartPulse, Plus, X, Search, Bell, Settings } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { STAFF_NAV } from '@/routes/staffNav'
 import { motion } from 'framer-motion'
 
 export function Layout() {
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const formatDateVi = (date: Date) => {
+    const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7']
+    const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12']
+    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]}`
+  }
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+  }
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
@@ -146,9 +162,9 @@ export function Layout() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col md:pl-72 min-h-screen">
-        {location.pathname !== '/dashboard' ? (
-          <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-slate-200/60 bg-white/80 dark:bg-slate-900/80 px-8 backdrop-blur-md">
+      <div className="flex-1 flex flex-col md:pl-72 min-h-screen bg-[#f8fafc] dark:bg-[#0f172a]">
+        <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-slate-200/60 bg-white/80 dark:bg-slate-900/80 px-8 backdrop-blur-md">
+          <div className="flex flex-1 items-center gap-8">
             <button
               onClick={() => setSidebarOpen(true)}
               className="text-slate-500 hover:text-slate-700 md:hidden"
@@ -156,32 +172,38 @@ export function Layout() {
               <Menu className="h-6 w-6" />
             </button>
 
-            <div className="flex flex-1 items-center justify-end gap-4">
-              <div className="flex items-center gap-2 px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full h-8 shrink-0">
-                <svg viewBox="0 0 512 512" className="w-4 h-4 rounded-full shadow-sm">
-                  <path fill="#da251d" d="M0 0h512v512H0z" />
-                  <path fill="#ffff00" d="m256 94.4l36.5 112.4h118.2l-95.6 69.5l36.5 112.4l-95.6-69.5l-95.6 69.5l36.5-112.4l-95.6-69.5h118.2z" />
-                </svg>
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">VN</span>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium text-xs">
-                {user?.fullNameVi?.charAt(0) || 'U'}
-              </div>
+            {/* Global Search Bar */}
+            <div className="relative flex-1 max-w-2xl group hidden md:block">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-600 transition-colors" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm bệnh nhân bằng tên, ID hoặc số điện thoại..."
+                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-none rounded-[13px] text-sm font-medium focus:ring-2 focus:ring-blue-600/20 shadow-sm transition-all"
+              />
             </div>
-          </header>
-        ) : (
-          /* Small mobile trigger for dashboard */
-          <div className="md:hidden fixed top-6 left-6 z-50">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-100 dark:border-slate-800 text-slate-600 overflow-hidden"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
           </div>
-        )}
 
-        <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <button className="p-2.5 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-[13px] transition-all relative group">
+                <Bell className="w-5 h-5 group-hover:text-blue-600" />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm"></span>
+              </button>
+              <button className="p-2.5 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-[13px] transition-all group">
+                <Settings className="w-5 h-5 group-hover:text-blue-600" />
+              </button>
+            </div>
+
+            <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+
+            <div className="text-right hidden sm:block min-w-[120px]">
+              <p className="text-xs font-black text-slate-900 dark:text-white mb-0.5">{formatDateVi(currentTime)}</p>
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{formatTime(currentTime)}</p>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 p-8 overflow-y-auto w-full max-w-[1600px] mx-auto">
           {location.pathname === '/' ? (
             <Outlet />
           ) : location.pathname === '/dashboard' && !tenantId ? (

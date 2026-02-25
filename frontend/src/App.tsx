@@ -10,8 +10,9 @@ import { LandingPage } from '@/pages/LandingPage'
 import { Dashboard } from '@/pages/Dashboard'
 import { Scheduling } from '@/pages/Scheduling'
 
-import { Analytics } from '@/pages/Analytics'
 import { Reports } from '@/pages/Reports'
+import { RiskAnalysis } from '@/pages/doctor/RiskAnalysis'
+import { PrescriptionList } from '@/pages/doctor/PrescriptionList' // Added this import
 import { Admin } from '@/pages/Admin'
 import { PatientPortal } from '@/pages/patient/PatientPortal'
 import { PatientEhr } from '@/pages/admin/PatientEhr'
@@ -33,6 +34,7 @@ import AiAssistant from '@/pages/patient/AiAssistant'
 import PatientFamily from '@/pages/patient/Family'
 import DoctorChat from '@/pages/doctor/Chat'
 import { DoctorConsultation } from '@/pages/DoctorConsultation'
+import { PatientList } from '@/pages/doctor/PatientList'
 import { Outlet } from 'react-router-dom'
 
 function App() {
@@ -90,15 +92,25 @@ function App() {
                 <Route path="chat" element={<DoctorChat />} />
               </Route>
 
+              {/* Phân tích nguy cơ: Doctor, Clinic Manager & Admin */}
+              <Route element={<PermissionGate allowedRoles={['doctor', 'clinic_manager', 'admin']} />}>
+                <Route path="analytics" element={<RiskAnalysis />} />
+              </Route>
+
+              {/* Toa thuốc: Doctor & Admin */}
+              <Route element={<PermissionGate allowedRoles={['doctor', 'admin']} />}>
+                <Route path="prescriptions" element={<PrescriptionList />} />
+              </Route>
+
               {/* Theo dõi & Tái khám: Doctor, Receptionist & Admin */}
               <Route element={<PermissionGate allowedRoles={['doctor', 'receptionist', 'admin']} />}>
+                <Route path="patients" element={<PatientList />} />
                 <Route path="scheduling" element={<Scheduling />} />
               </Route>
 
               {/* Báo cáo & Phân tích CDM */}
               <Route element={<PermissionGate allowedRoles={['clinic_manager', 'admin']} />}>
                 <Route path="reports" element={<Reports />} />
-                <Route path="analytics" element={<Analytics />} />
               </Route>
 
               {/* Admin Only */}
