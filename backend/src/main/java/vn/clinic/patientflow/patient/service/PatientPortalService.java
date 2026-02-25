@@ -214,7 +214,7 @@ public class PatientPortalService {
 
                 triageVitals.addAll(manualVitals);
                 return triageVitals.stream()
-                                .sorted((a, b) -> b.getRecordedAt().compareTo(a.getRecordedAt()))
+                                .sorted((a, b) -> b.recordedAt().compareTo(a.recordedAt()))
                                 .collect(Collectors.toList());
         }
 

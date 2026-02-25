@@ -6,7 +6,6 @@ import {
   LineChart,
   FileText,
   Leaf,
-  ChevronRight,
   Star,
   Menu,
   X,
@@ -15,7 +14,6 @@ import {
   Instagram,
   Facebook,
   Twitter,
-  ArrowRight,
   BriefcaseMedical
 } from 'lucide-react'
 import { LoginModal } from '@/pages/Login'

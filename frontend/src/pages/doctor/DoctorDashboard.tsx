@@ -1,243 +1,369 @@
-import { useQuery } from '@tanstack/react-query'
-import { useTenant } from '@/context/TenantContext'
-import { getDoctorDashboard } from '@/api/doctor'
 import {
     Users,
-    Clock,
-    CheckCircle2,
-    Calendar,
-    ArrowRight,
+    Bell,
+    Settings,
     Search,
     Filter,
-    Activity,
-    BrainCircuit
+    ClipboardList,
+    Calendar,
+    MessageSquare,
+    AlertTriangle,
+    CheckCircle2,
+    Send,
+    Megaphone,
+    MessageCircle,
+    MoreVertical,
+    BarChart3,
+    FileText,
+    TrendingUp,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { AcuityIndicator } from '@/components/AcuityBadge'
-import { WebSocketService } from '@/services/websocket'
-import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useState } from 'react'
 
 export function DoctorDashboard() {
-    const { headers } = useTenant()
+    const [searchTerm, setSearchTerm] = useState('')
 
-    const queryClient = useQueryClient()
-    const { data: stats, isLoading } = useQuery({
-        queryKey: ['doctor-dashboard-stats'],
-        queryFn: () => getDoctorDashboard(headers),
-        enabled: !!headers?.tenantId,
-    })
+    // Patient Type
+    type PatientData = {
+        id: string;
+        name: string;
+        initial: string;
+        age: number;
+        disease: string | string[];
+        metric: string;
+        updated: string;
+        risk: string;
+        riskLevel: number;
+        color: string;
+    }
 
-    useEffect(() => {
-        const ws = new WebSocketService((msg) => {
-            if (msg.type === 'QUEUE_REFRESH' || msg.type === 'PATIENT_CALLED') {
-                queryClient.invalidateQueries({ queryKey: ['doctor-dashboard-stats'] })
-            }
-        })
-        ws.connect()
-        return () => ws.disconnect()
-    }, [queryClient])
+    // Mock Data to match Dashboard.html exactly
+    const stats = [
+        { label: 'Tổng bệnh nhân', value: '1,250', trend: '+12%', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30' },
+        { label: 'Nguy cơ cao', value: '42', trend: '+5%', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/30', border: 'border-l-4 border-l-red-500' },
+        { label: 'Lịch khám', value: '15', trend: 'Hôm nay', icon: ClipboardList, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30' },
+        { label: 'Tỷ lệ tuân thủ', value: '88.5%', trend: '+3%', icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/30' }
+    ]
 
-    if (isLoading) return <div className="p-8 animate-pulse text-slate-400 font-black uppercase tracking-widest text-xs">Đang đồng bộ dữ liệu Clinical...</div>
-
-    const quickStats = [
+    const criticalInsights = [
         {
-            label: 'Bệnh nhân hôm nay',
-            value: stats?.totalPatientsToday || 0,
-            icon: Users,
-            color: 'text-blue-600',
-            bg: 'bg-blue-50',
-            trend: '+12% so với hôm qua'
+            id: '#BN0042',
+            name: 'Lê Thị B',
+            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuABsmgDCIftEUxlChjXh4knmVlplDSUWQUr6AtxTrzRKkSkUcwNTvaC8wX4bzmoZ8sYq_78RzSJlEcHza3v9KboPSldDmpZtm6yTwMimwvcd41nnJ-pN7jD5eAm1PVFXeu5b3L40qmMjmhO5RPqBb5q3shFB6CRgOTvg3oVtJ8-fWXd8WrYDuLb0QZNyduWrjGBtFYMRKnFZ5L8od-M2DbMomIyMbe59KKabagR87DhtAFci98eFAFcP59EODWpeR5mWyKyLePWVcI',
+            status: 'Nguy cấp',
+            message: 'Chỉ số Glucose tăng vọt: 185 mg/dL (Tăng 25% trong 24h)',
+            type: 'critical'
         },
         {
-            label: 'Đang đợi khám',
-            value: stats?.pendingConsultations || 0,
-            icon: Clock,
-            color: 'text-amber-600',
-            bg: 'bg-amber-50',
-            trend: 'Thời gian chờ TB: 15ph'
-        },
-        {
-            label: 'Đã hoàn tất',
-            value: stats?.completedConsultationsToday || 0,
-            icon: CheckCircle2,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
-            trend: 'Đạt 85% chỉ tiêu ca/ngày'
+            id: '#BN0891',
+            name: 'Trần Văn C',
+            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-SnB2x4cztkQhgnbedBxDvMr_jjfA_nCXXUKnMdmu1OqTkdQIPRi9Tn93XVyrekNq9ItG-JFBhIVhphD2bPPndbouWg9tXrvwGbeXPjaX-dn3NxVXp_3dYm9IOfxuijM1c_a61lBmc4M0ayxZGSzU0M9J7zOVeOhuovurjMEa9wTdecMKhRCpbg23tXyeD60yiY0j2_3ouXdjnn3VHP0u9Kb3AMvE-f8Tr5Yds-9kyHlLA-ZBXVSy7G0Gl4LwnHgz-R2_aDddx_8',
+            status: 'Theo dõi',
+            message: 'Huyết áp dao động bất thường: 145/95 mmHg (3 lần đo gần nhất)',
+            type: 'watch'
         }
     ]
 
+    const upcomingAppointments = [
+        { name: 'Phạm Minh Đăng', disease: 'Tiểu đường Type 2', time: '09:15', date: '24', month: 'MAY' },
+        { name: 'Nguyễn Hoàng Nam', disease: 'Huyết áp cao', time: '10:30', date: '24', month: 'MAY' }
+    ]
+
+    const patients: PatientData[] = [
+        { id: 'BN-5521', name: 'Nguyễn Linh', initial: 'NL', age: 45, disease: 'Tiểu đường Type 2', metric: 'Glucose: 120 mg/dL', updated: '2 giờ trước', risk: 'Ổn định', riskLevel: 30, color: 'green' },
+        { id: 'BN-0042', name: 'Lê Thị B', initial: 'LB', age: 62, disease: 'Cao huyết áp', metric: 'Glucose: 185 mg/dL', updated: '15 phút trước', risk: 'Nguy hiểm', riskLevel: 85, color: 'red' },
+        { id: 'BN-0891', name: 'Trần Văn C', initial: 'TV', age: 55, disease: ['Béo phì', 'Mỡ máu'], metric: 'BP: 145/95 mmHg', updated: '1 giờ trước', risk: 'Trung bình', riskLevel: 60, color: 'amber' }
+    ]
+
     return (
-        <div className="space-y-10 pb-20 animate-in fade-in duration-700">
-            {/* Top Bar - Dynamic Search & Filter */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-8 animate-in fade-in duration-700 bg-background-light-blue dark:bg-background-dark-blue -m-8 p-8 min-h-screen">
+            {/* Custom Header matching Dashboard.html */}
+            <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tightest uppercase mb-1">Clinical Overview</h1>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] flex items-center gap-2">
-                        <Activity className="w-3 h-3 text-blue-500" />
-                        Trạng thái hệ thống: <span className="text-emerald-500 italic">Đang hoạt động ổn định</span>
-                    </p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Tổng quan</h1>
+                    <p className="text-slate-500">Theo dõi trạng thái sức khỏe bệnh nhân trong thời gian thực</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-96 group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-blue-600 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Tìm nhanh bệnh nhân..."
-                            className="bg-white border border-slate-100 rounded-2xl pl-12 pr-6 py-3.5 text-xs font-bold focus:ring-4 focus:ring-blue-500/5 outline-none transition-all w-64 shadow-sm"
+                            placeholder="Tìm kiếm bệnh nhân bằng tên, ID hoặc số điện thoại..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-600/20 shadow-sm outline-none"
                         />
                     </div>
-                    <button className="p-3.5 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-slate-900 transition-all shadow-sm">
-                        <Filter className="w-5 h-5" />
-                    </button>
-                    <Link
-                        to="/consultation"
-                        className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl shadow-blue-500/20 active:scale-95 flex items-center gap-3"
-                    >
-                        Vào Phòng Khám
-                        <ArrowRight className="w-4 h-4" />
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <button className="p-2 text-slate-500 hover:bg-white dark:hover:bg-slate-800 rounded-lg relative">
+                            <Bell className="w-5 h-5" />
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                        </button>
+                        <button className="p-2 text-slate-500 hover:bg-white dark:hover:bg-slate-800 rounded-lg">
+                            <Settings className="w-5 h-5" />
+                        </button>
+                        <button className="p-2 text-slate-500 hover:bg-white dark:hover:bg-slate-800 rounded-lg">
+                            <Filter className="w-5 h-5" />
+                        </button>
+                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2 hidden md:block"></div>
+                        <div className="text-right hidden md:block">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-tight">Thứ 3, 24 Tháng 5</p>
+                            <p className="text-xs text-slate-500">08:30 AM</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {quickStats.map((s, i) => (
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {stats.map((s, i) => (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         key={i}
-                        className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group"
+                        className={`bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md ${s.border || ''}`}
                     >
-                        <div className="flex items-start justify-between relative z-10">
-                            <div className={`w-14 h-14 ${s.bg} ${s.color} rounded-[1.5rem] flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform`}>
-                                <s.icon className="w-7 h-7" />
+                        <div className="flex justify-between items-start mb-4">
+                            <div className={`p-2.5 ${s.bg} ${s.color} rounded-xl shadow-inner`}>
+                                <s.icon className="w-6 h-6" />
                             </div>
-                            <div className="text-right">
-                                <p className="text-4xl font-black tracking-tightest leading-none mb-1">{s.value}</p>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{s.label}</p>
-                            </div>
+                            <span className={`text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest ${s.trend.startsWith('+') ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}>
+                                {s.trend}
+                            </span>
                         </div>
-                        <div className="mt-6 flex items-center gap-2 relative z-10">
-                            <div className="w-1 h-1 rounded-full bg-slate-300" />
-                            <p className="text-[9px] font-bold text-slate-400 italic uppercase tracking-tighter">{s.trend}</p>
-                        </div>
-                        <div className={`absolute -right-6 -bottom-6 w-32 h-32 ${s.bg} opacity-[0.03] group-hover:opacity-[0.1] rounded-full blur-2xl transition-opacity`} />
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{s.label}</p>
+                        <h3 className={`text-3xl font-black tracking-tightest ${s.color === 'text-red-600' ? 'text-red-600' : 'text-slate-900 dark:text-white'}`}>
+                            {s.value}
+                        </h3>
                     </motion.div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                {/* Active Priority Queue */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
-                    <div className="flex items-center justify-between px-2">
-                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                            Hàng chờ ưu tiên AI
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+                {/* Critical Insights */}
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                    <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/20 rounded-t-[2rem]">
+                        <h3 className="font-black text-xs uppercase tracking-[0.3em] text-slate-400 flex items-center gap-3">
+                            <TrendingUp className="w-5 h-5 text-red-500" />
+                            Cảnh báo nguy cơ Real-time
                         </h3>
-                        <Link to="/queue" className="text-[9px] font-black text-blue-500 uppercase tracking-widest hover:underline">Xem tất cả hàng chờ</Link>
+                        <button className="text-[10px] text-blue-600 font-black uppercase tracking-widest hover:underline transition-all">Tất cả insight</button>
+                    </div>
+                    <div className="p-8 space-y-5">
+                        {criticalInsights.map((insight, idx) => (
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                key={idx}
+                                className={`flex items-center gap-6 p-6 rounded-[1.5rem] border transition-all hover:shadow-md ${insight.type === 'critical'
+                                    ? 'bg-red-50/50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'
+                                    : 'bg-amber-50/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30'
+                                    }`}
+                            >
+                                <div className="relative">
+                                    <img
+                                        className="w-14 h-14 rounded-2xl object-cover shadow-lg border-2 border-white dark:border-slate-800"
+                                        src={insight.avatar}
+                                        alt={insight.name}
+                                    />
+                                    <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900 ${insight.type === 'critical' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <p className="font-black text-slate-900 dark:text-white uppercase truncate tracking-tight">{insight.name} <span className="text-[10px] font-bold text-slate-400 ml-2">ID: {insight.id}</span></p>
+                                        <span className={`text-[9px] font-black px-2.5 py-1.5 rounded-xl uppercase tracking-[0.1em] ${insight.type === 'critical' ? 'bg-red-100 text-red-600 dark:bg-red-900/40 border border-red-200/50' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 border border-amber-200/50'}`}>
+                                            {insight.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                                        {insight.message}
+                                    </p>
+                                </div>
+                                <button className="bg-blue-600 text-white p-3 rounded-2xl hover:bg-slate-900 transition-all shadow-xl shadow-blue-600/20 active:scale-95">
+                                    <Send className="w-5 h-5" />
+                                </button>
+                            </motion.div>
+                        ))}
                     </div>
 
-                    <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-slate-50">
-                                        <th className="px-8 py-6 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Acuity</th>
-                                        <th className="px-8 py-6 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Bệnh nhân</th>
-                                        <th className="px-8 py-6 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Thời gian</th>
-                                        <th className="px-8 py-6 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {(stats?.activeQueue || []).filter(e => e.status !== 'COMPLETED').slice(0, 5).map((e, idx) => (
-                                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-8 py-6">
-                                                <AcuityIndicator level={e.acuityLevel} />
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase truncate max-w-[180px]">{e.patientName}</span>
-                                                    <span className="text-[9px] font-bold text-slate-400">{e.medicalServiceName || 'Khám chuyên khoa'}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-2">
-                                                    <Clock className="w-3.5 h-3.5 text-slate-300" />
-                                                    <span className="text-xs font-bold text-slate-500 italic">Đã đợi 12ph</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 text-right">
-                                                <Link
-                                                    to="/consultation"
-                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0"
-                                                >
-                                                    Khám ngay
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {(!stats?.activeQueue || stats.activeQueue.length === 0) && (
-                                        <tr>
-                                            <td colSpan={4} className="px-8 py-20 text-center">
-                                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-200">
-                                                    <CheckCircle2 className="w-8 h-8" />
-                                                </div>
-                                                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Hàng chờ trống</p>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                    {/* Chart Mockup */}
+                    <div className="p-8 pt-0 mt-auto">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-8 h-64 flex flex-col border border-slate-100 dark:border-slate-800">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8">
+                                XU HƯỚNG HUYẾT ÁP - BỆNH NHÂN TRẦN VĂN C
+                            </p>
+                            <div className="flex-1 flex items-end gap-3 px-2">
+                                <div className="flex-1 bg-blue-600/10 rounded-t-xl h-[40%] transition-all hover:bg-blue-600/20"></div>
+                                <div className="flex-1 bg-blue-600/10 rounded-t-xl h-[45%] transition-all hover:bg-blue-600/20"></div>
+                                <div className="flex-1 bg-blue-600/15 rounded-t-xl h-[60%] transition-all hover:bg-blue-600/25"></div>
+                                <div className="flex-1 bg-blue-600/20 rounded-t-xl h-[55%] transition-all hover:bg-blue-600/30"></div>
+                                <div className="flex-1 bg-blue-600/40 rounded-t-xl h-[75%] transition-all hover:bg-blue-600/50"></div>
+                                <div className="flex-1 bg-red-400/80 rounded-t-xl h-[90%] transition-all hover:bg-red-500 shadow-lg shadow-red-500/10"></div>
+                                <div className="flex-1 bg-red-500 rounded-t-xl h-[85%] transition-all hover:bg-red-600 shadow-lg shadow-red-600/10"></div>
+                            </div>
+                            <div className="flex justify-between text-[10px] mt-6 text-slate-400 font-black uppercase tracking-[0.25em] px-2">
+                                <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Vertical Sidebar Cards */}
-                <div className="lg:col-span-4 flex flex-col gap-10">
-                    <section className="bg-slate-900 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent" />
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] mb-8 text-amber-500 flex items-center gap-3">
-                            <Calendar className="w-4 h-4" />
+                {/* Right Panel */}
+                <div className="space-y-8">
+                    {/* Action Card */}
+                    <motion.div
+                        whileHover={{ y: -5 }}
+                        className="bg-blue-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-blue-600/30 relative overflow-hidden"
+                    >
+                        <div className="relative z-10">
+                            <h3 className="font-black text-xl mb-3 tracking-tight">Thao tác nhanh</h3>
+                            <p className="text-blue-100 text-xs font-bold leading-relaxed mb-10 opacity-80 uppercase tracking-widest">Gửi cảnh báo & Khuyến nghị sức khỏe tập trung</p>
+                            <div className="space-y-4">
+                                <button className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all border border-white/10">
+                                    <Megaphone className="w-5 h-5" />
+                                    Gửi cảnh báo khẩn cấp
+                                </button>
+                                <button className="w-full bg-white text-blue-600 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-95">
+                                    <MessageCircle className="w-5 h-5" />
+                                    Khuyến nghị sức khỏe
+                                </button>
+                            </div>
+                        </div>
+                        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-white/10 rounded-full blur-[80px]"></div>
+                    </motion.div>
+
+                    {/* Upcoming Appointments */}
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+                        <h3 className="font-black text-[10px] text-slate-400 uppercase tracking-[0.3em] mb-10 flex items-center gap-3 italic">
+                            <Calendar className="w-5 h-5 text-blue-600" />
                             Lịch hẹn sắp tới
                         </h3>
-                        <div className="space-y-6 relative z-10">
-                            {(stats?.upcomingAppointments || []).slice(0, 3).map((a, i) => (
-                                <div key={i} className="flex gap-5 border-l-2 border-white/5 pl-5 hover:border-white/20 transition-all cursor-default group/item">
-                                    <div className="flex flex-col">
-                                        <span className="text-lg font-black leading-none mb-1 group-hover/item:text-blue-400 transition-colors uppercase">{a.startTime || '09:30'}</span>
-                                        <span className="text-[9px] font-bold text-slate-500 italic">Hôm nay</span>
+                        <div className="space-y-8">
+                            {upcomingAppointments.map((app, i) => (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    key={i}
+                                    className="flex items-center gap-5 group cursor-default"
+                                >
+                                    <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 flex flex-col items-center justify-center border border-slate-100 dark:border-slate-700 transition-all group-hover:border-blue-500/30 group-hover:bg-blue-50/10">
+                                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter opacity-70">{app.month}</span>
+                                        <span className="text-xl font-black text-slate-800 dark:text-slate-200 leading-none">{app.date}</span>
                                     </div>
-                                    <div className="flex-1">
-                                        <p className="text-[11px] font-black uppercase truncate text-slate-200">{a.patientName}</p>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Tái khám định kỳ</p>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-black truncate text-slate-900 dark:text-white group-hover:text-blue-600 transition-all uppercase tracking-tight">{app.name}</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">{app.disease} • {app.time}</p>
                                     </div>
-                                </div>
+                                    <button className="p-2 text-slate-200 hover:text-blue-600 transition-all">
+                                        <MoreVertical className="w-5 h-5" />
+                                    </button>
+                                </motion.div>
                             ))}
-                            {(!stats?.upcomingAppointments || stats.upcomingAppointments.length === 0) && (
-                                <p className="text-xs font-bold text-slate-500 italic">Không có lịch hẹn sắp tới.</p>
-                            )}
                         </div>
-                        <div className="mt-10 pt-8 border-t border-white/5">
-                            <Link to="/scheduling" className="text-[9px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">
-                                Quản lý lịch biểu <ArrowRight className="w-3 h-3" />
-                            </Link>
-                        </div>
-                    </section>
+                        <button className="w-full mt-10 py-4 text-[10px] font-black text-slate-400 hover:text-blue-600 transition-all uppercase tracking-[0.3em] border-t border-slate-50 dark:border-slate-800">
+                            Quản lý lịch trình
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                    <section className="bg-white rounded-[3.5rem] p-10 border border-slate-100 shadow-xl shadow-slate-200/40 relative group overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform duration-700">
-                            <BrainCircuit className="w-32 h-32 text-blue-500" />
-                        </div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3 italic">
-                            AI Insight Hub
-                        </h3>
-                        <p className="text-sm font-bold text-slate-700 leading-relaxed italic border-l-4 border-blue-500 pl-6 py-2">
-                            "Mật độ hàng chờ đang tăng ở khu vực Khám nội. Vui lòng ưu tiên các ca Acuity 1 hiện đang chờ hơn 20 phút."
-                        </p>
-                    </section>
+            {/* Patient Management Table */}
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-12 pb-4">
+                <div className="p-10 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-slate-50/20">
+                    <div>
+                        <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tightest">Danh sách bệnh nhân quản lý</h3>
+                        <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest text-[10px]">Tổng số 1,250 hồ sơ đang được giám sát</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <button className="px-6 py-3 bg-white dark:bg-slate-800 hover:bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 transition-all border border-slate-100 dark:border-slate-700 shadow-sm">Lọc bệnh lý</button>
+                        <button className="px-6 py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-600 dark:hover:bg-blue-700 shadow-xl shadow-slate-900/10 transition-all">Xuất báo cáo</button>
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 text-[10px] font-black uppercase tracking-[0.25em] border-b border-slate-100 dark:border-slate-800">
+                                <th className="px-10 py-6">Bệnh nhân</th>
+                                <th className="px-10 py-6">Chẩn đoán</th>
+                                <th className="px-10 py-6">Chỉ số mới</th>
+                                <th className="px-10 py-6 text-center">Mức độ rủi ro</th>
+                                <th className="px-10 py-6 text-right">Tương tác</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                            {patients.map((p, i) => (
+                                <tr key={i} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-all group">
+                                    <td className="px-10 py-8">
+                                        <div className="flex items-center gap-5">
+                                            <div className={`w-12 h-12 rounded-[1.25rem] flex items-center justify-center font-black text-xs shadow-inner shadow-slate-900/5 ${p.color === 'red' ? 'bg-red-50 text-red-600' : p.color === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                {p.initial}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-blue-600 transition-all">{p.name}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-70">{p.id} • {p.age} tuổi</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-10 py-8 text-center sm:text-left">
+                                        <div className="flex flex-wrap gap-2">
+                                            {Array.isArray(p.disease) ? p.disease.map((d, di) => (
+                                                <span key={di} className="px-2.5 py-1.5 bg-slate-100/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-tighter rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                                                    {d}
+                                                </span>
+                                            )) : (
+                                                <span className={`px-2.5 py-1.5 text-[9px] font-black uppercase tracking-tighter rounded-xl border ${p.disease.includes('Tiểu đường') ? 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/30' : 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/30'}`}>
+                                                    {p.disease}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-10 py-8">
+                                        <p className={`text-sm font-black tracking-tight ${p.color === 'red' ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>{p.metric}</p>
+                                        <p className="text-[10px] text-slate-300 font-bold italic uppercase tracking-widest mt-1 opacity-50">{p.updated}</p>
+                                    </td>
+                                    <td className="px-10 py-8">
+                                        <div className="flex flex-col gap-3 items-center">
+                                            <div className="w-36 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner border border-slate-200/50 dark:border-slate-700">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${p.riskLevel}%` }}
+                                                    className={`h-full shadow-lg ${p.color === 'red' ? 'bg-red-500 shadow-red-500/20' : p.color === 'amber' ? 'bg-amber-500 shadow-amber-500/20' : 'bg-green-500 shadow-green-500/20'}`}
+                                                ></motion.div>
+                                            </div>
+                                            <span className={`text-[9px] font-black uppercase tracking-[0.3em] ${p.color === 'red' ? 'text-red-600' : p.color === 'amber' ? 'text-amber-600' : 'text-green-600'}`}>
+                                                {p.risk}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="px-10 py-8 text-right">
+                                        <div className="flex justify-end gap-2 opacity-40 group-hover:opacity-100 transition-all">
+                                            <button className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-400 hover:text-blue-600 rounded-2xl transition-all" title="View Analytics">
+                                                <BarChart3 className="w-5 h-5" />
+                                            </button>
+                                            <button className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-400 hover:text-blue-600 rounded-2xl transition-all" title="Secure Chat">
+                                                <MessageSquare className="w-5 h-5" />
+                                            </button>
+                                            <button className="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-300 hover:text-blue-600 rounded-2xl transition-all" title="Prescribe">
+                                                <FileText className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="p-10 bg-slate-50/30 dark:bg-slate-800/20 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] border-t border-slate-100 dark:border-slate-800">
+                    <p className="opacity-70">Showing 10 of 1,250 Patients</p>
+                    <div className="flex gap-3">
+                        <button className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">Prev</button>
+                        <button className="px-5 py-2.5 bg-blue-600 text-white rounded-xl shadow-xl shadow-blue-600/20 transition-all text-blue-50">1</button>
+                        <button className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">2</button>
+                        <button className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">Next</button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -3,12 +3,15 @@ import type { Role } from '@/context/RoleContext'
 import {
   LayoutDashboard,
   Users,
-  Stethoscope,
-  BarChart2,
-  FileText,
+  Search,
+  Activity,
+  ClipboardList,
   Calendar,
-  Settings,
   MessageSquare,
+  Settings,
+  FileText,
+  ShieldCheck,
+  LineChart
 } from 'lucide-react'
 
 export type StaffNavItem = {
@@ -16,16 +19,17 @@ export type StaffNavItem = {
   label: string
   icon: LucideIcon
   roles?: Role[]
+  badge?: number
 }
 
-/** Cấu hình menu staff - nguồn sự thật duy nhất cho path, label, icon và roles */
+/** Cấu hình menu staff - Cập nhật theo thiết kế Dashboard.html */
 export const STAFF_NAV: StaffNavItem[] = [
   { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
-  { to: '/reception', label: 'Tiếp nhận', icon: Users, roles: ['receptionist', 'admin'] },
-  { to: '/consultation', label: 'Khám & Điều trị', icon: Stethoscope, roles: ['doctor', 'admin'] },
+  { to: '/patients', label: 'Danh sách bệnh nhân', icon: Users, roles: ['doctor', 'receptionist', 'admin'] },
+  { to: '/analytics', label: 'Phân tích nguy cơ', icon: Activity, roles: ['doctor', 'clinic_manager', 'admin'] },
+  { to: '/consultation', label: 'Toa thuốc & Clinic', icon: ClipboardList, roles: ['doctor', 'admin'] },
   { to: '/scheduling', label: 'Lịch hẹn', icon: Calendar, roles: ['doctor', 'receptionist', 'admin'] },
-  { to: '/chat', label: 'Tư vấn từ xa', icon: MessageSquare, roles: ['doctor', 'admin'] },
+  { to: '/chat', label: 'Tin nhắn', icon: MessageSquare, roles: ['doctor', 'admin'], badge: 3 },
   { to: '/reports', label: 'Báo cáo', icon: FileText, roles: ['clinic_manager', 'admin'] },
-  { to: '/analytics', label: 'Thống kê', icon: BarChart2, roles: ['clinic_manager', 'admin'] },
-  { to: '/admin', label: 'Quản trị', icon: Settings, roles: ['admin'] },
+  { to: '/admin', label: 'Cấu hình hệ thống', icon: Settings, roles: ['admin'] },
 ]

@@ -64,6 +64,7 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LoginRequest.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LoginResponse.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\MedicalServiceDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\MedicationDosageLogDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\MedicationReminderDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\MedicationReminderRequest.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PagedResponse.java
@@ -77,6 +78,7 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientNotificationDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientPortalStatusDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientRelativeDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PatientVitalLogDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PharmacyInventoryDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PharmacyProductDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\PrescriptionDto.java
@@ -224,6 +226,7 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\masters\domain\MedicalService.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\masters\repository\MedicalServiceRepository.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\masters\service\MasterDataService.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\MedicationDosageLog.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\MedicationReminder.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\Patient.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientChatConversation.java
@@ -233,7 +236,9 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientInsurance.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientNotification.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientRelative.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientVitalLog.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\domain\PatientVitalTarget.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\MedicationDosageLogRepository.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\MedicationReminderRepository.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientChatConversationRepository.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientChatMessageRepository.java
@@ -243,6 +248,7 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientNotificationRepository.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientRelativeRepository.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientVitalLogRepository.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\repository\PatientVitalTargetRepository.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\MedicationReminderScheduler.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\patient\service\MedicationReminderService.java

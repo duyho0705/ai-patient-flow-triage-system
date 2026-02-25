@@ -22,11 +22,14 @@ export default {
           700: '#15803d',
           800: '#166534',
           900: '#14532d',
-          DEFAULT: '#4ade80' // Emerald Green from BangDieuKhien.html
+          DEFAULT: '#4ade80', // Emerald Green
+          blue: '#1975d2' // Blue from Dashboard.html
         },
         clinic: { green: '#059669', teal: '#0d9488', amber: '#d97706', red: '#dc2626' },
         "background-light": "#f6f8f7",
         "background-dark": "#122017",
+        "background-light-blue": "#f6f7f8",
+        "background-dark-blue": "#111921",
       },
       borderRadius: {
         "DEFAULT": "0.5rem",

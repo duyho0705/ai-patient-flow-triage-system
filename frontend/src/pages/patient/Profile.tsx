@@ -13,7 +13,6 @@ import {
     X,
     Eye,
     EyeOff,
-    ChevronDown,
     Droplets,
     Ruler,
     Weight,
@@ -28,59 +27,6 @@ import toast from 'react-hot-toast'
 import { UpdatePatientProfileRequest, ChangePasswordRequest } from '@/types/api'
 import { getPortalProfile, updatePortalProfile, changePortalPassword, uploadPortalAvatar } from '@/api/portal'
 
-function CustomSelect({ value, onChange, options, placeholder, className = '' }: {
-    value: string;
-    onChange: (val: string) => void;
-    options: { value: string; label: string }[];
-    placeholder: string;
-    className?: string;
-}) {
-    const [isOpen, setIsOpen] = useState(false)
-    const selectedOption = options.find(o => o.value === value)
-
-    return (
-        <div className={`relative ${className}`}>
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border transition-all ${isOpen ? 'border-emerald-400 bg-white dark:bg-slate-800 shadow-lg shadow-emerald-400/10' : 'border-slate-100 dark:border-slate-700'}`}
-            >
-                <span className={`font-bold transition-colors ${selectedOption ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400'}`}>
-                    {selectedOption ? selectedOption.label : placeholder}
-                </span>
-                <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform ${isOpen ? 'rotate-180 text-emerald-500' : ''}`} />
-            </button>
-
-            <AnimatePresence>
-                {isOpen && (
-                    <>
-                        <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                        <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute z-50 mt-2 w-full max-h-60 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-y-auto scrollbar-hide py-2"
-                        >
-                            {options.map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => {
-                                        onChange(opt.value)
-                                        setIsOpen(false)
-                                    }}
-                                    className={`w-full text-left px-5 py-3 text-sm font-bold transition-all ${value === opt.value ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-        </div>
-    )
-}
 
 const genderMap: Record<string, string> = {
     'MALE': 'Nam',
@@ -106,7 +52,6 @@ export default function PatientProfile() {
         ethnicity: 'Kinh',
         cccd: ''
     })
-    const [errors, setErrors] = useState<Record<string, string>>({})
 
     // Password change state
     const [isPassModalOpen, setIsPassModalOpen] = useState(false)
@@ -154,7 +99,6 @@ export default function PatientProfile() {
             if (dob > new Date()) newErrors.dateOfBirth = 'Ngày sinh không thể ở tương lai'
             if (isNaN(dob.getTime())) newErrors.dateOfBirth = 'Ngày sinh không hợp lệ'
         }
-        setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
 
@@ -186,7 +130,6 @@ export default function PatientProfile() {
         onSuccess: () => {
             toast.success('Cập nhật hồ sơ thành công!')
             queryClient.invalidateQueries({ queryKey: ['portal-profile'] })
-            setErrors({})
             setIsEditing(false)
         },
         onError: (err: any) => {
@@ -195,7 +138,6 @@ export default function PatientProfile() {
                 err.details.errors.forEach((e: any) => {
                     newErrors[e.field] = e.message
                 })
-                setErrors(newErrors)
                 toast.error('Vui lòng kiểm tra lại các trường thông tin.')
             } else {
                 toast.error(err.message || 'Có lỗi xảy ra khi cập nhật.')

@@ -10,7 +10,6 @@ import {
     Image as ImageIcon,
     Smile,
     Info,
-    MoreVertical,
     Star,
     Verified,
     Shield,
@@ -47,7 +46,7 @@ export default function PatientChatDoctor() {
     }, [doctors])
 
     // Fetch chat history for selected doctor
-    const { data: chatHistory, isLoading: loadingHistory } = useQuery({
+    const { data: chatHistory } = useQuery({
         queryKey: ['portal-chat-history', selectedDoctor?.id],
         queryFn: () => getPortalChatHistory(selectedDoctor.id, headers),
         enabled: !!selectedDoctor && !!headers?.tenantId,
