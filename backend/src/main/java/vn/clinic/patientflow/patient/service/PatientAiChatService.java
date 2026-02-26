@@ -15,8 +15,8 @@ import vn.clinic.patientflow.clinical.repository.PrescriptionRepository;
 import vn.clinic.patientflow.clinical.service.ClinicalService;
 import vn.clinic.patientflow.clinical.service.PromptRegistry;
 import vn.clinic.patientflow.patient.domain.Patient;
+import vn.clinic.patientflow.patient.repository.PatientVitalLogRepository;
 import vn.clinic.patientflow.scheduling.service.SchedulingService;
-import vn.clinic.patientflow.triage.repository.TriageVitalRepository;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -24,10 +24,7 @@ import java.util.List;
 
 /**
  * Enterprise AI Chat Service for Patient Portal.
- * <p>
- * Uses LangChain4j + Gemini to provide personalized medical advice
- * based on real patient data (vitals, prescriptions, appointments, invoices).
- * Falls back to rule-based responses if AI is not configured.
+ * CDM Specialization.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,7 +33,7 @@ public class PatientAiChatService {
 
         private final SchedulingService schedulingService;
         private final PrescriptionRepository prescriptionRepository;
-        private final TriageVitalRepository triageVitalRepository;
+        private final PatientVitalLogRepository patientVitalLogRepository;
         private final LabResultRepository labResultRepository;
         private final ClinicalService clinicalService;
         private final PromptRegistry promptRegistry;
@@ -72,10 +69,8 @@ public class PatientAiChatService {
                         prompt = buildChatPrompt(context, historyStr, request.getMessage());
                         aiResponse = chatModel.chat(prompt);
 
-                        // Record Audit Log (Enterprise)
                         recordAudit(patient, prompt, aiResponse, startTime, "SUCCESS", null);
 
-                        // Extract JSON from AI response
                         String jsonOnly = extractJson(aiResponse);
                         return OBJECT_MAPPER.readValue(jsonOnly, AiChatResponse.class);
 
@@ -107,24 +102,22 @@ public class PatientAiChatService {
         private String buildPatientContext(Patient p) {
                 StringBuilder sb = new StringBuilder();
 
-                // Basic Info
                 sb.append("=== THÔNG TIN BỆNH NHÂN ===\n");
                 sb.append("- Tên: ").append(p.getFullNameVi()).append("\n");
                 sb.append("- Tuổi: ").append(Period.between(p.getDateOfBirth(), LocalDate.now()).getYears())
                                 .append("\n");
                 sb.append("- Giới tính: ").append(p.getGender()).append("\n\n");
 
-                // Latest Vitals
-                var vitals = triageVitalRepository.findByPatientId(p.getId());
+                // Latest Vitals from PatientVitalLog
+                var vitals = patientVitalLogRepository.findByPatientIdOrderByRecordedAtDesc(p.getId());
                 if (!vitals.isEmpty()) {
                         sb.append("=== SINH HIỆU MỚI NHẤT ===\n");
-                        vitals.stream().limit(8).forEach(v -> sb.append("- ").append(v.getVitalType())
+                        vitals.stream().limit(10).forEach(v -> sb.append("- ").append(v.getVitalType())
                                         .append(": ").append(v.getValueNumeric()).append(" ").append(v.getUnit())
                                         .append(" (ghi nhận lúc ").append(v.getRecordedAt()).append(")\n"));
                         sb.append("\n");
                 }
 
-                // Recent Consultations
                 var recentConsultations = clinicalService.getRecentConsultationsByPatient(p.getId(), 5);
                 if (!recentConsultations.isEmpty()) {
                         sb.append("=== LỊCH SỬ THĂM KHÁM GẦN ĐÂY ===\n");
@@ -133,7 +126,6 @@ public class PatientAiChatService {
                         sb.append("\n");
                 }
 
-                // Lab Results
                 var recentLabs = labResultRepository.findByConsultationPatientIdOrderByCreatedAtDesc(p.getId());
                 if (!recentLabs.isEmpty()) {
                         sb.append("=== KẾT QUẢ XÉT NGHIỆM ===\n");
@@ -143,21 +135,16 @@ public class PatientAiChatService {
                         sb.append("\n");
                 }
 
-                // Current Medications
                 var prescriptions = prescriptionRepository.findByPatientIdOrderByCreatedAtDesc(p.getId());
                 if (!prescriptions.isEmpty()) {
                         sb.append("=== THUỐC ĐANG DÙNG (ĐƠN MỚI NHẤT) ===\n");
                         prescriptions.get(0).getItems().forEach(i -> {
-                                String name = i.getProductNameCustom();
-                                if ((name == null || name.isBlank()) && i.getProduct() != null) {
-                                        name = i.getProduct().getNameVi();
-                                }
-                                sb.append("- ").append(name).append(": ").append(i.getDosageInstruction()).append("\n");
+                                sb.append("- ").append(i.getProductNameCustom()).append(": ")
+                                                .append(i.getDosageInstruction()).append("\n");
                         });
                         sb.append("\n");
                 }
 
-                // Medication Reminders
                 var reminders = medicationReminderService.getRemindersByPatient(p.getId());
                 if (!reminders.isEmpty()) {
                         sb.append("=== LỊCH NHẮC UỐNG THUỐC HIỆN TẠI ===\n");
@@ -167,7 +154,6 @@ public class PatientAiChatService {
                         sb.append("\n");
                 }
 
-                // Upcoming Appointments
                 var appts = schedulingService.getUpcomingAppointmentsByPatient(p.getId());
                 if (!appts.isEmpty()) {
                         sb.append("=== LỊCH HẸN SẮP TỚI ===\n");
@@ -181,9 +167,8 @@ public class PatientAiChatService {
         }
 
         private String buildChatHistory(List<AiChatRequest.ChatMessage> history) {
-                if (history == null || history.isEmpty()) {
+                if (history == null || history.isEmpty())
                         return "";
-                }
                 StringBuilder sb = new StringBuilder();
                 for (var msg : history) {
                         sb.append(msg.getRole().toUpperCase()).append(": ")
@@ -225,9 +210,7 @@ public class PatientAiChatService {
                                 patient.getIdentityUserId(),
                                 prompt,
                                 response,
-                                System.currentTimeMillis() - startTime,
-                                status,
-                                errorMsg);
+                                System.currentTimeMillis() - startTime, status, errorMsg);
         }
 
         private AiChatResponse processRuleBased(Patient patient, AiChatRequest request) {
@@ -239,7 +222,6 @@ public class PatientAiChatService {
                         response = "Bạn có thể xem lịch khám tại mục Lịch hẹn.";
                         suggestions = List.of("Xem ngay", "Đặt lịch mới");
                 }
-
                 return AiChatResponse.builder().response(response).suggestions(suggestions).build();
         }
 }

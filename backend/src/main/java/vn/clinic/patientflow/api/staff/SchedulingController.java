@@ -38,88 +38,93 @@ import java.util.stream.Collectors;
 @Tag(name = "Scheduling", description = "Lịch hẹn")
 public class SchedulingController {
 
-    private final SchedulingService schedulingService;
-    private final TenantService tenantService;
-    private final PatientService patientService;
-    private final IdentityService identityService;
+        private final SchedulingService schedulingService;
+        private final TenantService tenantService;
+        private final PatientService patientService;
+        private final IdentityService identityService;
 
-    @GetMapping
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'TRIAGE_NURSE', 'ADMIN', 'CLINIC_MANAGER')")
-    @Operation(summary = "Danh sách lịch hẹn theo chi nhánh và ngày")
-    public ResponseEntity<ApiResponse<PagedResponse<AppointmentDto>>> list(
-            @RequestParam UUID branchId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @PageableDefault(size = 20) Pageable pageable) {
-        Page<SchedulingAppointment> page = schedulingService.getAppointmentsByBranchAndDate(branchId, date, pageable);
-        var data = PagedResponse.of(page,
-                page.getContent().stream().map(AppointmentDto::fromEntity).collect(Collectors.toList()));
-        return ResponseEntity.ok(ApiResponse.success(data));
-    }
+        @GetMapping
+        @PreAuthorize("hasAnyRole('RECEPTIONIST', 'TRIAGE_NURSE', 'ADMIN', 'CLINIC_MANAGER')")
+        @Operation(summary = "Danh sách lịch hẹn theo chi nhánh và ngày")
+        public ResponseEntity<ApiResponse<PagedResponse<AppointmentDto>>> list(
+                        @RequestParam UUID branchId,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @PageableDefault(size = 20) Pageable pageable) {
+                Page<SchedulingAppointment> page = schedulingService.getAppointmentsByBranchAndDate(branchId, date,
+                                pageable);
+                var data = PagedResponse.of(page,
+                                page.getContent().stream().map(AppointmentDto::fromEntity)
+                                                .collect(Collectors.toList()));
+                return ResponseEntity.ok(ApiResponse.success(data));
+        }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Lấy lịch hẹn theo ID")
-    public ResponseEntity<ApiResponse<AppointmentDto>> getById(@PathVariable UUID id) {
-        return ResponseEntity
-                .ok(ApiResponse.success(AppointmentDto.fromEntity(schedulingService.getAppointmentById(id))));
-    }
+        @GetMapping("/{id}")
+        @Operation(summary = "Lấy lịch hẹn theo ID")
+        public ResponseEntity<ApiResponse<AppointmentDto>> getById(@PathVariable UUID id) {
+                return ResponseEntity
+                                .ok(ApiResponse.success(
+                                                AppointmentDto.fromEntity(schedulingService.getAppointmentById(id))));
+        }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
-    @Operation(summary = "Tạo lịch hẹn")
-    public ResponseEntity<ApiResponse<AppointmentDto>> create(@Valid @RequestBody CreateAppointmentRequest request) {
-        TenantBranch branch = tenantService.getBranchById(request.getBranchId());
-        Patient patient = patientService.getById(request.getPatientId());
-        IdentityUser createdByUser = request.getCreatedByUserId() != null
-                ? identityService.getUserById(request.getCreatedByUserId())
-                : null;
+        @PostMapping
+        @ResponseStatus(HttpStatus.CREATED)
+        @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
+        @Operation(summary = "Tạo lịch hẹn")
+        public ResponseEntity<ApiResponse<AppointmentDto>> create(
+                        @Valid @RequestBody CreateAppointmentRequest request) {
+                TenantBranch branch = tenantService.getBranchById(request.getBranchId());
+                Patient patient = patientService.getById(request.getPatientId());
+                IdentityUser createdByUser = request.getCreatedByUserId() != null
+                                ? identityService.getUserById(request.getCreatedByUserId())
+                                : null;
 
-        SchedulingAppointment appointment = SchedulingAppointment.builder()
-                .branch(branch)
-                .patient(patient)
-                .appointmentDate(request.getAppointmentDate())
-                .slotStartTime(request.getSlotStartTime())
-                .slotEndTime(request.getSlotEndTime())
-                .status(request.getStatus())
-                .appointmentType(request.getAppointmentType())
-                .notes(request.getNotes())
-                .createdByUser(createdByUser)
-                .build();
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(AppointmentDto.fromEntity(schedulingService.createAppointment(appointment))));
-    }
+                SchedulingAppointment appointment = SchedulingAppointment.builder()
+                                .branch(branch)
+                                .patient(patient)
+                                .appointmentDate(request.getAppointmentDate())
+                                .slotStartTime(request.getSlotStartTime())
+                                .slotEndTime(request.getSlotEndTime())
+                                .status(request.getStatus())
+                                .appointmentType(request.getAppointmentType())
+                                .notes(request.getNotes())
+                                .createdByUser(createdByUser)
+                                .build();
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(ApiResponse.success(AppointmentDto
+                                                .fromEntity(schedulingService.createAppointment(appointment))));
+        }
 
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
-    @Operation(summary = "Cập nhật trạng thái lịch hẹn")
-    public ResponseEntity<ApiResponse<AppointmentDto>> updateStatus(@PathVariable UUID id,
-            @RequestParam String status) {
-        return ResponseEntity.ok(
-                ApiResponse.success(AppointmentDto.fromEntity(schedulingService.updateAppointmentStatus(id, status))));
-    }
+        @PatchMapping("/{id}/status")
+        @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
+        @Operation(summary = "Cập nhật trạng thái lịch hẹn")
+        public ResponseEntity<ApiResponse<AppointmentDto>> updateStatus(@PathVariable UUID id,
+                        @RequestParam String status) {
+                return ResponseEntity.ok(
+                                ApiResponse.success(AppointmentDto
+                                                .fromEntity(schedulingService.updateAppointmentStatus(id, status))));
+        }
 
-    @PostMapping("/{id}/check-in")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
-    @Operation(summary = "Check-in lịch hẹn (chuyển vào hàng chờ)")
-    public ResponseEntity<ApiResponse<AppointmentDto>> checkIn(
-            @PathVariable UUID id,
-            @RequestParam UUID queueDefinitionId) {
-        return ResponseEntity
-                .ok(ApiResponse.success(AppointmentDto.fromEntity(schedulingService.checkIn(id, queueDefinitionId))));
-    }
+        @PostMapping("/{id}/check-in")
+        @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
+        @Operation(summary = "Tiếp đón bệnh nhân (Check-in)")
+        public ResponseEntity<ApiResponse<AppointmentDto>> checkIn(
+                        @PathVariable UUID id) {
+                return ResponseEntity
+                                .ok(ApiResponse.success(AppointmentDto.fromEntity(schedulingService.checkIn(id))));
+        }
 
-    @GetMapping("/slots")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
-    @Operation(summary = "Danh sách mẫu khung giờ theo tenant")
-    public ResponseEntity<ApiResponse<List<SlotTemplateDto>>> getSlotTemplates() {
-        UUID tenantId = TenantContext.getTenantIdOrThrow();
-        var data = schedulingService.getSlotTemplatesByTenant(tenantId).stream()
-                .map(s -> new SlotTemplateDto(
-                        s.getId(),
-                        s.getCode(),
-                        s.getStartTime(),
-                        s.getDurationMinutes()))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(ApiResponse.success(data));
-    }
+        @GetMapping("/slots")
+        @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
+        @Operation(summary = "Danh sách mẫu khung giờ theo tenant")
+        public ResponseEntity<ApiResponse<List<SlotTemplateDto>>> getSlotTemplates() {
+                UUID tenantId = TenantContext.getTenantIdOrThrow();
+                var data = schedulingService.getSlotTemplatesByTenant(tenantId).stream()
+                                .map(s -> new SlotTemplateDto(
+                                                s.getId(),
+                                                s.getCode(),
+                                                s.getStartTime(),
+                                                s.getDurationMinutes()))
+                                .collect(Collectors.toList());
+                return ResponseEntity.ok(ApiResponse.success(data));
+        }
 }

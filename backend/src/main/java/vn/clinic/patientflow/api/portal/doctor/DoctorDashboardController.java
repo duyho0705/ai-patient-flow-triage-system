@@ -12,9 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import vn.clinic.patientflow.api.dto.ApiResponse;
 import vn.clinic.patientflow.api.dto.AppointmentDto;
 import vn.clinic.patientflow.api.dto.DoctorDashboardDto;
-import vn.clinic.patientflow.api.dto.QueueEntryDto;
 import vn.clinic.patientflow.auth.AuthPrincipal;
-import vn.clinic.patientflow.queue.service.QueueService;
 import vn.clinic.patientflow.scheduling.service.SchedulingService;
 
 import java.util.List;
@@ -22,15 +20,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/doctor-portal/dashboard")
+@RequestMapping("/api/portal/doctor/dashboard")
 @RequiredArgsConstructor
-@Tag(name = "Doctor Dashboard", description = "Dashboard dành cho bác sĩ")
+@Tag(name = "Doctor Dashboard", description = "Dashboard dành cho bác sĩ - Chronic Disease Management")
 @Slf4j
 @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
 public class DoctorDashboardController {
 
         private final SchedulingService schedulingService;
-        private final QueueService queueService;
 
         @GetMapping
         @Operation(summary = "Lấy dữ liệu tổng quan cho bác sĩ (Real-time Dashboard)")
@@ -39,36 +36,20 @@ public class DoctorDashboardController {
                 log.debug("Building doctor dashboard for user: {}", doctorUserId);
 
                 var todayAppointments = schedulingService.getDoctorTodayAppointments(doctorUserId);
-                var activeEntries = queueService.getAllActiveEntries();
-
-                long waitingCount = activeEntries.stream()
-                                .filter(q -> "WAITING".equalsIgnoreCase(q.getStatus()))
-                                .count();
-
-                long completedToday = activeEntries.stream()
-                                .filter(q -> "COMPLETED".equalsIgnoreCase(q.getStatus()))
-                                .count();
 
                 var data = DoctorDashboardDto.builder()
                                 .totalPatientsToday(todayAppointments.size())
-                                .pendingConsultations(waitingCount)
-                                .completedConsultationsToday(completedToday)
-                                .activeQueue(activeEntries.stream().map(QueueEntryDto::fromEntity)
-                                                .collect(Collectors.toList()))
+                                .pendingConsultations((long) todayAppointments.stream()
+                                                .filter(a -> "SCHEDULED".equalsIgnoreCase(a.getStatus()))
+                                                .count())
+                                .completedConsultationsToday((long) todayAppointments.stream()
+                                                .filter(a -> "COMPLETED".equalsIgnoreCase(a.getStatus()))
+                                                .count())
                                 .upcomingAppointments(
                                                 todayAppointments.stream().map(AppointmentDto::fromEntity)
                                                                 .collect(Collectors.toList()))
                                 .unreadMessages(List.of())
                                 .build();
-                return ResponseEntity.ok(ApiResponse.success(data));
-        }
-
-        @GetMapping("/active-queue")
-        @Operation(summary = "Danh sách bệnh nhân đang đợi (Prioritized by AI/Acuity)")
-        public ResponseEntity<ApiResponse<List<QueueEntryDto>>> getActiveQueue() {
-                var data = queueService.getAllActiveEntries().stream()
-                                .map(QueueEntryDto::fromEntity)
-                                .collect(Collectors.toList());
                 return ResponseEntity.ok(ApiResponse.success(data));
         }
 }

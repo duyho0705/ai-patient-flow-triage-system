@@ -8,6 +8,5 @@ import java.util.List;
 @Builder
 public class PublicQueueDto {
     private String branchName;
-    private List<QueueEntryDto> calledEntries;
-    private List<QueueEntryDto> waitingEntries;
+    private List<AppointmentDto> upcomingAppointments;
 }

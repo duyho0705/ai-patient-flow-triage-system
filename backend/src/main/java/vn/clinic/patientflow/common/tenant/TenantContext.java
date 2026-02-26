@@ -5,7 +5,8 @@ import java.util.UUID;
 
 /**
  * Thread-local tenant context for multi-tenancy.
- * Set by filter/interceptor after auth; all tenant-scoped queries must use this.
+ * Set by filter/interceptor after auth; all tenant-scoped queries must use
+ * this.
  * Never read tenant from request body – only from token/header/session.
  */
 public final class TenantContext {
@@ -34,6 +35,10 @@ public final class TenantContext {
 
     public static Optional<UUID> getBranchId() {
         return Optional.ofNullable(BRANCH_ID.get());
+    }
+
+    public static UUID getBranchIdOrThrow() {
+        return getBranchId().orElseThrow(() -> new IllegalStateException("Branch context not set"));
     }
 
     public static void clear() {

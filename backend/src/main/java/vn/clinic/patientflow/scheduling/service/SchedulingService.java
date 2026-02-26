@@ -33,7 +33,6 @@ public class SchedulingService {
     private final SchedulingCalendarDayRepository calendarDayRepository;
     private final SchedulingAppointmentRepository appointmentRepository;
     private final TenantService tenantService;
-    private final vn.clinic.patientflow.queue.service.QueueService queueService;
 
     @Transactional(readOnly = true)
     public List<SchedulingSlotTemplate> getSlotTemplatesByTenant(UUID tenantId) {
@@ -76,46 +75,19 @@ public class SchedulingService {
     @Transactional
     public SchedulingAppointment updateAppointmentStatus(UUID id, String status) {
         SchedulingAppointment existing = getAppointmentById(id);
-        String oldStatus = existing.getStatus();
         existing.setStatus(status);
-        SchedulingAppointment saved = appointmentRepository.save(existing);
-
-        if (!status.equals(oldStatus)) {
-            String message = "Lịch hẹn của bạn đã được cập nhật trạng thái: " + status;
-            if ("CONFIRMED".equals(status)) {
-                message = "Lịch hẹn của bạn vào ngày " + saved.getAppointmentDate() + " lúc " + saved.getSlotStartTime()
-                        + " đã được xác nhận.";
-            } else if ("CANCELLED".equals(status)) {
-                message = "Lịch hẹn của bạn vào ngày " + saved.getAppointmentDate() + " đã bị hủy.";
-            }
-            queueService.notifyPatient(saved.getPatient().getId(), message);
-        }
-
-        return saved;
+        return appointmentRepository.save(existing);
     }
 
     @Transactional
-    public SchedulingAppointment checkIn(UUID id, UUID queueDefinitionId) {
+    public SchedulingAppointment checkIn(UUID id) {
         SchedulingAppointment existing = getAppointmentById(id);
-        if ("CHECKED_IN".equals(existing.getStatus())) {
+        if ("CHECKED_IN".equals(existing.getStatus()) || "ARRIVED".equals(existing.getStatus())) {
             throw new IllegalStateException("Appointment is already checked in");
         }
 
-        existing.setStatus("CHECKED_IN");
-        SchedulingAppointment saved = appointmentRepository.save(existing);
-
-        // Add to queue
-        queueService.createEntry(
-                queueDefinitionId,
-                saved.getPatient().getId(),
-                (UUID) null,
-                saved.getId(),
-                (UUID) null, // medicalServiceId
-                (String) null, // notes
-                0 // position
-        );
-
-        return saved;
+        existing.setStatus("ARRIVED");
+        return appointmentRepository.save(existing);
     }
 
     @Transactional(readOnly = true)
@@ -127,7 +99,7 @@ public class SchedulingService {
     public List<SchedulingAppointment> getUpcomingAppointmentsByPatient(UUID patientId) {
         return appointmentRepository
                 .findByPatientIdAndStatusInAndAppointmentDateGreaterThanEqualOrderByAppointmentDateAsc(
-                        patientId, List.of("SCHEDULED", "CONFIRMED"), LocalDate.now());
+                        patientId, List.of("SCHEDULED", "CONFIRMED", "ARRIVED"), LocalDate.now());
     }
 
     @Transactional(readOnly = true)

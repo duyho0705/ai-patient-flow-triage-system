@@ -11,7 +11,7 @@ import vn.clinic.patientflow.patient.domain.PatientChronicCondition;
 import vn.clinic.patientflow.patient.domain.PatientVitalTarget;
 import vn.clinic.patientflow.patient.repository.PatientChronicConditionRepository;
 import vn.clinic.patientflow.patient.repository.PatientVitalTargetRepository;
-import vn.clinic.patientflow.triage.repository.TriageVitalRepository;
+import vn.clinic.patientflow.patient.repository.PatientVitalLogRepository;
 import vn.clinic.patientflow.clinical.repository.ClinicalVitalRepository;
 import vn.clinic.patientflow.api.dto.VitalHistoryDto;
 
@@ -29,7 +29,7 @@ public class ChronicManagementController {
 
     private final PatientChronicConditionRepository chronicConditionRepository;
     private final PatientVitalTargetRepository vitalTargetRepository;
-    private final TriageVitalRepository triageVitalRepository;
+    private final PatientVitalLogRepository patientVitalLogRepository;
     private final ClinicalVitalRepository clinicalVitalRepository;
 
     @GetMapping("/conditions")
@@ -58,17 +58,18 @@ public class ChronicManagementController {
     }
 
     @GetMapping("/vitals")
-    @Operation(summary = "Lấy lịch sử sinh hiệu tổng hợp (Triage + Clinical)")
+    @Operation(summary = "Lấy lịch sử sinh hiệu tổng hợp (CDM + Clinical)")
     public ResponseEntity<ApiResponse<List<VitalHistoryDto>>> getVitalHistory(@RequestParam UUID patientId) {
         List<VitalHistoryDto> history = new ArrayList<>();
 
-        triageVitalRepository.findTop5ByPatientIdOrderByRecordedAtDesc(patientId)
+        patientVitalLogRepository.findByPatientIdOrderByRecordedAtDesc(patientId)
+                .stream().limit(10)
                 .forEach(v -> history.add(VitalHistoryDto.builder()
                         .recordedAt(v.getRecordedAt())
                         .vitalType(v.getVitalType())
                         .valueNumeric(v.getValueNumeric())
                         .unit(v.getUnit())
-                        .source("TRIAGE")
+                        .source("CDM")
                         .build()));
 
         clinicalVitalRepository.findTop10ByConsultationPatientIdOrderByRecordedAtDesc(patientId)

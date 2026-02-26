@@ -5,7 +5,7 @@ import lombok.*;
 import vn.clinic.patientflow.common.domain.BaseAuditableEntity;
 import vn.clinic.patientflow.identity.domain.IdentityUser;
 import vn.clinic.patientflow.patient.domain.Patient;
-import vn.clinic.patientflow.queue.domain.QueueEntry;
+import vn.clinic.patientflow.scheduling.domain.SchedulingAppointment;
 import vn.clinic.patientflow.tenant.domain.Tenant;
 import vn.clinic.patientflow.tenant.domain.TenantBranch;
 
@@ -34,8 +34,8 @@ public class ClinicalConsultation extends BaseAuditableEntity {
     private Patient patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "queue_entry_id")
-    private QueueEntry queueEntry;
+    @JoinColumn(name = "appointment_id")
+    private SchedulingAppointment appointment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_user_id")

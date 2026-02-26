@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import vn.clinic.patientflow.clinical.domain.ClinicalConsultation;
 import vn.clinic.patientflow.clinical.repository.ClinicalVitalRepository;
 import vn.clinic.patientflow.clinical.repository.LabResultRepository;
-import vn.clinic.patientflow.triage.repository.TriageVitalRepository;
+import vn.clinic.patientflow.patient.repository.PatientVitalLogRepository;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -14,15 +14,12 @@ import java.time.Period;
  * Enterprise Clinical Context Service.
  * Standardizes how patient data is prepared for AI models to ensure
  * high-quality and consistent reasoning.
- * 
- * Context quality directly impacts AI output quality.
- * This service is the SINGLE SOURCE OF TRUTH for AI context construction.
  */
 @Service
 @RequiredArgsConstructor
 public class ClinicalContextService {
 
-    private final TriageVitalRepository vitalsRepository;
+    private final PatientVitalLogRepository vitalsRepository;
     private final LabResultRepository labResultRepository;
     private final ClinicalVitalRepository clinicalVitalRepository;
     private final vn.clinic.patientflow.clinical.repository.PrescriptionRepository prescriptionRepository;
@@ -32,15 +29,13 @@ public class ClinicalContextService {
 
     /**
      * Builds a comprehensive, structured medical context for AI consumption.
-     * Sections are ordered by clinical priority (demographics → encounter → vitals
-     * → labs → meds → guardrails).
      */
     public String buildStandardMedicalContext(ClinicalConsultation consultation) {
-        StringBuilder sb = new StringBuilder(2048); // Pre-allocate for typical context size
+        StringBuilder sb = new StringBuilder(2048);
 
         appendPatientProfile(sb, consultation);
         appendCurrentEncounter(sb, consultation);
-        appendTriageVitals(sb, consultation);
+        appendHistoricalVitals(sb, consultation);
         appendClinicalVitals(sb, consultation);
         appendLabResults(sb, consultation);
         appendChronicDiseaseContext(sb, consultation);
@@ -64,14 +59,12 @@ public class ClinicalContextService {
 
         sb.append("- Gender: ").append(patient.getGender() != null ? patient.getGender() : "Unknown").append("\n");
 
-        // Allergies – Critical for drug interaction and CDS
         if (patient.getAllergies() != null && !patient.getAllergies().isBlank()) {
             sb.append("- ⚠️ ALLERGIES: ").append(patient.getAllergies()).append("\n");
         } else {
             sb.append("- Allergies: NKDA (No Known Drug Allergies)\n");
         }
 
-        // Chronic conditions – Important for risk stratification
         if (patient.getChronicConditions() != null && !patient.getChronicConditions().isBlank()) {
             sb.append("- Chronic Conditions: ").append(patient.getChronicConditions()).append("\n");
         }
@@ -91,17 +84,17 @@ public class ClinicalContextService {
         sb.append("\n");
     }
 
-    private void appendTriageVitals(StringBuilder sb, ClinicalConsultation consultation) {
-        sb.append("### TRIAGE VITALS (Pre-Encounter)\n");
-        var triageVitals = vitalsRepository.findByPatientId(consultation.getPatient().getId());
-        if (triageVitals.isEmpty()) {
-            sb.append("- No triage vitals recorded.\n");
+    private void appendHistoricalVitals(StringBuilder sb, ClinicalConsultation consultation) {
+        sb.append("### HISTORICAL VITALS (Self-recorded/Previous)\n");
+        var vitals = vitalsRepository.findByPatientIdOrderByRecordedAtDesc(consultation.getPatient().getId());
+        if (vitals.isEmpty()) {
+            sb.append("- No vitals recorded.\n");
         } else {
-            triageVitals.stream().limit(5).forEach(v -> sb.append(String.format("- %s: %.1f %s (%s)\n",
+            vitals.stream().limit(10).forEach(v -> sb.append(String.format("- %s: %.1f %s (%s)\n",
                     v.getVitalType(),
                     v.getValueNumeric(),
                     safeStr(v.getUnit()),
-                    v.getCreatedAt())));
+                    v.getRecordedAt())));
         }
         sb.append("\n");
     }
@@ -152,7 +145,7 @@ public class ClinicalContextService {
 
         sb.append("\n### PERSONALIZED VITAL TARGETS\n");
         if (vitalTargets.isEmpty()) {
-            sb.append("- No personalized targets. Use standard clinical ranges.\n");
+            sb.append("- No personalized targets.\n");
         } else {
             vitalTargets.forEach(t -> sb.append(String.format("- Target %s: %s - %s %s (Note: %s)\n",
                     t.getVitalType(), t.getMinValue(), t.getMaxValue(), t.getUnit(), safeStr(t.getNotes()))));
@@ -181,22 +174,11 @@ public class ClinicalContextService {
             sb.append("- No active prescriptions for this encounter.\n");
         } else {
             prescription.ifPresent(p -> p.getItems().forEach(item -> {
-                String med = item.getProduct() != null
-                        ? item.getProduct().getNameVi()
-                        : item.getProductNameCustom();
                 sb.append(String.format("- %s (Qty: %s) - %s\n",
-                        med, item.getQuantity(), safeStr(item.getDosageInstruction())));
+                        item.getProductNameCustom(), item.getQuantity(), safeStr(item.getDosageInstruction())));
             }));
         }
         sb.append("\n");
-    }
-
-    private void appendClinicalGuardrails(StringBuilder sb) {
-        sb.append("### CLINICAL GUARDRAILS\n");
-        sb.append("- Local Guidelines: MOH Vietnam (Bộ Y Tế)\n");
-        sb.append("- Safety Level: HIGH\n");
-        sb.append("- IMPORTANT: Always recommend physician review for critical findings.\n");
-        sb.append("- IMPORTANT: Drug dosages must be verified by a licensed pharmacist.\n");
     }
 
     public vn.clinic.patientflow.api.dto.CdmReportDto getCdmReportData(ClinicalConsultation consultation,
@@ -242,7 +224,11 @@ public class ClinicalContextService {
                 .build();
     }
 
-    // ── Utility Methods ──────────────────────────────────────────────────
+    private void appendClinicalGuardrails(StringBuilder sb) {
+        sb.append("### CLINICAL GUARDRAILS\n");
+        sb.append("- Local Guidelines: MOH Vietnam (Bộ Y Tế)\n");
+        sb.append("- IMPORTANT: Always recommend physician review for critical findings.\n");
+    }
 
     private String safeStr(String value) {
         return value != null ? value : "N/A";

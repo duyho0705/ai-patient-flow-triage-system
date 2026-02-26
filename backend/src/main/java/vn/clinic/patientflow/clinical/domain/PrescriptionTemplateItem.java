@@ -2,7 +2,6 @@ package vn.clinic.patientflow.clinical.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import vn.clinic.patientflow.pharmacy.domain.PharmacyProduct;
 import java.util.UUID;
 
 @Entity
@@ -20,10 +19,6 @@ public class PrescriptionTemplateItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "template_id", nullable = false)
     private PrescriptionTemplate template;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    private PharmacyProduct product;
 
     @Column(name = "product_name_custom")
     private String productNameCustom;

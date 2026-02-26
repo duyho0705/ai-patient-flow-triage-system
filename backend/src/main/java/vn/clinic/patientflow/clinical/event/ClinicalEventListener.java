@@ -8,16 +8,11 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import vn.clinic.patientflow.clinical.service.AiClinicalService;
-import vn.clinic.patientflow.clinical.service.ClinicalSimulationService;
 import vn.clinic.patientflow.clinical.repository.ClinicalConsultationRepository;
 
 /**
  * Enterprise Event Listener for post-consultation workflows.
- * Handles: AI Care Plan generation, Medical data simulation (R&D only),
- * and future extensibility (e.g., notification dispatch, analytics pipeline).
- * 
- * Note: AiClinicalInsightListener is the primary listener for AI insights.
- * This listener delegates additional post-completion tasks.
+ * Handles: AI Care Plan generation.
  */
 @Component
 @RequiredArgsConstructor
@@ -26,7 +21,6 @@ public class ClinicalEventListener {
 
     private final AiClinicalService aiClinicalService;
     private final ClinicalConsultationRepository consultationRepository;
-    private final ClinicalSimulationService simulationService;
 
     @Async
     @EventListener
@@ -35,16 +29,7 @@ public class ClinicalEventListener {
         var consultation = event.getConsultation();
         log.info("[EventPipeline] Post-processing consultation: {}", consultation.getId());
 
-        // Stage 1: Simulate medical data for R&D/Demo environments
-        try {
-            simulationService.generateSimulatedData(consultation);
-            log.debug("[EventPipeline] Simulated data seeded for consultation: {}", consultation.getId());
-        } catch (Exception e) {
-            log.warn("[EventPipeline] Simulation skipped (non-critical): {}", e.getMessage());
-        }
-
-        // Stage 2: Generate AI Care Plan (if not already handled by
-        // AiClinicalInsightListener)
+        // Generate AI Care Plan
         try {
             consultationRepository.findById(consultation.getId()).ifPresent(c -> {
                 if (c.getAiInsights() == null || c.getAiInsights().isBlank()) {

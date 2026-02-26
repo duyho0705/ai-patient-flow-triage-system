@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getPortalDashboard, getPortalQueues, logPortalVital } from '@/api/portal'
+import { getPortalDashboard, logPortalVital } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
 import { usePatientRealtime } from '@/hooks/usePatientRealtime'
 import {
@@ -32,12 +32,6 @@ export default function PatientDashboard() {
     const { data: dashboard, isLoading: loadingDash } = useQuery({
         queryKey: ['portal-dashboard'],
         queryFn: () => getPortalDashboard(headers),
-        enabled: !!headers?.tenantId
-    })
-
-    const { data: queues } = useQuery({
-        queryKey: ['portal-queues'],
-        queryFn: () => getPortalQueues(headers),
         enabled: !!headers?.tenantId
     })
 
@@ -210,71 +204,16 @@ export default function PatientDashboard() {
                         </div>
                     </div>
 
-                    {/* Live Queue component integration */}
-                    {(queues && queues.length > 0) && (
-                        <div className="space-y-4 pt-6">
-                            <h3 className="text-lg font-black flex items-center gap-3 px-2 text-slate-800 dark:text-white">
-                                <span className="relative flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ade80] opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#4ade80]"></span>
-                                </span>
-                                Hàng chờ trực tiếp
-                            </h3>
-                            <div className="grid gap-4">
-                                {queues.map(q => (
-                                    <motion.div
-                                        key={q.id}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30 rounded-3xl p-6 flex items-center justify-between shadow-sm"
-                                    >
-                                        <div className="flex items-center gap-5">
-                                            <div className="w-14 h-14 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center text-[#4ade80] shadow-sm font-black text-xl italic border border-[#4ade80]/10">
-                                                {q.queueName?.charAt(0) || 'Q'}
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-[#4ade80] uppercase tracking-[0.2em]">{q.queueName || 'Phòng khám'}</p>
-                                                <p className="text-xl font-black text-slate-900 dark:text-white mt-1">
-                                                    {q.status === 'CALLED' ? 'Mời bạn vào khám!' : 'Đang trong hàng chờ'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-3xl font-black text-[#4ade80]">~{q.estimatedWaitMinutes}p</p>
-                                            <p className="text-[10px] font-black text-[#4ade80]/60 uppercase tracking-widest">{q.peopleAhead} người phía trước</p>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Sidebar Area */}
-                <div className="space-y-8">
-                    {/* 4. Automatic Alerts Widget */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 p-5 rounded-[2rem] shadow-sm"
-                    >
-                        <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400 mb-3 font-black text-xs uppercase tracking-widest">
-                            <AlertTriangle className="w-5 h-5" />
-                            Cảnh báo quan trọng
-                        </div>
-                        <p className="text-sm text-rose-700 dark:text-rose-300 font-bold leading-relaxed">
-                            {dashboard?.healthAlerts?.[0] || 'Đường huyết sáng nay cao hơn mức bình thường. Vui lòng kiểm tra lại chế độ ăn uống và thông báo cho bác sĩ.'}
-                        </p>
-                    </motion.div>
-
-                    {/* 2. Medication Management Widget */}
+                    {/* Medication Management Widget */}
                     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/30">
                             <h3 className="font-black flex items-center gap-3 text-sm uppercase tracking-widest text-slate-800 dark:text-slate-200">
                                 <Pill className="w-5 h-5 text-emerald-500" />
-                                Lịch uống thuốc
+                                Lịch uống thuốc & Cấp thuốc
                             </h3>
-                            <Link to="/patient/history" className="text-[10px] text-emerald-500 font-black uppercase tracking-tighter hover:underline">Xem tất cả</Link>
+                            <button className="text-[10px] bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase tracking-tighter hover:bg-emerald-600 transition-all shadow-sm">
+                                Yêu cầu cấp thêm
+                            </button>
                         </div>
                         <div className="p-6 space-y-5">
                             <div className="flex items-center gap-4 group">
@@ -286,16 +225,16 @@ export default function PatientDashboard() {
                                     <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">08:00 AM • Đã uống</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4 group">
-                                <div className="w-12 h-12 rounded-2xl border-2 border-emerald-500 text-emerald-500 flex items-center justify-center animate-pulse shadow-lg shadow-emerald-500/10 transition-all group-hover:scale-110">
+                            <div className="flex items-center gap-4 group shadow-lg shadow-emerald-500/5 p-2 rounded-2xl border border-emerald-100">
+                                <div className="w-12 h-12 rounded-2xl border-2 border-emerald-500 text-emerald-500 flex items-center justify-center animate-pulse transition-all group-hover:scale-110">
                                     <Clock className="w-6 h-6 stroke-[3px]" />
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-sm font-black text-slate-900 dark:text-white">Lisinopril 10mg</p>
-                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">01:00 PM • Cần uống</p>
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">01:00 PM • Cần uống sớm</p>
                                 </div>
                                 <button className="bg-[#4ade80] text-slate-900 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#4ade80]/90 transition-all shadow-md active:scale-95">
-                                    Đã uống
+                                    Xác nhận uống
                                 </button>
                             </div>
                             <div className="flex items-center gap-4 group opacity-50">
@@ -309,6 +248,25 @@ export default function PatientDashboard() {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Right Sidebar Area */}
+                <div className="space-y-8">
+                    {/* Automatic Alerts Widget */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 p-5 rounded-[2rem] shadow-sm relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                        <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400 mb-3 font-black text-xs uppercase tracking-widest relative z-10">
+                            <AlertTriangle className="w-5 h-5" />
+                            Cảnh báo sức khỏe
+                        </div>
+                        <p className="text-sm text-rose-700 dark:text-rose-300 font-bold leading-relaxed relative z-10">
+                            Chỉ số đường huyết sáng nay (6.5) đang ở mức cận cao. Vui lòng hạn chế tinh bột và kiểm tra lại sau 2 giờ.
+                        </p>
+                    </motion.div>
 
                     {/* 5. Follow-up Appointments Widget */}
                     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-6">

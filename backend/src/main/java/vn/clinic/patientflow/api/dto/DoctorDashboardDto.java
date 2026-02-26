@@ -11,6 +11,5 @@ public class DoctorDashboardDto {
     private long pendingConsultations;
     private long completedConsultationsToday;
     private List<AppointmentDto> upcomingAppointments;
-    private List<QueueEntryDto> activeQueue;
     private List<PatientChatMessageDto> unreadMessages;
 }

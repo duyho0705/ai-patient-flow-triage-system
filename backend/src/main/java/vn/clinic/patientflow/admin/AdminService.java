@@ -36,7 +36,7 @@ public class AdminService {
     private final TenantService tenantService;
     private final PasswordEncoder passwordEncoder;
     private final vn.clinic.patientflow.common.service.AuditLogService auditLogService;
-    private final vn.clinic.patientflow.billing.service.BillingService billingService;
+
     private final vn.clinic.patientflow.common.repository.AuditLogRepository auditLogRepository;
 
     @Transactional(readOnly = true)
@@ -187,7 +187,4 @@ public class AdminService {
         return AdminUserDto.fromEntity(user, assignments);
     }
 
-    public RevenueReportDto getRevenueReport(UUID branchId, java.time.LocalDate from, java.time.LocalDate to) {
-        return billingService.getRevenueReport(branchId, from, to);
-    }
 }

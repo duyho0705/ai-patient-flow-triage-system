@@ -52,13 +52,6 @@ public class PatientClinicalController {
                 return ResponseEntity.ok(ApiResponse.success(portalService.getVitalTrends(p.getId(), type)));
         }
 
-        @GetMapping("/queues")
-        @Operation(summary = "Trạng thái hàng chờ hiện tại")
-        public ResponseEntity<ApiResponse<List<QueueEntryDto>>> getActiveQueues() {
-                Patient p = portalService.getAuthenticatedPatient();
-                return ResponseEntity.ok(ApiResponse.success(portalService.getActiveQueues(p.getId())));
-        }
-
         @PostMapping("/vitals")
         @Operation(summary = "Bệnh nhân tự nhập chỉ số sinh hiệu")
         public ResponseEntity<ApiResponse<PatientVitalLogDto>> logVital(@RequestBody PatientVitalLogDto dto) {

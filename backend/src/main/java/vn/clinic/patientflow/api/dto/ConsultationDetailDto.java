@@ -9,8 +9,6 @@ import java.util.List;
 public class ConsultationDetailDto {
     private ConsultationDto consultation;
     private PrescriptionDto prescription;
-    private InvoiceDto invoice;
-    private List<TriageVitalDto> vitals;
     private List<LabResultDto> labResults;
     private List<DiagnosticImageDto> diagnosticImages;
 }
