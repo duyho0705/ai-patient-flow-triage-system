@@ -2,7 +2,6 @@ package vn.clinic.patientflow.api.dto;
 
 import lombok.Data;
 import java.util.List;
-import java.util.UUID;
 
 @Data
 public class CreatePrescriptionTemplateRequest {
@@ -12,7 +11,7 @@ public class CreatePrescriptionTemplateRequest {
 
     @Data
     public static class Item {
-        private UUID productId;
+        private String productNameCustom;
         private Double quantity;
         private String dosageInstruction;
     }

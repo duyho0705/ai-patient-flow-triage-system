@@ -2,6 +2,7 @@ package vn.clinic.patientflow.api.admin;
 
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,10 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import vn.clinic.patientflow.aiaudit.service.AiAuditServiceV2;
+import vn.clinic.patientflow.aiaudit.domain.AiAuditLog;
+import vn.clinic.patientflow.aiaudit.repository.AiAuditLogRepository;
 import vn.clinic.patientflow.api.dto.ApiResponse;
 import vn.clinic.patientflow.api.dto.PagedResponse;
-import vn.clinic.patientflow.aiaudit.domain.AiAuditLog;
 
 /**
  * API AI Audit – Xem log tương tác AI (Enterprise Observability).
@@ -27,7 +28,7 @@ import vn.clinic.patientflow.aiaudit.domain.AiAuditLog;
 @Tag(name = "AI Audit", description = "AI Audit + Observability")
 public class AiAuditController {
 
-    private final AiAuditServiceV2 aiAuditService;
+    private final AiAuditLogRepository aiAuditLogRepository;
 
     @GetMapping
     @Operation(summary = "Danh sách AI audit log theo chi nhánh")
@@ -35,7 +36,8 @@ public class AiAuditController {
             @RequestParam UUID branchId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        var logs = aiAuditService.findByBranch(branchId, PageRequest.of(page, size));
-        return ResponseEntity.ok(ApiResponse.success(logs));
+        Page<AiAuditLog> logs = aiAuditLogRepository.findByBranchIdOrderByCreatedAtDesc(
+                branchId, PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResponse.success(PagedResponse.of(logs)));
     }
 }

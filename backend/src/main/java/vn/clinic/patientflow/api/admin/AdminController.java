@@ -80,15 +80,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(adminService.listAuditLogs(tenantId, PageRequest.of(page, size))));
     }
 
-    @GetMapping("/revenue-report")
-    @Operation(summary = "Báo cáo doanh thu")
-    public ResponseEntity<ApiResponse<RevenueReportDto>> getRevenueReport(
-            @RequestParam UUID branchId,
-            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
-            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
-        return ResponseEntity.ok(ApiResponse.success(adminService.getRevenueReport(branchId, from, to)));
-    }
-
     @GetMapping("/ai-health")
     @Operation(summary = "Theo dõi sức khỏe và chi phí hệ thống AI")
     public ResponseEntity<ApiResponse<AiSystemHealthDto>> getAiHealth() {

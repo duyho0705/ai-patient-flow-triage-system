@@ -1,14 +1,10 @@
 package vn.clinic.patientflow.report;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +13,6 @@ import lombok.RequiredArgsConstructor;
 import vn.clinic.patientflow.api.dto.DailyVolumeDto;
 import vn.clinic.patientflow.api.dto.WaitTimeSummaryDto;
 import vn.clinic.patientflow.common.tenant.TenantContext;
-import vn.clinic.patientflow.clinical.repository.ClinicalConsultationRepository;
-import vn.clinic.patientflow.scheduling.repository.SchedulingAppointmentRepository;
 import vn.clinic.patientflow.tenant.domain.TenantBranch;
 import vn.clinic.patientflow.tenant.repository.TenantBranchRepository;
 
@@ -30,8 +24,6 @@ import vn.clinic.patientflow.tenant.repository.TenantBranchRepository;
 @RequiredArgsConstructor
 public class ReportService {
 
-        private final ClinicalConsultationRepository consultationRepository;
-        private final SchedulingAppointmentRepository appointmentRepository;
         private final TenantBranchRepository tenantBranchRepository;
 
         @Transactional(readOnly = true)
@@ -49,8 +41,8 @@ public class ReportService {
                                         .date(d)
                                         .branchId(branch.getId().toString())
                                         .branchName(branch.getNameVi())
-                                        .triageCount(0L) // Triage removed
-                                        .completedQueueEntries(0L) // Queue removed
+                                        .triageCount(0L)
+                                        .completedQueueEntries(0L)
                                         .build());
                 }
                 return result;
@@ -69,8 +61,8 @@ public class ReportService {
                                 .branchName(branch.getNameVi())
                                 .fromDate(fromDate)
                                 .toDate(toDate)
-                                .averageWaitMinutes(null) // Queue removed
-                                .totalCompletedEntries(0L) // Queue removed
+                                .averageWaitMinutes(null)
+                                .totalCompletedEntries(0L)
                                 .build();
         }
 

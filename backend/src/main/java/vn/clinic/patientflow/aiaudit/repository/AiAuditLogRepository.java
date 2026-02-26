@@ -17,4 +17,7 @@ public interface AiAuditLogRepository extends JpaRepository<AiAuditLog, UUID> {
 
     @org.springframework.data.jpa.repository.Query("SELECT a.status, COUNT(a) FROM AiAuditLog a GROUP BY a.status")
     List<Object[]> getCountByStatusGrouped();
+
+    org.springframework.data.domain.Page<AiAuditLog> findByBranchIdOrderByCreatedAtDesc(
+            UUID branchId, org.springframework.data.domain.Pageable pageable);
 }

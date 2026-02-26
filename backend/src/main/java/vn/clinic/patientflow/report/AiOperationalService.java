@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 /**
  * Enterprise Operational Intelligence Service.
  * Provides strategic insights using AI to optimize clinic performance.
+ * Updated for CDM - removed revenue/billing and triage-based metrics.
  */
 @Service
 @RequiredArgsConstructor
@@ -46,20 +47,16 @@ public class AiOperationalService {
         LocalDate end = LocalDate.now();
         LocalDate start = end.minusDays(7);
 
-        var revenue = reportService.getRevenueReport(branchId, start, end);
         var waitTime = reportService.getWaitTimeSummary(branchId, start, end);
         var volume = reportService.getDailyVolume(branchId, start, end);
-        var effectiveness = reportService.getAiEffectiveness(branchId, start, end);
         var heatmap = reportService.getOperationalHeatmap(branchId);
 
-        return generateOperationalInsights(revenue, waitTime, volume, effectiveness, heatmap);
+        return generateOperationalInsights(waitTime, volume, heatmap);
     }
 
     public AiOperationalInsightDto generateOperationalInsights(
-            RevenueReportDto revenue,
             WaitTimeSummaryDto waitTime,
             java.util.List<DailyVolumeDto> volume,
-            AiEffectivenessDto aiEffectiveness,
             BranchOperationalHeatmapDto heatmap) {
 
         if (chatModel == null)
@@ -72,7 +69,7 @@ public class AiOperationalService {
         }
 
         long startTime = System.currentTimeMillis();
-        String context = buildOperationalContext(revenue, waitTime, volume, aiEffectiveness, heatmap);
+        String context = buildOperationalContext(waitTime, volume, heatmap);
         String prompt = promptRegistry.getOperationalInsightsPrompt(context);
 
         try {
@@ -81,49 +78,35 @@ public class AiOperationalService {
 
             aiAuditService.recordInteraction(
                     AiAuditLog.AiFeatureType.OPERATIONAL_INSIGHT,
-                    null,
-                    null,
-                    prompt,
-                    res,
+                    null, null, prompt, res,
                     System.currentTimeMillis() - startTime,
-                    "SUCCESS",
-                    null);
+                    "SUCCESS", null);
             return dto;
         } catch (Exception e) {
             log.error("AI Operational Intelligence Error: {}", e.getMessage());
             aiAuditService.recordInteraction(
                     AiAuditLog.AiFeatureType.OPERATIONAL_INSIGHT,
-                    null,
-                    null,
-                    prompt,
-                    null,
+                    null, null, prompt, null,
                     System.currentTimeMillis() - startTime,
-                    "FAILED",
-                    e.getMessage());
+                    "FAILED", e.getMessage());
             return fallbackInsights();
         }
     }
 
     private String buildOperationalContext(
-            RevenueReportDto revenue,
             WaitTimeSummaryDto waitTime,
             java.util.List<DailyVolumeDto> volume,
-            AiEffectivenessDto aiEffectiveness,
             BranchOperationalHeatmapDto heatmap) {
 
         StringBuilder sb = new StringBuilder();
-        sb.append("1. Revenue: Total ").append(revenue.getTotalRevenue()).append("\n");
-        sb.append("2. Wait Time: Avg ").append(waitTime.getAverageWaitMinutes()).append(" mins over ")
+        sb.append("1. Wait Time: Avg ").append(waitTime.getAverageWaitMinutes()).append(" mins over ")
                 .append(waitTime.getTotalCompletedEntries()).append(" patients.\n");
-        sb.append("3. Volume Trends (Last 7 days): ")
+        sb.append("2. Volume Trends (Last 7 days): ")
                 .append(volume.stream()
-                        .map(v -> v.getDate() + ": Triage=" + v.getTriageCount() + ", Completed="
-                                + v.getCompletedQueueEntries())
+                        .map(v -> v.getDate() + ": Consultations=" + v.getCompletedQueueEntries())
                         .collect(Collectors.joining("; ")))
                 .append("\n");
-        sb.append("4. AI Effectiveness: Match Rate=").append(aiEffectiveness.getMatchRate()).append(", Override Rate=")
-                .append(aiEffectiveness.getOverrideRate()).append("\n");
-        sb.append("5. Current Heatmap: Load=").append(heatmap.getSystemLoadLevel()).append(", Total Active=")
+        sb.append("3. Current Heatmap: Load=").append(heatmap.getSystemLoadLevel()).append(", Total Active=")
                 .append(heatmap.getTotalActivePatients()).append("\n");
 
         return sb.toString();

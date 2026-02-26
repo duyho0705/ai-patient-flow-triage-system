@@ -8,7 +8,7 @@ import java.time.Instant;
 @Builder
 public class TimelineItemDto {
     private String id;
-    private String type; // TRIAGE, CONSULTATION, INVOICE, PRESCRIPTION
+    private String type; // CONSULTATION, PRESCRIPTION, VITAL_LOG
     private Instant timestamp;
     private String title;
     private String subtitle;
