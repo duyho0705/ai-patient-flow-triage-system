@@ -12,4 +12,6 @@ public class DoctorDashboardDto {
     private long completedConsultationsToday;
     private List<AppointmentDto> upcomingAppointments;
     private List<PatientChatMessageDto> unreadMessages;
+    private List<RiskPatientDto> riskPatients;
+    private List<String> criticalVitalsAlerts;
 }

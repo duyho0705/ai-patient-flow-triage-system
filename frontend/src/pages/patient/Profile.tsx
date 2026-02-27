@@ -282,7 +282,10 @@ export default function PatientProfile() {
                             <Edit3 className="w-4 h-4" />
                             {isEditing ? 'Hủy chỉnh sửa' : 'Chỉnh sửa hồ sơ'}
                         </button>
-                        <button className="flex items-center justify-center gap-2 px-8 py-3.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all">
+                        <button
+                            onClick={() => window.print()}
+                            className="flex items-center justify-center gap-2 px-8 py-3.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all"
+                        >
                             <Download className="w-4 h-4" />
                             Tải tóm tắt bệnh án
                         </button>
@@ -300,7 +303,7 @@ export default function PatientProfile() {
                                 <div className="p-2.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl">
                                     <User className="w-5 h-5 text-[#4ade80]" />
                                 </div>
-                                Thông tin cá nhân
+                                Thông tin hồ sơ bệnh án
                             </h3>
                             {isEditing && (
                                 <button
@@ -552,7 +555,7 @@ export default function PatientProfile() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setIsPassModalOpen(false)}
-                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                            className="absolute inset-0"
                         />
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}

@@ -50,6 +50,8 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\DoctorInfoDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\FollowUpSuggestionDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\Icd10CodeDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\InvoiceDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\InvoiceItemDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\KioskRegistrationRequest.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LabResultDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\LoginRequest.java
@@ -81,6 +83,7 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RegisterRequest.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RevenueByDayDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RevenueReportDto.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RiskPatientDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\RoleDto.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SendChatMessageRequest.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\dto\SetPasswordRequest.java
@@ -115,6 +118,7 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\doctor\DoctorProfileController.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientAiController.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientAppointmentController.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientBillingController.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientBranchController.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientClinicalController.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\api\portal\patient\PatientMedicationController.java
@@ -130,6 +134,10 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\auth\AuthPrincipal.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\auth\AuthService.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\auth\BadCredentialsException.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\domain\BillingInvoice.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\domain\BillingInvoiceItem.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\repository\BillingInvoiceRepository.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\billing\service\BillingService.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\ClinicalConsultation.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\ClinicalVital.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\domain\ConsultationFeedback.java
@@ -154,6 +162,7 @@ C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patient
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\CdsService.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalContextService.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalMapper.java
+C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalRiskService.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\ClinicalService.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\EarlyWarningService.java
 C:\MyLearn\ai-patient-flow-triage-system\backend\src\main\java\vn\clinic\patientflow\clinical\service\PrescriptionTemplateService.java

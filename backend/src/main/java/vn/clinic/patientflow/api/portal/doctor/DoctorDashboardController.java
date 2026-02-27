@@ -20,7 +20,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/portal/doctor/dashboard")
+@RequestMapping("/api/doctor-portal/dashboard")
 @RequiredArgsConstructor
 @Tag(name = "Doctor Dashboard", description = "Dashboard dành cho bác sĩ - Chronic Disease Management")
 @Slf4j
@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 public class DoctorDashboardController {
 
         private final SchedulingService schedulingService;
+        private final vn.clinic.patientflow.clinical.service.ClinicalRiskService riskService;
 
         @GetMapping
         @Operation(summary = "Lấy dữ liệu tổng quan cho bác sĩ (Real-time Dashboard)")
@@ -36,6 +37,15 @@ public class DoctorDashboardController {
                 log.debug("Building doctor dashboard for user: {}", doctorUserId);
 
                 var todayAppointments = schedulingService.getDoctorTodayAppointments(doctorUserId);
+
+                // For CDM highlight, we look at all active patients the doctor is monitoring
+                // In this simplified version, we look at patients with recent appointments
+                var monitoredPatients = todayAppointments.stream()
+                                .map(a -> a.getPatient())
+                                .distinct()
+                                .collect(Collectors.toList());
+
+                var riskPatients = riskService.identifyRiskPatients(monitoredPatients);
 
                 var data = DoctorDashboardDto.builder()
                                 .totalPatientsToday(todayAppointments.size())
@@ -48,6 +58,12 @@ public class DoctorDashboardController {
                                 .upcomingAppointments(
                                                 todayAppointments.stream().map(AppointmentDto::fromEntity)
                                                                 .collect(Collectors.toList()))
+                                .riskPatients(riskPatients)
+                                .criticalVitalsAlerts(riskPatients.stream()
+                                                .filter(rp -> "CRITICAL".equals(rp.getRiskLevel()))
+                                                .map(rp -> "CẢNH BÁO NGUY CẤP: BN " + rp.getPatientName() + " - "
+                                                                + rp.getReason())
+                                                .collect(Collectors.toList()))
                                 .unreadMessages(List.of())
                                 .build();
                 return ResponseEntity.ok(ApiResponse.success(data));

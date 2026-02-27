@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import vn.clinic.patientflow.api.dto.*;
 import vn.clinic.patientflow.auth.AuthPrincipal;
+import vn.clinic.patientflow.billing.service.BillingService;
 import vn.clinic.patientflow.clinical.repository.DiagnosticImageRepository;
 import vn.clinic.patientflow.clinical.repository.LabResultRepository;
 import vn.clinic.patientflow.clinical.service.ClinicalService;
@@ -48,6 +49,7 @@ public class PatientPortalService {
         private final IdentityService identityService;
         private final MedicationReminderService medicationReminderService;
         private final FileStorageService fileStorageService;
+        private final BillingService billingService;
 
         // Repositories
         private final PrescriptionRepository prescriptionRepository;
@@ -72,11 +74,15 @@ public class PatientPortalService {
         // ╚═══════════════════════════════════════════════════════════════╝
 
         public PatientDashboardDto getDashboardData(UUID patientId) {
+                Patient p = patientService.getById(patientId);
                 var appointments = schedulingService.getUpcomingAppointmentsByPatient(patientId);
                 var recentVisits = clinicalService.getRecentConsultationsByPatient(patientId, 5);
 
                 return PatientDashboardDto.builder()
                                 .patientId(patientId)
+                                .patientName(p.getFullNameVi())
+                                .patientAvatar(p.getAvatarUrl())
+                                .activeQueues(0) // Queue module removed in CDM
                                 .nextAppointment(appointments.isEmpty() ? null
                                                 : AppointmentDto.fromEntity(appointments.get(0)))
                                 .recentVisits(recentVisits.stream()
@@ -85,6 +91,9 @@ public class PatientPortalService {
                                 .latestPrescription(prescriptionRepository
                                                 .findByPatientIdOrderByCreatedAtDesc(patientId).stream()
                                                 .findFirst().map(clinicalService::mapPrescriptionToDto).orElse(null))
+                                .pendingInvoice(billingService.getInvoicesByPatient(patientId).stream()
+                                                .filter(inv -> "PENDING".equals(inv.getStatus()))
+                                                .findFirst().orElse(null))
                                 .medicationReminders(medicationReminderService.getRemindersByPatient(patientId)
                                                 .stream().map(MedicationReminderDto::fromEntity)
                                                 .collect(Collectors.toList()))
@@ -427,5 +436,42 @@ public class PatientPortalService {
                                                 .recordedAt(v.getRecordedAt())
                                                 .build())
                                 .collect(Collectors.toList());
+        }
+
+        /**
+         * Lấy xu hướng chỉ số sức khỏe có lọc theo khoảng thời gian.
+         */
+        public List<VitalTrendDto> getVitalTrendsFiltered(UUID patientId, String type, Instant from, Instant to) {
+                return patientVitalLogRepository
+                                .findByPatientIdAndVitalTypeAndRecordedAtBetweenOrderByRecordedAtAsc(
+                                                patientId, type, from, to)
+                                .stream()
+                                .map(v -> VitalTrendDto.builder()
+                                                .type(v.getVitalType())
+                                                .value(v.getValueNumeric())
+                                                .recordedAt(v.getRecordedAt())
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
+        /**
+         * Nhập chỉ số sinh hiệu kèm ảnh máy đo.
+         */
+        @Transactional
+        public PatientVitalLogDto logVitalWithImage(Patient p, PatientVitalLogDto dto, MultipartFile image) {
+                String imageUrl = null;
+                if (image != null && !image.isEmpty()) {
+                        imageUrl = fileStorageService.saveVitalImage(image, p.getId());
+                }
+                var log = PatientVitalLog.builder()
+                                .patient(p)
+                                .vitalType(dto.getVitalType())
+                                .valueNumeric(dto.getValueNumeric())
+                                .unit(dto.getUnit())
+                                .recordedAt(dto.getRecordedAt() != null ? dto.getRecordedAt() : Instant.now())
+                                .imageUrl(imageUrl != null ? imageUrl : dto.getImageUrl())
+                                .notes(dto.getNotes())
+                                .build();
+                return PatientVitalLogDto.fromEntity(patientVitalLogRepository.save(log));
         }
 }

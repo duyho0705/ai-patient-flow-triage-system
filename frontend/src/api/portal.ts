@@ -442,3 +442,46 @@ export async function logPortalVital(data: PatientVitalLogDto, tenant: TenantHea
 export async function logMedicationTaken(data: MedicationDosageLogDto, tenant: TenantHeaders | null): Promise<MedicationDosageLogDto> {
     return post<MedicationDosageLogDto>('/portal/medication-reminders/log', data, tenant)
 }
+
+// Vital Trends (with date filter support)
+export async function getPortalVitalTrends(
+    type: string,
+    tenant: TenantHeaders | null,
+    from?: string,
+    to?: string
+): Promise<any[]> {
+    let url = `/portal/clinical/vitals/trends?type=${type}`
+    if (from && to) {
+        url += `&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+    }
+    return get<any[]>(url, tenant)
+}
+
+// Upload vital image alongside vital data
+export async function logPortalVitalWithImage(
+    data: { vitalType: string; valueNumeric: number; unit?: string; notes?: string },
+    image: File,
+    tenant: TenantHeaders | null
+): Promise<PatientVitalLogDto> {
+    const formData = new FormData()
+    formData.append('vitalType', data.vitalType)
+    formData.append('valueNumeric', String(data.valueNumeric))
+    if (data.unit) formData.append('unit', data.unit)
+    if (data.notes) formData.append('notes', data.notes)
+    formData.append('image', image)
+    return post<PatientVitalLogDto>('/portal/clinical/vitals/upload', formData, tenant)
+}
+
+// Send chat file/image
+export async function sendPortalChatFile(
+    doctorId: string,
+    file: File,
+    content: string | undefined,
+    tenant: TenantHeaders | null
+): Promise<any> {
+    const formData = new FormData()
+    formData.append('doctorUserId', doctorId)
+    formData.append('file', file)
+    if (content) formData.append('content', content)
+    return post<any>('/portal/chat/send-file', formData, tenant)
+}

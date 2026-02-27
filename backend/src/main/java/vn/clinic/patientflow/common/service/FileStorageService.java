@@ -35,6 +35,32 @@ public class FileStorageService {
         }
     }
 
+    public String saveVitalImage(MultipartFile file, UUID patientId) {
+        try {
+            String extension = getFileExtension(file.getOriginalFilename());
+            String filename = "vital_" + patientId + "_" + System.currentTimeMillis() + extension;
+            Path vitalsDir = this.root.resolve("vitals");
+            Files.createDirectories(vitalsDir);
+            Files.copy(file.getInputStream(), vitalsDir.resolve(filename));
+            return "/uploads/vitals/" + filename;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not store the vital image. Error: " + e.getMessage());
+        }
+    }
+
+    public String saveChatFile(MultipartFile file, UUID patientId) {
+        try {
+            String extension = getFileExtension(file.getOriginalFilename());
+            String filename = "chat_" + patientId + "_" + System.currentTimeMillis() + extension;
+            Path chatDir = this.root.resolve("chat");
+            Files.createDirectories(chatDir);
+            Files.copy(file.getInputStream(), chatDir.resolve(filename));
+            return "/uploads/chat/" + filename;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not store the chat file. Error: " + e.getMessage());
+        }
+    }
+
     private String getFileExtension(String fileName) {
         if (fileName == null)
             return ".png";

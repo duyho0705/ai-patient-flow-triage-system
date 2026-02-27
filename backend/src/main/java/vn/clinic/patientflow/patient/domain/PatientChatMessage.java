@@ -41,6 +41,9 @@ public class PatientChatMessage {
     @Column(nullable = false)
     private Instant sentAt;
 
+    @Column(name = "file_url", length = 512)
+    private String fileUrl;
+
     @PrePersist
     protected void onCreate() {
         sentAt = Instant.now();

@@ -3,9 +3,11 @@ package vn.clinic.patientflow.api.portal.patient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import vn.clinic.patientflow.api.dto.ApiResponse;
 import vn.clinic.patientflow.api.dto.DoctorInfoDto;
 import vn.clinic.patientflow.api.dto.PatientChatMessageDto;
@@ -47,5 +49,16 @@ public class PatientMessagingController {
         Patient p = portalService.getAuthenticatedPatient();
         return ResponseEntity.ok(ApiResponse
                 .success(patientChatService.sendMessage(p, request.getDoctorUserId(), request.getContent())));
+    }
+
+    @PostMapping(value = "/send-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Gửi tin nhắn kèm file/ảnh cho bác sĩ")
+    public ResponseEntity<ApiResponse<PatientChatMessageDto>> sendChatFile(
+            @RequestParam UUID doctorUserId,
+            @RequestParam(required = false) String content,
+            @RequestParam("file") MultipartFile file) {
+        Patient p = portalService.getAuthenticatedPatient();
+        return ResponseEntity.ok(ApiResponse
+                .success(patientChatService.sendMessageWithFile(p, doctorUserId, content, file)));
     }
 }

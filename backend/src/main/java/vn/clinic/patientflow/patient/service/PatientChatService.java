@@ -6,8 +6,10 @@ import vn.clinic.patientflow.patient.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import vn.clinic.patientflow.api.dto.DoctorInfoDto;
 import vn.clinic.patientflow.api.dto.PatientChatMessageDto;
+import vn.clinic.patientflow.common.service.FileStorageService;
 import vn.clinic.patientflow.identity.domain.IdentityUser;
 import vn.clinic.patientflow.identity.repository.IdentityUserRepository;
 import vn.clinic.patientflow.patient.domain.Patient;
@@ -28,6 +30,7 @@ public class PatientChatService {
         private final PatientChatMessageRepository messageRepository;
         private final IdentityUserRepository identityUserRepository;
         private final PatientRepository patientRepository;
+        private final FileStorageService fileStorageService;
 
         @Transactional(readOnly = true)
         public List<DoctorInfoDto> getAvailableDoctors() {
@@ -36,8 +39,7 @@ public class PatientChatService {
                                 .map(u -> DoctorInfoDto.builder()
                                                 .id(u.getId())
                                                 .name(u.getFullNameVi() != null ? u.getFullNameVi() : u.getEmail())
-                                                .specialty("Chuyên khoa Nội") // In real app, this should come from user
-                                                                              // attributes
+                                                .specialty("Chuyên khoa Nội")
                                                 .avatar(u.getFullNameVi() != null ? u.getFullNameVi().substring(0, 1)
                                                                 : "D")
                                                 .online(true)
@@ -54,6 +56,7 @@ public class PatientChatService {
                                                 .senderType(m.getSenderType())
                                                 .content(m.getContent())
                                                 .sentAt(m.getSentAt())
+                                                .fileUrl(m.getFileUrl())
                                                 .build())
                                 .collect(Collectors.toList());
         }
@@ -76,6 +79,35 @@ public class PatientChatService {
                                 .senderType(msg.getSenderType())
                                 .content(msg.getContent())
                                 .sentAt(msg.getSentAt())
+                                .build();
+        }
+
+        @Transactional
+        public PatientChatMessageDto sendMessageWithFile(Patient patient, UUID doctorUserId, String content,
+                        MultipartFile file) {
+                var conv = getOrCreateConversation(patient, doctorUserId);
+
+                String fileUrl = null;
+                if (file != null && !file.isEmpty()) {
+                        fileUrl = fileStorageService.saveChatFile(file, patient.getId());
+                }
+
+                PatientChatMessage msg = PatientChatMessage.builder()
+                                .conversation(conv)
+                                .senderType("PATIENT")
+                                .content(content != null ? content : "📎 File đính kèm")
+                                .sentAt(Instant.now())
+                                .fileUrl(fileUrl)
+                                .build();
+
+                messageRepository.save(msg);
+
+                return PatientChatMessageDto.builder()
+                                .id(msg.getId())
+                                .senderType(msg.getSenderType())
+                                .content(msg.getContent())
+                                .sentAt(msg.getSentAt())
+                                .fileUrl(msg.getFileUrl())
                                 .build();
         }
 
@@ -104,7 +136,7 @@ public class PatientChatService {
                                                 .patientId(c.getPatient().getId())
                                                 .patientName(c.getPatient().getFullNameVi())
                                                 .status(c.getStatus())
-                                                .lastMessageAt(c.getCreatedAt()) // Should ideally be last message time
+                                                .lastMessageAt(c.getCreatedAt())
                                                 .build())
                                 .collect(Collectors.toList());
         }

@@ -17,8 +17,8 @@ import {
     Settings,
     X,
     Circle,
-    LifeBuoy,
-    BriefcaseMedical
+    BriefcaseMedical,
+    Headset
 } from 'lucide-react'
 import { getPortalNotifications, markPortalNotificationAsRead, markPortalAllNotificationsAsRead, getPortalProfile, getPortalInvoices } from '@/api/portal'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -39,23 +39,25 @@ export function PatientLayout({ children }: PatientLayoutProps) {
     const queryClient = useQueryClient()
     const [isNotifOpen, setIsNotifOpen] = useState(false)
 
+    const isPatient = user?.roles?.includes('patient') || false
+
     const { data: profile } = useQuery({
         queryKey: ['portal-profile'],
         queryFn: () => getPortalProfile(headers),
-        enabled: !!user && !!headers?.tenantId
+        enabled: !!user && !!headers?.tenantId && isPatient
     })
 
     const { data: notifications = [] } = useQuery({
         queryKey: ['patient-notifications'],
         queryFn: () => getPortalNotifications(headers),
-        enabled: !!user && !!headers?.tenantId,
+        enabled: !!user && !!headers?.tenantId && isPatient,
         refetchInterval: 60000
     })
 
     const { data: invoices = [] } = useQuery({
         queryKey: ['portal-invoices'],
         queryFn: () => getPortalInvoices(headers),
-        enabled: !!user && !!headers?.tenantId,
+        enabled: !!user && !!headers?.tenantId && isPatient,
         refetchInterval: 120000 // Invoices less frequent than notifications
     })
 
@@ -106,7 +108,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
         { path: '/patient/vitals', label: 'Chỉ số sức khỏe', icon: BarChart3 },
         { path: '/patient/appointments', label: 'Lịch hẹn', icon: Calendar },
         { path: '/patient/chat', label: 'Tin nhắn bác sĩ', icon: MessageSquare },
-        { path: '/patient/profile', label: 'Hồ sơ cá nhân', icon: User },
+        { path: '/patient/profile', label: 'Hồ sơ bệnh án', icon: User },
     ]
 
     const handleLogout = () => {
@@ -148,7 +150,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
 
                 <div className="p-4 border-t border-slate-200 dark:border-slate-800">
                     <button className="w-full bg-emerald-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-600 transition-colors">
-                        <LifeBuoy className="w-5 h-5" />
+                        <Headset className="w-5 h-5" />
                         Cần trợ giúp?
                     </button>
                     <button

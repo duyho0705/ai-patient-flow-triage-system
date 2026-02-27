@@ -16,4 +16,5 @@ public class PatientChatMessageDto {
     private String senderType;
     private String content;
     private Instant sentAt;
+    private String fileUrl;
 }

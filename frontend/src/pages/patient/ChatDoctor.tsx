@@ -20,7 +20,7 @@ import {
     Loader2
 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getPortalChatDoctors, getPortalChatHistory, sendPortalChatMessage } from '@/api/portal'
+import { getPortalChatDoctors, getPortalChatHistory, sendPortalChatMessage, sendPortalChatFile } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
 import toast from 'react-hot-toast'
 
@@ -30,6 +30,7 @@ export default function PatientChatDoctor() {
     const [selectedDoctor, setSelectedDoctor] = useState<any>(null)
     const [message, setMessage] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
     // Fetch available doctors
     const { data: doctors, isLoading: loadingDoctors } = useQuery({
@@ -64,9 +65,41 @@ export default function PatientChatDoctor() {
         }
     })
 
+    const fileMutation = useMutation({
+        mutationFn: (file: File) => sendPortalChatFile(selectedDoctor.id, file, message || undefined, headers),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['portal-chat-history', selectedDoctor?.id] })
+            setMessage('')
+            setSelectedFile(null)
+            toast.success('Đã gửi file thành công!')
+        },
+        onError: () => {
+            toast.error('Không thể gửi file.')
+        }
+    })
+
     const handleSend = () => {
-        if (!message.trim() || sendMutation.isPending) return
+        if (sendMutation.isPending || fileMutation.isPending) return
+        if (selectedFile) {
+            fileMutation.mutate(selectedFile)
+            return
+        }
+        if (!message.trim()) return
         sendMutation.mutate(message)
+    }
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error('File không được vượt quá 10MB')
+                return
+            }
+            setSelectedFile(file)
+            // Auto-send the file
+            fileMutation.mutate(file)
+        }
+        e.target.value = '' // Reset input
     }
 
     const filteredDoctors = doctors?.filter(d =>
@@ -184,13 +217,13 @@ export default function PatientChatDoctor() {
                                             <img src={selectedDoctor.avatar} className="w-8 h-8 rounded-full border border-slate-100" alt="Dr" />
                                         )}
                                         <div className={`max-w-[80%] flex flex-col ${msg.senderType === 'PATIENT' ? 'items-end' : 'items-start'} gap-1.5`}>
-                                            {msg.isImage ? (
+                                            {(msg.isImage || msg.fileUrl) ? (
                                                 <div className="bg-[#4ade80]/10 border border-[#4ade80]/20 p-2 rounded-2xl rounded-br-none group cursor-pointer relative">
-                                                    <img src={msg.imageUrl} className="rounded-xl w-64 h-40 object-cover" alt="attachment" />
+                                                    <img src={msg.imageUrl || msg.fileUrl} className="rounded-xl w-64 h-40 object-cover" alt="attachment" />
                                                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center rounded-xl">
                                                         <ZoomIn className="text-white w-6 h-6" />
                                                     </div>
-                                                    <p className="text-[10px] mt-2 text-slate-500 px-1 italic">Kết quả đính kèm</p>
+                                                    <p className="text-[10px] mt-2 text-slate-500 px-1 italic">{msg.content || 'File đính kèm'}</p>
                                                 </div>
                                             ) : (
                                                 <div className={`p-4 rounded-3xl text-sm font-medium shadow-sm leading-relaxed ${msg.senderType === 'PATIENT'
@@ -212,12 +245,19 @@ export default function PatientChatDoctor() {
                         {/* Input Area */}
                         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                             <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-[1.5rem] p-1.5 transition-all focus-within:ring-4 focus-within:ring-emerald-500/10 focus-within:bg-white dark:focus-within:bg-slate-800">
-                                <button className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-500 transition-colors">
+                                <input
+                                    type="file"
+                                    id="chat-file-upload"
+                                    className="hidden"
+                                    accept="image/*,.pdf,.doc,.docx"
+                                    onChange={handleFileSelect}
+                                />
+                                <label htmlFor="chat-file-upload" className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-500 transition-colors cursor-pointer">
                                     <PlusCircle className="w-5 h-5" />
-                                </button>
-                                <button className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-500 transition-colors">
+                                </label>
+                                <label htmlFor="chat-file-upload" className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-500 transition-colors cursor-pointer">
                                     <ImageIcon className="w-5 h-5" />
-                                </button>
+                                </label>
                                 <button className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-500 transition-colors">
                                     <Smile className="w-5 h-5" />
                                 </button>
@@ -231,10 +271,10 @@ export default function PatientChatDoctor() {
                                 />
                                 <button
                                     onClick={handleSend}
-                                    disabled={!message.trim() || sendMutation.isPending}
+                                    disabled={(!message.trim() && !selectedFile) || sendMutation.isPending || fileMutation.isPending}
                                     className="bg-[#4ade80] text-slate-900 p-2.5 rounded-xl shadow-lg shadow-[#4ade80]/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                                 >
-                                    {sendMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin text-slate-900" /> : <Send className="w-5 h-5" />}
+                                    {(sendMutation.isPending || fileMutation.isPending) ? <Loader2 className="w-5 h-5 animate-spin text-slate-900" /> : <Send className="w-5 h-5" />}
                                 </button>
                             </div>
                         </div>

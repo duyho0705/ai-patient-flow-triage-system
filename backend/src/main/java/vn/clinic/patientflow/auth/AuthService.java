@@ -13,6 +13,13 @@ import vn.clinic.patientflow.config.JwtUtil;
 import vn.clinic.patientflow.identity.domain.IdentityUser;
 import vn.clinic.patientflow.identity.service.IdentityService;
 
+import vn.clinic.patientflow.patient.domain.Patient;
+import vn.clinic.patientflow.patient.repository.PatientRepository;
+import vn.clinic.patientflow.tenant.domain.Tenant;
+import vn.clinic.patientflow.tenant.repository.TenantRepository;
+import vn.clinic.patientflow.common.exception.ResourceNotFoundException;
+import java.time.LocalDate;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -30,6 +37,8 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
     private final PasswordEncoder passwordEncoder;
+    private final PatientRepository patientRepository;
+    private final TenantRepository tenantRepository;
 
     /**
      * Đăng nhập: kiểm tra email/password, lấy roles theo tenant (và branch nếu có),
@@ -86,6 +95,21 @@ public class AuthService {
 
         // Assign default role 'patient' for public registration
         identityService.assignRole(user.getId(), request.getTenantId(), request.getBranchId(), "patient");
+
+        // Create a Patient entity to avoid 404s when the new patient accesses the
+        // portal
+        Tenant tenant = tenantRepository.findById(request.getTenantId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant", request.getTenantId()));
+
+        Patient patient = new Patient();
+        patient.setTenant(tenant);
+        patient.setIdentityUserId(user.getId());
+        patient.setExternalId(user.getId().toString()); // Use user ID as external ID to link
+        patient.setFullNameVi(user.getFullNameVi());
+        patient.setEmail(user.getEmail());
+        patient.setIsActive(true);
+        patient.setDateOfBirth(LocalDate.of(1990, 1, 1)); // Default date, update later in profile
+        patientRepository.save(patient);
 
         return login(new LoginRequest(request.getEmail(), request.getPassword(), request.getTenantId(),
                 request.getBranchId()));

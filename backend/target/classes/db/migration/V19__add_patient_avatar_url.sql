@@ -1,1 +1,0 @@
-ALTER TABLE patient ADD COLUMN avatar_url VARCHAR(1000);
