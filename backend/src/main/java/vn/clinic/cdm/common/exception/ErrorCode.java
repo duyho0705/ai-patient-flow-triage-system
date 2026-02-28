@@ -22,7 +22,8 @@ public enum ErrorCode {
 
     // General Errors
     VALIDATION_FAILED("G001", "Dữ liệu không hợp lệ"),
-    INTERNAL_SERVER_ERROR("G002", "Lỗi xử lý nội bộ hệ thống");
+    TOO_MANY_REQUESTS("G002", "Quá nhiều yêu cầu, vui lòng thử lại sau"),
+    INTERNAL_SERVER_ERROR("G003", "Lỗi xử lý nội bộ hệ thống");
 
     private final String code;
     private final String defaultMessage;

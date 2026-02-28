@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final vn.clinic.cdm.identity.service.IdentityService identityService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -42,6 +43,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         Claims claims = jwtUtil.validateAndParse(token);
 
         if (claims != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UUID userId = jwtUtil.getUserId(claims);
+            Integer tokenVersion = jwtUtil.getTokenVersion(claims);
+
+            // Token Version Validation
+            vn.clinic.cdm.identity.domain.IdentityUser user = identityService.getUserById(userId);
+            if (tokenVersion == null || !tokenVersion.equals(user.getTokenVersion())) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             String email = jwtUtil.getEmail(claims);
             UUID tenantId = jwtUtil.getTenantId(claims);
             UUID branchId = jwtUtil.getBranchId(claims);

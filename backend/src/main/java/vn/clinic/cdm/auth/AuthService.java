@@ -74,7 +74,7 @@ public class AuthService {
         identityService.updateLastLoginAt(user);
         Instant expiresAt = Instant.now().plusMillis(jwtProperties.getExpirationMs());
         String accessToken = jwtUtil.generateToken(user.getId(), user.getEmail(), tenantId, branchId, roles,
-                permissions);
+                permissions, user.getTokenVersion());
         String refreshToken = createRefreshToken(user);
 
         // Audit Logging
@@ -165,7 +165,7 @@ public class AuthService {
             identityService.updateLastLoginAt(user);
             Instant expiresAt = Instant.now().plusMillis(jwtProperties.getExpirationMs());
             String accessToken = jwtUtil.generateToken(user.getId(), user.getEmail(), tenantId, branchId, roles,
-                    permissions);
+                    permissions, user.getTokenVersion());
             String refreshToken = createRefreshToken(user);
 
             auditService.logSuccess(user.getId(), user.getEmail(), "SOCIAL_LOGIN", "Logged in via Social Provider",
@@ -240,7 +240,7 @@ public class AuthService {
                             tenantId, null);
 
                     String newAccessToken = jwtUtil.generateToken(user.getId(), user.getEmail(), tenantId, null, roles,
-                            permissions);
+                            permissions, user.getTokenVersion());
                     String newRefreshToken = createRefreshToken(user);
 
                     AuthUserDto userDto = AuthUserDto.builder()
@@ -270,5 +270,13 @@ public class AuthService {
         }
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         identityService.saveUser(user);
+    }
+
+    @Transactional
+    public void revokeAllSessions(UUID userId) {
+        IdentityUser user = identityService.getUserById(userId);
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        identityService.saveUser(user);
+        refreshTokenRepository.deleteByUser(user);
     }
 }

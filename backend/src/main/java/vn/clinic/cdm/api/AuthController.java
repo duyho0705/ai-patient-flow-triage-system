@@ -20,6 +20,7 @@ import vn.clinic.cdm.identity.domain.IdentityUser;
 import vn.clinic.cdm.identity.service.IdentityService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import vn.clinic.cdm.common.annotation.RateLimit;
 
 /**
  * API xác thực – login (JWT), me (thông tin user hiện tại).
@@ -35,6 +36,7 @@ public class AuthController {
 
         @PostMapping("/login")
         @Operation(summary = "Đăng nhập", description = "Trả về JWT và thông tin user (Cũng đặt JWT trong HttpOnly Cookie).")
+        @RateLimit(strict = true)
         public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
                 LoginResponse response = authService.login(request);
                 String refreshToken = response.getRefreshToken();
@@ -58,6 +60,7 @@ public class AuthController {
 
         @PostMapping("/register")
         @Operation(summary = "Đăng ký", description = "Tự đăng ký tài khoản mới và đặt JWT Cookie.")
+        @RateLimit(strict = true)
         public ResponseEntity<ApiResponse<LoginResponse>> register(
                         @Valid @RequestBody vn.clinic.cdm.api.dto.auth.RegisterRequest request) {
                 LoginResponse response = authService.register(request);
@@ -82,6 +85,7 @@ public class AuthController {
 
         @PostMapping("/social-login")
         @Operation(summary = "Đăng nhập Google/Facebook", description = "Xác thực Firebase Token và cấp JWT.")
+        @RateLimit(strict = true)
         public ResponseEntity<ApiResponse<LoginResponse>> socialLogin(
                         @Valid @RequestBody vn.clinic.cdm.api.dto.auth.SocialLoginRequest request) {
                 LoginResponse response = authService.socialLogin(request);

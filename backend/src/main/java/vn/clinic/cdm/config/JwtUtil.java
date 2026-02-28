@@ -34,6 +34,7 @@ public class JwtUtil {
     private static final String CLAIM_BRANCH_ID = "branchId";
     private static final String CLAIM_ROLES = "roles";
     private static final String CLAIM_PERMISSIONS = "permissions";
+    private static final String CLAIM_TOKEN_VERSION = "tokenVersion";
 
     private final JwtProperties jwtProperties;
 
@@ -46,7 +47,7 @@ public class JwtUtil {
     }
 
     public String generateToken(UUID userId, String email, UUID tenantId, UUID branchId, List<String> roles,
-            List<String> permissions) {
+            List<String> permissions, Integer tokenVersion) {
         Instant now = Instant.now();
         Instant exp = now.plusMillis(jwtProperties.getExpirationMs());
         return Jwts.builder()
@@ -56,6 +57,7 @@ public class JwtUtil {
                 .claim(CLAIM_BRANCH_ID, branchId != null ? branchId.toString() : null)
                 .claim(CLAIM_ROLES, roles != null ? roles : List.of())
                 .claim(CLAIM_PERMISSIONS, permissions != null ? permissions : List.of())
+                .claim(CLAIM_TOKEN_VERSION, tokenVersion)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .signWith(signingKey())
@@ -155,5 +157,14 @@ public class JwtUtil {
                     .collect(Collectors.toList());
         }
         return List.of();
+    }
+
+    public Integer getTokenVersion(Claims claims) {
+        if (claims == null)
+            return null;
+        Object v = claims.get(CLAIM_TOKEN_VERSION);
+        if (v instanceof Number num)
+            return num.intValue();
+        return null;
     }
 }
