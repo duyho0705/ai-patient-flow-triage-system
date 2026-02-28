@@ -20,7 +20,7 @@ export interface AuthUserDto {
 export interface LoginRequest {
   email: string
   password: string
-  tenantId: string
+  tenantId?: string
   branchId?: string | null
 }
 
@@ -40,7 +40,7 @@ export interface RegisterRequest {
 
 export interface SocialLoginRequest {
   idToken: string
-  tenantId: string
+  tenantId?: string
   branchId?: string | null
 }
 
@@ -439,6 +439,9 @@ export interface PatientDashboardDto {
   pendingInvoice?: InvoiceDto
   medicationReminders?: MedicationReminderDto[]
   healthAlerts?: string[]
+  bloodType?: string
+  chronicConditions?: string
+  assignedDoctorName?: string
 }
 
 export interface LabResultDto {

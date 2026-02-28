@@ -45,9 +45,9 @@ import vn.clinic.cdm.tenant.domain.TenantBranch;
 import vn.clinic.cdm.clinical.repository.HealthMetricRepository;
 import vn.clinic.cdm.clinical.service.MedicationService;
 import vn.clinic.cdm.clinical.domain.HealthMetric;
+import vn.clinic.cdm.clinical.service.MedicationMapper;
 
 import java.time.Instant;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -60,6 +60,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PatientPortalService {
+        private final MedicationMapper medicationMapper;
 
         private final PatientService patientService;
         private final SchedulingService schedulingService;
@@ -105,15 +106,17 @@ public class PatientPortalService {
                                                 .filter(inv -> "PENDING".equals(inv.getStatus()))
                                                 .findFirst().orElse(null))
                                 .medicationReminders(medicationService.getDailySchedules(patientId)
-                                                .stream().map(s -> MedicationReminderDto.builder()
-                                                                .id(s.getId())
-                                                                .medicineName(s.getMedication().getMedicineName())
-                                                                .reminderTime(LocalTime.now()) // Placeholder
-                                                                .isActive(true)
-                                                                .build())
+                                                .stream().map(medicationMapper::toReminderDto)
                                                 .collect(Collectors.toList()))
                                 .healthAlerts(generateHealthAlerts(patientId))
                                 .vitalTrends(new java.util.ArrayList<>())
+                                .bloodType(p.getBloodType())
+                                .chronicConditions(p.getChronicConditions())
+                                .assignedDoctorName(p.getAssignedDoctor() != null
+                                                && p.getAssignedDoctor().getIdentityUser() != null
+                                                                ? p.getAssignedDoctor().getIdentityUser()
+                                                                                .getFullNameVi()
+                                                                : null)
                                 .build();
         }
 
@@ -227,7 +230,8 @@ public class PatientPortalService {
         @Transactional
         public MedicationDosageLogDto markMedicationTaken(Patient p, MedicationDosageLogDto dto) {
                 if (dto.getMedicationReminderId() != null) {
-                        medicationService.recordDose(dto.getMedicationReminderId(), "TAKEN", "Ghi nháº­n bá»Ÿi bá»‡nh nhÃ¢n");
+                        medicationService.recordDose(dto.getMedicationReminderId(), "TAKEN",
+                                        "Ghi nháº­n bá»Ÿi bá»‡nh nhÃ¢n");
                 }
                 return dto;
         }
@@ -440,4 +444,3 @@ public class PatientPortalService {
                                 .build();
         }
 }
-

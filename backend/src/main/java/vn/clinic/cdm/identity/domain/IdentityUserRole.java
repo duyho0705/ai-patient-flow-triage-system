@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * GÃ¡n vai trÃ² cho user theo tenant/chi nhÃ¡nh. branch_id NULL = toÃ n tenant.
+ * Gán vai trò cho user theo tenant/chi nhánh. branch_id NULL = toàn tenant.
  */
 @Entity
 @Table(name = "identity_user_role")

@@ -12,17 +12,16 @@ import vn.clinic.cdm.common.notification.ChatNotificationService;
 @RestController
 @RequestMapping("/api/chat/notify")
 @RequiredArgsConstructor
-@Tag(name = "Chat Notification", description = "Gá»­i thÃ´ng bÃ¡o cÃ³ tin nháº¯n má»›i")
+@Tag(name = "Chat Notification", description = "Gửi thông báo có tin nhắn mới")
 public class ChatNotificationController {
 
     private final ChatNotificationService chatNotificationService;
 
     @PostMapping
-    @Operation(summary = "Gá»­i thÃ´ng bÃ¡o Ä‘áº©y khi cÃ³ tin nháº¯n má»›i")
+    @Operation(summary = "Gửi thông báo đẩy khi có tin nhắn mới")
     public ResponseEntity<ApiResponse<Void>> sendNotify(@RequestBody SendChatNotificationRequest request) {
         // Run asynchronously so we don't block the frontend response
         new Thread(() -> chatNotificationService.handleSendChatNotification(request)).start();
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
-

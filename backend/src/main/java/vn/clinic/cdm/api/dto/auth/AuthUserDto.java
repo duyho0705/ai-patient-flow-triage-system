@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * ThÃ´ng tin user cÆ¡ báº£n tráº£ vá» sau login.
+ * Thông tin user cơ bản trả về sau login.
  */
 @Data
 @Builder

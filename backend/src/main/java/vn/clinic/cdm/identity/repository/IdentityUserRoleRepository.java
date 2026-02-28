@@ -15,7 +15,7 @@ public interface IdentityUserRoleRepository extends JpaRepository<IdentityUserRo
     List<IdentityUserRole> findByUserIdAndTenantId(UUID userId, UUID tenantId);
 
     /**
-     * Roles Ã¡p dá»¥ng cho user trong tenant táº¡i chi nhÃ¡nh: (branch_id IS NULL hoáº·c branch_id = :branchId).
+     * Roles áp dụng cho user trong tenant tại chi nhánh: (branch_id IS NULL hoặc branch_id = :branchId).
      */
     @Query("SELECT ur FROM IdentityUserRole ur WHERE ur.user.id = :userId AND ur.tenant.id = :tenantId " +
            "AND (ur.branch IS NULL OR ur.branch.id = :branchId)")

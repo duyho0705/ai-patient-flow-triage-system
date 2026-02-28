@@ -9,7 +9,7 @@ import vn.clinic.cdm.tenant.domain.Tenant;
 import java.util.UUID;
 
 /**
- * BÃ¡c sÄ©.
+ * Bác sĩ.
  */
 @Entity
 @Table(name = "doctor")

@@ -18,7 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/portal/billing")
 @RequiredArgsConstructor
-@Tag(name = "Patient Billing", description = "Quáº£n lÃ½ hÃ³a Ä‘Æ¡n cá»§a bá»‡nh nhÃ¢n")
+@Tag(name = "Patient Billing", description = "Quản lý hóa đơn của bệnh nhân")
 @PreAuthorize("hasRole('PATIENT')")
 public class PatientBillingController {
 
@@ -26,14 +26,14 @@ public class PatientBillingController {
     private final BillingService billingService;
 
     @GetMapping("/invoices")
-    @Operation(summary = "Láº¥y danh sÃ¡ch hÃ³a Ä‘Æ¡n cá»§a bá»‡nh nhÃ¢n")
+    @Operation(summary = "Lấy danh sách hóa đơn của bệnh nhân")
     public ResponseEntity<ApiResponse<List<InvoiceDto>>> getInvoices() {
         Patient p = portalService.getAuthenticatedPatient();
         return ResponseEntity.ok(ApiResponse.success(billingService.getInvoicesByPatient(p.getId())));
     }
 
     @PostMapping("/invoices/{id}/pay")
-    @Operation(summary = "Thanh toÃ¡n hÃ³a Ä‘Æ¡n")
+    @Operation(summary = "Thanh toán hóa đơn")
     public ResponseEntity<ApiResponse<InvoiceDto>> payInvoice(
             @PathVariable UUID id,
             @RequestBody String paymentMethod) {
@@ -41,4 +41,3 @@ public class PatientBillingController {
         return ResponseEntity.ok(ApiResponse.success(billingService.payInvoice(p.getId(), id, paymentMethod)));
     }
 }
-

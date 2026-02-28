@@ -27,21 +27,21 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/portal/clinical")
 @RequiredArgsConstructor
-@Tag(name = "Patient Clinical", description = "Quáº£n lÃ½ dá»¯ liá»‡u lÃ¢m sÃ ng cá»§a bá»‡nh nhÃ¢n")
+@Tag(name = "Patient Clinical", description = "Quản lý dữ liệu lâm sàng của bệnh nhân")
 @PreAuthorize("hasRole('PATIENT')")
 public class PatientClinicalController {
 
         private final PatientPortalService portalService;
 
         @GetMapping("/dashboard")
-        @Operation(summary = "Dá»¯ liá»‡u tá»•ng quan cho trang chá»§ bá»‡nh nhÃ¢n")
+        @Operation(summary = "Dữ liệu tổng quan cho trang chủ bệnh nhân")
         public ResponseEntity<ApiResponse<PatientDashboardDto>> getDashboard() {
                 Patient p = portalService.getAuthenticatedPatient();
                 return ResponseEntity.ok(ApiResponse.success(portalService.getDashboardData(p.getId())));
         }
 
         @GetMapping("/medical-history")
-        @Operation(summary = "Lá»‹ch sá»­ khÃ¡m bá»‡nh (CÃ³ phÃ¢n trang)")
+        @Operation(summary = "Lịch sử khám bệnh (Có phân trang)")
         public ResponseEntity<ApiResponse<PagedResponse<ConsultationDto>>> getHistory(
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "10") int size) {
@@ -50,14 +50,14 @@ public class PatientClinicalController {
         }
 
         @GetMapping("/medical-history/{id}")
-        @Operation(summary = "Chi tiáº¿t ca khÃ¡m")
+        @Operation(summary = "Chi tiết ca khám")
         public ResponseEntity<ApiResponse<ConsultationDetailDto>> getHistoryDetail(@PathVariable UUID id) {
                 Patient p = portalService.getAuthenticatedPatient();
                 return ResponseEntity.ok(ApiResponse.success(portalService.getConsultationDetail(p.getId(), id)));
         }
 
         @GetMapping("/vitals/trends")
-        @Operation(summary = "Dá»¯ liá»‡u xu hÆ°á»›ng sinh hiá»‡u cho biá»ƒu Ä‘á»“ (há»— trá»£ lá»c ngÃ y/tuáº§n/thÃ¡ng)")
+        @Operation(summary = "Dữ liệu xu hướng sinh hiệu cho biểu đồ (hỗ trợ lọc ngày/tuần/tháng)")
         public ResponseEntity<ApiResponse<List<VitalTrendDto>>> getVitalTrends(
                         @RequestParam String type,
                         @RequestParam(required = false) String from,
@@ -75,14 +75,14 @@ public class PatientClinicalController {
         }
 
         @PostMapping("/vitals")
-        @Operation(summary = "Bá»‡nh nhÃ¢n tá»± nháº­p chá»‰ sá»‘ sinh hiá»‡u")
+        @Operation(summary = "Bệnh nhân tự nhập chỉ số sinh hiệu")
         public ResponseEntity<ApiResponse<PatientVitalLogDto>> logVital(@RequestBody PatientVitalLogDto dto) {
                 Patient p = portalService.getAuthenticatedPatient();
                 return ResponseEntity.ok(ApiResponse.success(portalService.logVitalMetric(p, dto)));
         }
 
         @PostMapping(value = "/vitals/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        @Operation(summary = "Nháº­p chá»‰ sá»‘ sinh hiá»‡u kÃ¨m áº£nh mÃ¡y Ä‘o")
+        @Operation(summary = "Nhập chỉ số sinh hiệu kèm ảnh máy đo")
         public ResponseEntity<ApiResponse<PatientVitalLogDto>> logVitalWithImage(
                         @RequestParam String vitalType,
                         @RequestParam BigDecimal valueNumeric,
@@ -99,4 +99,3 @@ public class PatientClinicalController {
                 return ResponseEntity.ok(ApiResponse.success(portalService.logVitalWithImage(p, dto, image)));
         }
 }
-

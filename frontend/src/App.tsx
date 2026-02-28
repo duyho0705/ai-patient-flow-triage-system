@@ -32,11 +32,70 @@ import { PatientAllocation } from '@/pages/admin/PatientAllocation'
 import { FinancialReport } from '@/pages/admin/FinancialReport'
 import { MonthlyReport } from '@/pages/admin/MonthlyReport'
 import { DoctorPerformance } from '@/pages/admin/DoctorPerformance'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { useTenant } from '@/context/TenantContext'
+import { getRedirectResult } from 'firebase/auth'
+import { auth } from '@/firebase'
+import toast from 'react-hot-toast'
+import { ERROR_CODES, APP_ROUTES } from '@/constants'
+import { useAppNavigation } from '@/hooks/useAppNavigation'
+
+function SocialLoginHandler() {
+  const { socialLogin } = useAuth()
+  const { setTenant } = useTenant()
+  const location = useLocation()
+  const navigation = useAppNavigation()
+
+  useEffect(() => {
+    let handled = false
+    const handleRedirectResult = async () => {
+      if (handled) return
+      try {
+        const result = await getRedirectResult(auth)
+        if (result && result.user) {
+          handled = true
+          toast.success("Xác thực mạng xã hội thành công! Đang xử lý đăng nhập...")
+          const token = await result.user.getIdToken()
+          try {
+            const res = await socialLogin({ idToken: token, tenantId: undefined, branchId: undefined })
+            setTenant(res.user.tenantId, res.user.branchId ?? undefined)
+            setTimeout(() => {
+              navigation.navigateAfterLogin(res.user)
+            }, 300)
+          } catch (socialErr: any) {
+            console.log("Social login needs tenant selection:", socialErr)
+            if (socialErr.errorCode === ERROR_CODES.AUTH_TENANT_REQUIRED || socialErr.message === 'REQUIRE_TENANT_SELECTION') {
+              if (location.pathname === APP_ROUTES.LOGIN) {
+                navigation.navigateToLogin({ firebaseToken: token })
+              } else {
+                navigation.navigateToLanding({ openLogin: true, firebaseToken: token })
+              }
+            } else {
+              toast.error('Lỗi đăng nhập: ' + socialErr.message)
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error('Redirect sign-in error:', err)
+        if (err?.message?.includes('REQUIRE_TENANT_SELECTION') || err?.response?.data?.message?.includes('REQUIRE_TENANT_SELECTION')) {
+          // Already handled in inner try-catch, but just in case
+        } else {
+          toast.error('Lỗi đăng nhập MXH: ' + err.message)
+        }
+      }
+    }
+    handleRedirectResult()
+  }, [])
+
+  return null
+}
 
 function App() {
   return (
     <>
+      <SocialLoginHandler />
       <Toaster
         position="top-right"
         toastOptions={{

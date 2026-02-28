@@ -29,5 +29,7 @@ public class PatientDashboardDto {
     private List<MedicationReminderDto> medicationReminders;
     private List<String> healthAlerts;
     private List<VitalTrendDto> vitalTrends;
+    private String bloodType;
+    private String chronicConditions;
+    private String assignedDoctorName;
 }
-

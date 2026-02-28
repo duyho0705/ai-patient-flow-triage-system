@@ -16,7 +16,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Cáº¥u hÃ¬nh Spring Security â€“ JWT, stateless, permit login & actuator & Swagger.
+ * Cáº¥u hÃ¬nh Spring Security â€“ JWT, stateless, permit login & actuator &
+ * Swagger.
  */
 @Configuration
 @EnableWebSecurity
@@ -53,8 +54,8 @@ public class SecurityConfig {
         // Cáº§n thiáº¿t Ä‘á»ƒ gá»­i Cookie tá»« Frontend khÃ¡c origin
         configuration.setAllowedOriginPatterns(java.util.List.of("http://localhost:[*]", "http://127.0.0.1:[*]"));
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration
-                .setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "X-Tenant-Id", "X-Branch-Id"));
+        configuration.setAllowedHeaders(java.util.List.of(
+                "Authorization", "Content-Type", "Accept", "X-Tenant-Id", "X-Branch-Id", "X-Requested-With"));
         configuration.setExposedHeaders(java.util.List.of("X-Rate-Limit-Remaining"));
         configuration.setAllowCredentials(true);
 
@@ -75,4 +76,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-

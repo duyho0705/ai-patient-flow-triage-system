@@ -19,7 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/management/reports")
 @RequiredArgsConstructor
-@Tag(name = "Clinic Management", description = "Quáº£n lÃ½ phÃ²ng khÃ¡m (Role 3)")
+@Tag(name = "Clinic Management", description = "Quản lý phòng khám (Role 3)")
 public class ManagerController {
 
     private final ReportingService reportingService;
@@ -27,7 +27,7 @@ public class ManagerController {
 
     @GetMapping("/summary")
     @PreAuthorize("hasAnyRole('CLINIC_MANAGER', 'ADMIN')")
-    @Operation(summary = "Xem bÃ¡o cÃ¡o tá»•ng há»£p")
+    @Operation(summary = "Xem báo cáo tổng hợp")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getSummary() {
         return ResponseEntity
                 .ok(ApiResponse.success(reportingService.getClinicStats(TenantContext.getTenantIdOrThrow())));
@@ -35,7 +35,7 @@ public class ManagerController {
 
     @GetMapping("/export-excel")
     @PreAuthorize("hasAnyRole('CLINIC_MANAGER', 'ADMIN')")
-    @Operation(summary = "Xuáº¥t bÃ¡o cÃ¡o bá»‡nh nhÃ¢n báº£n Excel")
+    @Operation(summary = "Xuất báo cáo bệnh nhân bản Excel")
     public ResponseEntity<byte[]> exportExcel() throws IOException {
         byte[] data = excelExportService.exportPatientReport();
 
@@ -45,4 +45,3 @@ public class ManagerController {
                 .body(data);
     }
 }
-

@@ -16,27 +16,26 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CreateUserRequest {
 
-    @NotBlank(message = "Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @NotBlank(message = "Email không được để trống")
     @Email
     private String email;
 
-    @NotBlank(message = "Há» tÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @NotBlank(message = "Họ tên không được để trống")
     @Size(max = 255)
     private String fullNameVi;
 
-    @NotBlank(message = "Máº­t kháº©u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 6, max = 100)
     private String password;
 
     @Size(max = 20)
     private String phone;
 
-    @NotNull(message = "Tenant ID khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @NotNull(message = "Tenant ID không được để trống")
     private UUID tenantId;
 
-    @NotBlank(message = "MÃ£ role khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @NotBlank(message = "Mã role không được để trống")
     private String roleCode;
 
     private UUID branchId;
 }
-

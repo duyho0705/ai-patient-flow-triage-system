@@ -10,16 +10,14 @@ import vn.clinic.cdm.api.dto.auth.LoginRequest;
 import vn.clinic.cdm.api.dto.auth.LoginResponse;
 import vn.clinic.cdm.config.JwtProperties;
 import vn.clinic.cdm.config.JwtUtil;
+import vn.clinic.cdm.common.ManagementConstants;
+import vn.clinic.cdm.common.exception.ApiException;
+import vn.clinic.cdm.common.exception.ErrorCode;
 import vn.clinic.cdm.identity.domain.IdentityUser;
 import vn.clinic.cdm.identity.service.IdentityService;
-
-import vn.clinic.cdm.patient.domain.Patient;
-import vn.clinic.cdm.patient.repository.PatientRepository;
 import vn.clinic.cdm.tenant.domain.Tenant;
 import vn.clinic.cdm.tenant.repository.TenantRepository;
-import vn.clinic.cdm.common.exception.ResourceNotFoundException;
-import java.time.LocalDate;
-
+import org.springframework.http.HttpStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -29,8 +27,8 @@ import com.google.firebase.auth.FirebaseToken;
 import vn.clinic.cdm.api.dto.auth.SocialLoginRequest;
 
 /**
- * XÃ¡c thá»±c Ä‘Äƒng nháº­p â€“ kiá»ƒm tra máº­t kháº©u, resolve roles theo tenant/branch,
- * phÃ¡t JWT.
+ * Xác thực đăng nhập – kiểm tra mật khẩu, resolve roles theo tenant/branch,
+ * phát JWT.
  */
 @Service
 @RequiredArgsConstructor
@@ -41,25 +39,28 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
     private final PasswordEncoder passwordEncoder;
-    private final PatientRepository patientRepository;
     private final TenantRepository tenantRepository;
+    private final RegisterService registerService;
 
     /**
-     * ÄÄƒng nháº­p: kiá»ƒm tra email/password, láº¥y roles theo tenant (vÃ  branch náº¿u cÃ³),
-     * phÃ¡t JWT.
+     * Đăng nhập: kiểm tra email/password, lấy roles theo tenant (và branch nếu có),
+     * phát JWT.
      */
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        IdentityUser user = identityService.getActiveUserByEmail(request.getEmail().trim().toLowerCase());
+        IdentityUser user = identityService.getActiveUserByEmail(request.getEmail());
         if (user == null || user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
             log.warn("Login failed: User not found or no password set for email {}", request.getEmail());
-            throw new BadCredentialsException("Email hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng");
+            throw new BadCredentialsException("Email hoặc mật khẩu không đúng");
         }
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             log.warn("Login failed: Password mismatch for email {}", request.getEmail());
-            throw new BadCredentialsException("Email hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng");
+            throw new BadCredentialsException("Email hoặc mật khẩu không đúng");
         }
         UUID tenantId = request.getTenantId();
+        if (tenantId == null && user.getTenant() != null) {
+            tenantId = user.getTenant().getId();
+        }
         UUID branchId = request.getBranchId();
         List<String> roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
         if (roles.isEmpty()) {
@@ -87,33 +88,16 @@ public class AuthService {
     @Transactional
     public LoginResponse register(vn.clinic.cdm.api.dto.auth.RegisterRequest request) {
         if (identityService.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email nÃ y Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng");
+            throw new ApiException(ErrorCode.RESOURCE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST,
+                    "Email này đã được sử dụng");
         }
 
-        IdentityUser user = new IdentityUser();
-        user.setEmail(request.getEmail().trim().toLowerCase());
-        user.setFullNameVi(request.getFullNameVi());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setIsActive(true);
-        user = identityService.saveUser(user);
-
-        // Assign default role 'patient' for public registration
-        identityService.assignRole(user.getId(), request.getTenantId(), request.getBranchId(), "patient");
-
-        // Create a Patient entity to avoid 404s when the new patient accesses the
-        // portal
-        Tenant tenant = tenantRepository.findById(request.getTenantId())
-                .orElseThrow(() -> new ResourceNotFoundException("Tenant", request.getTenantId()));
-
-        Patient patient = new Patient();
-        patient.setTenant(tenant);
-        patient.setIdentityUser(user);
-        patient.setExternalId(user.getId().toString()); // Use user ID as external ID to link
-        patient.setFullNameVi(user.getFullNameVi());
-        patient.setEmail(user.getEmail());
-        patient.setIsActive(true);
-        patient.setDateOfBirth(LocalDate.of(1990, 1, 1)); // Default date, update later in profile
-        patientRepository.save(patient);
+        registerService.registerNewPatient(
+                request.getEmail(),
+                request.getFullNameVi(),
+                request.getPassword(),
+                request.getTenantId(),
+                request.getBranchId());
 
         return login(new LoginRequest(request.getEmail(), request.getPassword(), request.getTenantId(),
                 request.getBranchId()));
@@ -124,8 +108,12 @@ public class AuthService {
         try {
             FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
             String email = decodedToken.getEmail();
-            if (email == null) {
-                throw new BadCredentialsException("Token khÃ´ng chá»©a email há»£p lá»‡");
+
+            // Fallback for providers that don't always return email (like Facebook)
+            if (email == null || email.isBlank()) {
+                log.warn("Social login token has no email. Falling back to UID based identifier for UID: {}",
+                        decodedToken.getUid());
+                email = decodedToken.getUid() + "@social-login.local";
             }
             email = email.trim().toLowerCase();
 
@@ -133,47 +121,30 @@ public class AuthService {
             UUID tenantId = request.getTenantId();
             UUID branchId = request.getBranchId();
 
+            if (tenantId == null) {
+                if (user != null && user.getTenant() != null) {
+                    tenantId = user.getTenant().getId();
+                } else {
+                    throw new ApiException(ErrorCode.AUTH_TENANT_REQUIRED, HttpStatus.BAD_REQUEST,
+                            "REQUIRE_TENANT_SELECTION");
+                }
+            }
+
             if (user == null) {
-                // Register new user automatically
-                user = new IdentityUser();
-                user.setEmail(email);
-                user.setFullNameVi(decodedToken.getName() != null ? decodedToken.getName() : "NgÆ°á»i dÃ¹ng Social");
-                user.setIsActive(true);
-                user = identityService.saveUser(user);
-
-                identityService.assignRole(user.getId(), tenantId, branchId, "patient");
-
-                Tenant tenant = tenantRepository.findById(tenantId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Tenant", tenantId));
-
-                Patient patient = new Patient();
-                patient.setTenant(tenant);
-                patient.setIdentityUser(user);
-                patient.setExternalId(user.getId().toString());
-                patient.setFullNameVi(user.getFullNameVi());
-                patient.setEmail(user.getEmail());
-                patient.setIsActive(true);
-                patient.setDateOfBirth(LocalDate.of(1990, 1, 1));
-                patientRepository.save(patient);
+                // Register new user automatically using RegisterService
+                String name = decodedToken.getName() != null ? decodedToken.getName() : "Người dùng Social";
+                user = registerService.registerNewPatient(email, name, null, tenantId, branchId);
             }
 
             List<String> roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
             if (roles.isEmpty()) {
                 // User exists but has no roles here -> add patient role
-                identityService.assignRole(user.getId(), tenantId, branchId, "patient");
+                identityService.assignRole(user.getId(), tenantId, branchId, ManagementConstants.Roles.PATIENT);
                 roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
 
                 Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
                 if (tenant != null) {
-                    Patient patient = new Patient();
-                    patient.setTenant(tenant);
-                    patient.setIdentityUser(user);
-                    patient.setExternalId(user.getId().toString());
-                    patient.setFullNameVi(user.getFullNameVi());
-                    patient.setEmail(user.getEmail());
-                    patient.setIsActive(true);
-                    patient.setDateOfBirth(LocalDate.of(1990, 1, 1));
-                    patientRepository.save(patient);
+                    registerService.createPatientProfile(user, tenant);
                 }
             }
 
@@ -194,9 +165,11 @@ public class AuthService {
                     .user(userDto)
                     .build();
 
+        } catch (BadCredentialsException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Firebase social login failed", e);
-            throw new BadCredentialsException("XÃ¡c thá»±c social tháº¥t báº¡i: " + e.getMessage());
+            throw new ApiException(ErrorCode.AUTH_SOCIAL_LOGIN_FAILED, HttpStatus.UNAUTHORIZED, e.getMessage());
         }
     }
 
@@ -210,4 +183,3 @@ public class AuthService {
         identityService.saveUser(user);
     }
 }
-

@@ -12,7 +12,6 @@ import jakarta.validation.constraints.Size;
 @AllArgsConstructor
 public class ChangePasswordRequest {
     private String oldPassword;
-    @Size(min = 8, message = "Máº­t kháº©u má»›i pháº£i cÃ³ Ã­t nháº¥t 8 kÃ½ tá»±")
+    @Size(min = 8, message = "Mật khẩu mới phải có ít nhất 8 ký tự")
     private String newPassword;
 }
-

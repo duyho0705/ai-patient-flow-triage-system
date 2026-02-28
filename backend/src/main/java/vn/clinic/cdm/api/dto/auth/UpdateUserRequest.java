@@ -16,8 +16,6 @@ public class UpdateUserRequest {
     @Size(max = 20)
     private String phone;
 
-
-    /** Náº¿u cÃ³: thay tháº¿ toÃ n bá»™ gÃ¡n role cá»§a user. */
     private List<UserRoleAssignmentInput> roleAssignments;
 
     @Data

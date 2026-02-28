@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useTenant } from '@/context/TenantContext'
 import { listTenants } from '@/api/tenants'
@@ -14,8 +14,11 @@ import { FcGoogle } from 'react-icons/fc'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { RegisterRequest } from '@/types/api'
 import { CustomSelect } from '@/components/CustomSelect'
-import { GoogleAuthProvider, FacebookAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth'
+import { GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth } from '@/firebase'
+import { ERROR_CODES } from '@/constants'
+import { useAppNavigation } from '@/hooks/useAppNavigation'
+import { EnterpriseErrorUtils } from '@/utils/errors'
 
 /* ─────────── helpers ─────────── */
 
@@ -34,7 +37,7 @@ function getPasswordStrength(pw: string) {
 }
 
 const HERO_IMG =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuAxurL_0mHkDSA7Xy8Ivzc16G0mL0tuBC-qzP2L6nAylR1tH6aJySP9Xn-h53lyWhTu0qDM3g7pHesLDfwkHbBck-H6ydTV0PNaAVqhWN9i5nv2I-CWCsMsPBEp1n_bN4FS3-FLfKSK5t0aJ5HIvpsYUxAxgiIv0bxmfQs6BqHY50b4qblQuxhm_of6WK5KgtBV4D-yb4o4vHDXodAgXHfj5xaNOCNpM1xNjEn2vkrm286YzltEXIO8pbuqOE8a2jQ-lyWDOUQLI3bx'
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAxurL_0mHkDSA7Xy8Ivzc16G0mL0tuBC-qzP2L6nAylR1tH6aJySP9Xn-h53lyWhTu0qDM3g7pHesLDfwkHbBck-H6ydTV0PNaAVqhWN9i5nv2I-CWCsMsPBEp1n_bN4FS3-FLyKSK5t0aJ5HIvpsYUxAxgiIv0bxmfQs6BqHY50b4qblQuxhm_of6WK5KgtBV4D-yb4o4vHDXodAgXHfj5xaNOCNpM1xNjEn2vkrm286YzltEXIO8pbuqOE8a2jQ-lyWDOUQLI3bx'
 
 /* ═══════════════════════════════════════
    LoginForm — shared by page & modal
@@ -43,14 +46,15 @@ const HERO_IMG =
 interface LoginFormProps {
   onSuccess?: () => void
   redirectTo?: { pathname?: string; search?: string }
+  initialFirebaseToken?: string
 }
 
-function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
+function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(initialFirebaseToken ? 2 : 1)
   const { login, register, socialLogin } = useAuth()
   const { setTenant } = useTenant()
-  const navigate = useNavigate()
+  const navigation = useAppNavigation()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -59,34 +63,47 @@ function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [firebaseIdToken, setFirebaseIdToken] = useState<string | null>(null)
+  const [firebaseIdToken, setFirebaseIdToken] = useState<string | null>(initialFirebaseToken || null)
 
   const { data: tenants = [] } = useQuery({ queryKey: ['tenants'], queryFn: listTenants })
 
   useEffect(() => {
-    if (tenants.length === 1 && !tenantId) setTenantId(tenants[0].id)
-  }, [tenants])
+    if (initialFirebaseToken) {
+      setFirebaseIdToken(initialFirebaseToken)
+      setStep(2)
+    }
+  }, [initialFirebaseToken])
 
-  // Process the redirect login result when the component mounts
   useEffect(() => {
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth)
-        if (result && result.user) {
-          const token = await result.user.getIdToken()
-          setFirebaseIdToken(token)
-          // Proceed to the next step (e.g., branch selection)
-          setStep(2)
+    if (tenants.length === 1 && !tenantId) setTenantId(tenants[0].id)
+  }, [tenants, tenantId])
+
+  // auto login if we have a token and exactly one tenant
+  useEffect(() => {
+    let active = true
+    const attemptAutoLogin = async () => {
+      if (firebaseIdToken && tenants.length === 1 && tenantId && !submitting) {
+        setSubmitting(true)
+        try {
+          const res = await socialLogin({ idToken: firebaseIdToken, tenantId: tenantId, branchId: undefined })
+          if (active) {
+            setTenant(res.user.tenantId, res.user.branchId ?? undefined)
+            setTimeout(() => {
+              navigation.navigateAfterLogin(res.user, redirectTo?.pathname)
+              onSuccess?.()
+            }, 100)
+          }
+        } catch (err: any) {
+          if (active) {
+            setError(err?.message || 'Có lỗi xảy ra khi xác thực.')
+            setSubmitting(false)
+          }
         }
-      } catch (err: any) {
-        console.error('Redirect sign-in error:', err)
-        setError(err?.message || 'Lỗi xử lý đăng nhập bằng mạng xã hội.')
       }
     }
-
-    handleRedirectResult()
-  }, [])
-
+    attemptAutoLogin()
+    return () => { active = false }
+  }, [firebaseIdToken, tenants.length, tenantId, navigation, onSuccess, socialLogin, setTenant, submitting])
 
   const pwStrength = useMemo(() => getPasswordStrength(password), [password])
 
@@ -95,43 +112,52 @@ function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
     e.preventDefault()
     setError('')
 
-    if (!email) { setError('Vui lòng nhập email.'); setStep(1); return }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Định dạng email không hợp lệ.'); setStep(1); return }
-    if (!password) { setError('Vui lòng nhập mật khẩu.'); setStep(1); return }
+    if (!firebaseIdToken) {
+      if (!email) { setError('Vui lòng nhập email.'); setStep(1); return }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Định dạng email không hợp lệ.'); setStep(1); return }
+      if (!password) { setError('Vui lòng nhập mật khẩu.'); setStep(1); return }
 
-    if (mode === 'register') {
-      if (!fullNameVi.trim()) { setError('Vui lòng nhập họ và tên.'); setStep(1); return }
-      if (password.length < 8) { setError('Mật khẩu phải có ít nhất 8 ký tự.'); setStep(1); return }
-      if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/.test(password)) {
-        setError('Mật khẩu phải bao gồm chữ hoa, chữ thường và số.')
-        setStep(1); return
+      if (mode === 'register') {
+        if (!fullNameVi.trim()) { setError('Vui lòng nhập họ và tên.'); setStep(1); return }
+        if (password.length < 8) { setError('Mật khẩu phải có ít nhất 8 ký tự.'); setStep(1); return }
+        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/.test(password)) {
+          setError('Mật khẩu phải bao gồm chữ hoa, chữ thường và số.')
+          setStep(1); return
+        }
       }
     }
 
-    if (step === 1) { setStep(2); return }
-    if (!tenantId) { setError('Vui lòng chọn phòng khám.'); return }
+    if (step === 1) {
+      if (!firebaseIdToken) {
+        setStep(2);
+        return;
+      }
+    }
+
+    if (step === 2 && !tenantId) { setError('Vui lòng chọn phòng khám.'); return }
 
     setSubmitting(true)
     try {
       let res;
       if (firebaseIdToken) {
-        // Complete social login flow
-        res = await socialLogin({ idToken: firebaseIdToken, tenantId, branchId: undefined })
+        // Complete social login flow using the selected tenant
+        res = await socialLogin({ idToken: firebaseIdToken, tenantId: tenantId, branchId: undefined })
       } else {
         if (mode === 'register') {
+          if (!tenantId) { setError('Vui lòng chọn phòng khám để đăng ký.'); setStep(2); return }
           const req: RegisterRequest = { email: email.trim(), password, fullNameVi: fullNameVi.trim(), tenantId, branchId: undefined }
-          await register(req)
+          res = await register(req)
+        } else {
+          res = await login({ email: email.trim(), password, tenantId: tenantId || undefined, branchId: undefined })
         }
-        res = await login({ email: email.trim(), password, tenantId, branchId: undefined })
       }
 
       setTenant(res.user.tenantId, res.user.branchId ?? undefined)
 
-      const target = res.user.roles.includes('patient') ? '/patient' : '/dashboard'
-      navigate(redirectTo?.pathname ? redirectTo : target, { replace: true })
+      navigation.navigateAfterLogin(res.user, redirectTo?.pathname) // Fixed: hook handle basic redirect or pass targetPath
       onSuccess?.()
     } catch (err: any) {
-      setError(err?.message || 'Thao tác thất bại. Vui lòng kiểm tra lại thông tin.')
+      setError(EnterpriseErrorUtils.getMessage(err))
       setStep(1)
     } finally {
       setSubmitting(false)
@@ -142,10 +168,33 @@ function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
     setError('')
     try {
       const provider = providerName === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider()
-      await signInWithRedirect(auth, provider)
+      provider.addScope('email')
+      const result = await signInWithPopup(auth, provider)
+      if (result.user) {
+        const token = await result.user.getIdToken()
+        setFirebaseIdToken(token)
+
+        // Try to login automatically first
+        try {
+          const res = await socialLogin({ idToken: token, tenantId: undefined, branchId: undefined })
+          setTenant(res.user.tenantId, res.user.branchId ?? undefined)
+          setTimeout(() => {
+            navigation.navigateAfterLogin(res.user, redirectTo?.pathname)
+            onSuccess?.()
+          }, 100)
+        } catch (socialErr: any) {
+          console.log("Social login needs tenant selection:", socialErr)
+          if (socialErr.errorCode === ERROR_CODES.AUTH_TENANT_REQUIRED || socialErr.message === 'REQUIRE_TENANT_SELECTION') {
+            setStep(2)
+          } else {
+            setError(EnterpriseErrorUtils.getMessage(socialErr))
+          }
+        }
+      }
     } catch (err: any) {
       console.error(err)
-      setError(err?.message || `Lỗi khi chuyển hướng đăng nhập bằng ${providerName}`)
+      if (err.code === 'auth/popup-closed-by-user') return
+      setError(err?.message || `Lỗi khi đăng nhập bằng ${providerName}`)
     }
   }
 
@@ -357,6 +406,7 @@ function Field({ label, icon, type = 'text', value, onChange, placeholder }: {
    ═══════════════════════════════════════ */
 
 export function Login() {
+  const location = useLocation()
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
       {/* ── Left: Hero ── */}
@@ -415,7 +465,7 @@ export function Login() {
             <p className="text-sm text-slate-500 font-semibold italic">Đăng nhập để truy cập hệ thống</p>
           </div>
 
-          <LoginForm />
+          <LoginForm initialFirebaseToken={location.state?.firebaseToken} />
         </motion.div>
       </div>
     </div>
@@ -443,10 +493,12 @@ export function LoginModal({
   isOpen,
   onClose,
   redirectTo,
+  initialFirebaseToken,
 }: {
   isOpen: boolean
   onClose: () => void
   redirectTo?: { pathname?: string; search?: string }
+  initialFirebaseToken?: string
 }) {
   return (
     <AnimatePresence>
@@ -483,7 +535,7 @@ export function LoginModal({
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Chào mừng đến Sống Khỏe</h2>
               </div>
 
-              <LoginForm onSuccess={onClose} redirectTo={redirectTo} />
+              <LoginForm onSuccess={onClose} redirectTo={redirectTo} initialFirebaseToken={initialFirebaseToken} />
             </div>
           </motion.div>
         </div>

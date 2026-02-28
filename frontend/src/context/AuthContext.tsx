@@ -17,10 +17,28 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+const mapRole = (r: string): string => {
+  const role = r.toLowerCase()
+  if (role === 'system_admin') return 'admin'
+  return role
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUserDto | null>(null)
+  const [user, setUserState] = useState<AuthUserDto | null>(null)
   const [token, setToken] = useState<string | null>(() => getStoredToken())
   const [isLoading, setIsLoading] = useState(true)
+
+  const setUser = useCallback((u: AuthUserDto | null) => {
+    if (!u) {
+      setUserState(null)
+      return
+    }
+    const normalizedUser = {
+      ...u,
+      roles: u.roles.map(mapRole),
+    }
+    setUserState(normalizedUser)
+  }, [])
 
   const refreshUser = useCallback(async () => {
     const t = getStoredToken()
@@ -41,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [setUser])
 
   useEffect(() => {
     refreshUser()
@@ -54,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(res.user)
       return res
     },
-    []
+    [setUser]
   )
 
   const socialLogin = useCallback(
@@ -64,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(res.user)
       return res
     },
-    []
+    [setUser]
   )
 
   const register = useCallback(
@@ -74,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(res.user)
       return res
     },
-    []
+    [setUser]
   )
 
   const logout = useCallback(() => {

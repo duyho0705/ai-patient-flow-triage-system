@@ -12,8 +12,8 @@ import vn.clinic.cdm.api.dto.medication.MedicationDosageLogDto;
 import vn.clinic.cdm.clinical.service.MedicationService;
 import vn.clinic.cdm.patient.domain.Patient;
 import vn.clinic.cdm.patient.service.PatientPortalService;
+import vn.clinic.cdm.clinical.service.MedicationMapper;
 
-import java.time.LocalTime;
 import java.util.List;
 
 import java.util.stream.Collectors;
@@ -27,20 +27,14 @@ public class PatientMedicationController {
 
     private final PatientPortalService portalService;
     private final MedicationService medicationService;
+    private final MedicationMapper medicationMapper;
 
     @GetMapping
     @Operation(summary = "Láº¥y danh sÃ¡ch nháº¯c lá»‹ch uá»‘ng thuá»‘c")
     public ResponseEntity<ApiResponse<List<MedicationReminderDto>>> getReminders() {
         Patient p = portalService.getAuthenticatedPatient();
-        var data = medicationService.getDailySchedules(p.getId()).stream()
-                .map(s -> MedicationReminderDto.builder()
-                        .id(s.getId())
-                        .medicineName(s.getMedication().getMedicineName())
-                        .reminderTime(LocalTime.now()) // Placeholder
-                        .dosage(s.getMedication().getDosage())
-                        .isActive(true)
-                        .notes(s.getMedication().getInstructions())
-                        .build())
+        List<MedicationReminderDto> data = medicationService.getDailySchedules(p.getId()).stream()
+                .map(medicationMapper::toReminderDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -52,4 +46,3 @@ public class PatientMedicationController {
         return ResponseEntity.ok(ApiResponse.success(portalService.markMedicationTaken(p, dto)));
     }
 }
-

@@ -17,20 +17,19 @@ import java.util.UUID;
 @AllArgsConstructor
 public class RegisterRequest {
 
-    @NotBlank(message = "Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
-    @Email(message = "Email khÃ´ng há»£p lá»‡")
+    @NotBlank(message = "Email không được để trống")
+    @Email(message = "Email không hợp lệ")
     private String email;
 
-    @NotBlank(message = "Máº­t kháº©u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
-    @Size(min = 6, message = "Máº­t kháº©u pháº£i cÃ³ Ã­t nháº¥t 6 kÃ½ tá»±")
+    @NotBlank(message = "Mật khẩu không được để trống")
+    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
     private String password;
 
-    @NotBlank(message = "Há» tÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+    @NotBlank(message = "Họ tên không được để trống")
     private String fullNameVi;
 
-    @NotNull(message = "Vui lÃ²ng chá»n phÃ²ng khÃ¡m")
+    @NotNull(message = "Vui lòng chọn phòng khám")
     private UUID tenantId;
 
     private UUID branchId;
 }
-

@@ -9,7 +9,7 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 /**
- * Chuáº©n tráº£ vá» danh sÃ¡ch cÃ³ phÃ¢n trang.
+ * Chuẩn trả về danh sách có phân trang.
  */
 @Data
 @Builder

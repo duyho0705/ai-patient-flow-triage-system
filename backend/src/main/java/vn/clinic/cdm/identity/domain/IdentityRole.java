@@ -7,7 +7,7 @@ import vn.clinic.cdm.common.domain.BaseAuditableEntity;
 import java.util.UUID;
 
 /**
- * Vai trÃ² ngÆ°á»i dÃ¹ng (PATIENT, DOCTOR, CLINIC_MANAGER, SYSTEM_ADMIN).
+ * Vai trò người dùng (PATIENT, DOCTOR, CLINIC_MANAGER, SYSTEM_ADMIN).
  */
 @Entity
 @Table(name = "identity_role")

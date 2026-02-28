@@ -22,6 +22,7 @@ export function LandingPage() {
   const location = useLocation()
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [redirectAfterLogin, setRedirectAfterLogin] = useState<{ pathname?: string; search?: string } | undefined>(undefined)
+  const [firebaseToken, setFirebaseToken] = useState<string | undefined>(undefined)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -29,6 +30,9 @@ export function LandingPage() {
       setIsLoginOpen(true)
       if (location.state?.from) {
         setRedirectAfterLogin(location.state.from)
+      }
+      if (location.state?.firebaseToken) {
+        setFirebaseToken(location.state.firebaseToken)
       }
       window.history.replaceState({}, document.title)
     }
@@ -41,8 +45,10 @@ export function LandingPage() {
         onClose={() => {
           setIsLoginOpen(false)
           setRedirectAfterLogin(undefined)
+          setFirebaseToken(undefined)
         }}
         redirectTo={redirectAfterLogin ?? location.state?.from}
+        initialFirebaseToken={firebaseToken}
       />
 
       {/* Header */}

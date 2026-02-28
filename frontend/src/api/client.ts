@@ -56,8 +56,14 @@ export async function api<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
-    const error: any = new Error(err.message || err.error || res.statusText)
+    const errorMessage = err.message || err.error || res.statusText
+    const error: any = new Error(errorMessage)
     error.details = err
+    if (err.data?.errorCode) {
+      error.errorCode = err.data.errorCode
+    } else if (err.errorCode) {
+      error.errorCode = err.errorCode
+    }
     throw error
   }
 
@@ -71,7 +77,12 @@ export async function api<T>(
   if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
     const apiRes = json as ApiResponse<T>
     if (!apiRes.success) {
-      throw new Error(apiRes.message || 'API Error')
+      const err: any = new Error(apiRes.message || 'API Error')
+      err.data = apiRes.data
+      if ((apiRes.data as any)?.errorCode) {
+        err.errorCode = (apiRes.data as any).errorCode
+      }
+      throw err
     }
     return apiRes.data
   }

@@ -14,6 +14,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import vn.clinic.cdm.auth.AuthPrincipal;
 import vn.clinic.cdm.common.tenant.TenantContext;
 
 import java.io.IOException;
@@ -50,8 +51,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                     .collect(Collectors.toList());
 
+            AuthPrincipal principal = AuthPrincipal.builder()
+                    .userId(jwtUtil.getUserId(claims))
+                    .email(email)
+                    .tenantId(tenantId)
+                    .branchId(branchId)
+                    .roles(roles)
+                    .build();
+
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    email, null, authorities);
+                    principal, null, authorities);
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
             SecurityContextHolder.getContext().setAuthentication(authToken);
@@ -70,4 +79,3 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
     }
 }
-

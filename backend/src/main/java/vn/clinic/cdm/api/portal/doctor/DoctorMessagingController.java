@@ -20,7 +20,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/doctor-portal/chat")
 @RequiredArgsConstructor
-@Tag(name = "Doctor Messaging", description = "Chat trá»±c tuyáº¿n vá»›i bá»‡nh nhÃ¢n dÃ nh cho bÃ¡c sÄ©")
+@Tag(name = "Doctor Messaging", description = "Chat trực tuyến với bệnh nhân dành cho bác sĩ")
 @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
 public class DoctorMessagingController {
 
@@ -28,14 +28,14 @@ public class DoctorMessagingController {
     private final PatientService patientService;
 
     @GetMapping("/conversations")
-    @Operation(summary = "Láº¥y danh sÃ¡ch cÃ¡c cuá»™c trÃ² chuyá»‡n vá»›i bá»‡nh nhÃ¢n")
+    @Operation(summary = "Lấy danh sách các cuộc trò chuyện với bệnh nhân")
     public ResponseEntity<ApiResponse<List<PatientChatConversationDto>>> getChatConversations() {
         UUID doctorUserId = AuthPrincipal.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(patientChatService.getDoctorConversations(doctorUserId)));
     }
 
     @GetMapping("/history/{patientId}")
-    @Operation(summary = "Láº¥y lá»‹ch sá»­ trÃ² chuyá»‡n vá»›i má»™t bá»‡nh nhÃ¢n cá»¥ thá»ƒ")
+    @Operation(summary = "Lấy lịch sử trò chuyện với một bệnh nhân cụ thể")
     public ResponseEntity<ApiResponse<List<PatientChatMessageDto>>> getChatHistory(@PathVariable UUID patientId) {
         var patient = patientService.getById(patientId);
         UUID doctorUserId = AuthPrincipal.getCurrentUserId();
@@ -43,7 +43,7 @@ public class DoctorMessagingController {
     }
 
     @PostMapping("/send/{patientId}")
-    @Operation(summary = "Gá»­i tin nháº¯n cho bá»‡nh nhÃ¢n")
+    @Operation(summary = "Gửi tin nhắn cho bệnh nhân")
     public ResponseEntity<ApiResponse<PatientChatMessageDto>> sendMessage(@PathVariable UUID patientId,
             @RequestBody String content) {
         UUID doctorUserId = AuthPrincipal.getCurrentUserId();
@@ -51,4 +51,3 @@ public class DoctorMessagingController {
                 .ok(ApiResponse.success(patientChatService.doctorSendMessage(doctorUserId, patientId, content)));
     }
 }
-
