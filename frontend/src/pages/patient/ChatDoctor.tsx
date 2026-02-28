@@ -23,6 +23,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getPortalChatDoctors, getPortalChatHistory, sendPortalChatMessage, sendPortalChatFile } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
 import toast from 'react-hot-toast'
+import VideoCall from '@/components/VideoCall'
 
 export default function PatientChatDoctor() {
     const { headers } = useTenant()
@@ -31,6 +32,7 @@ export default function PatientChatDoctor() {
     const [message, setMessage] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [isVideoCallOpen, setIsVideoCallOpen] = useState(false)
 
     // Fetch available doctors
     const { data: doctors, isLoading: loadingDoctors } = useQuery({
@@ -185,7 +187,7 @@ export default function PatientChatDoctor() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
-                                <button className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all">
+                                <button onClick={() => setIsVideoCallOpen(true)} className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all">
                                     <Video className="w-5 h-5" />
                                 </button>
                                 <button className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all">
@@ -370,6 +372,15 @@ export default function PatientChatDoctor() {
                     </>
                 )}
             </aside>
+
+            {isVideoCallOpen && (
+                <VideoCall
+                    roomID="telehealth-room"
+                    userID={`patient-${Math.floor(Math.random() * 10000)}`}
+                    userName="Bệnh nhân"
+                    onClose={() => setIsVideoCallOpen(false)}
+                />
+            )}
         </div>
     )
 }

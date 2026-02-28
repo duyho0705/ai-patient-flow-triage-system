@@ -38,6 +38,12 @@ export interface RegisterRequest {
   branchId?: string | null
 }
 
+export interface SocialLoginRequest {
+  idToken: string
+  tenantId: string
+  branchId?: string | null
+}
+
 export interface UserRoleAssignmentDto {
   tenantId: string
   tenantName?: string

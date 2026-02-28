@@ -9,9 +9,13 @@ import {
   BriefcaseMedical, ChevronRight, User, Eye, EyeOff, ShieldCheck, Heart,
   Activity, ArrowLeft,
 } from 'lucide-react'
+import { FaFacebook } from 'react-icons/fa'
+import { FcGoogle } from 'react-icons/fc'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { LoginRequest, RegisterRequest } from '@/types/api'
+import type { RegisterRequest } from '@/types/api'
 import { CustomSelect } from '@/components/CustomSelect'
+import { signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth'
+import { auth } from '@/firebase'
 
 /* ─────────── helpers ─────────── */
 
@@ -44,7 +48,7 @@ interface LoginFormProps {
 function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [step, setStep] = useState(1)
-  const { login, register } = useAuth()
+  const { login, register, socialLogin } = useAuth()
   const { setTenant } = useTenant()
   const navigate = useNavigate()
 
@@ -56,6 +60,7 @@ function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [firebaseIdToken, setFirebaseIdToken] = useState<string | null>(null)
 
   const { data: tenants = [] } = useQuery({ queryKey: ['tenants'], queryFn: listTenants })
   const { data: branches = [] } = useQuery({
@@ -93,12 +98,18 @@ function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
 
     setSubmitting(true)
     try {
-      if (mode === 'register') {
-        const req: RegisterRequest = { email: email.trim(), password, fullNameVi: fullNameVi.trim(), tenantId, branchId: branchId || undefined }
-        await register(req)
+      let res;
+      if (firebaseIdToken) {
+        // Complete social login flow
+        res = await socialLogin({ idToken: firebaseIdToken, tenantId, branchId: branchId || undefined })
+      } else {
+        if (mode === 'register') {
+          const req: RegisterRequest = { email: email.trim(), password, fullNameVi: fullNameVi.trim(), tenantId, branchId: branchId || undefined }
+          await register(req)
+        }
+        res = await login({ email: email.trim(), password, tenantId, branchId: branchId || undefined })
       }
-      const loginReq: LoginRequest = { email: email.trim(), password, tenantId, branchId: branchId || undefined }
-      const res = await login(loginReq)
+
       setTenant(res.user.tenantId, res.user.branchId ?? undefined)
 
       const target = res.user.roles.includes('patient') ? '/patient' : '/dashboard'
@@ -112,7 +123,23 @@ function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
     }
   }
 
-  const switchMode = () => { setMode(m => m === 'login' ? 'register' : 'login'); setStep(1); setError('') }
+  const handleSocialLogin = async (providerName: 'google' | 'facebook') => {
+    setError('')
+    try {
+      const provider = providerName === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider()
+      const result = await signInWithPopup(auth, provider)
+      const token = await result.user.getIdToken()
+      // Store token and trigger step 2 directly
+      setFirebaseIdToken(token)
+      setStep(2)
+
+    } catch (err: any) {
+      console.error(err)
+      setError(err?.message || `Lỗi khi đăng nhập bằng ${providerName}`)
+    }
+  }
+
+  const switchMode = () => { setMode(m => m === 'login' ? 'register' : 'login'); setStep(1); setError(''); setFirebaseIdToken(null) }
 
   return (
     <>
@@ -233,7 +260,7 @@ function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
 
               <div className="flex gap-3 pt-1">
                 <motion.button
-                  type="button" onClick={() => setStep(1)}
+                  type="button" onClick={() => { setStep(1); setFirebaseIdToken(null) }}
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                   className="flex items-center justify-center gap-1.5 px-5 py-3.5 rounded-full border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors"
                 >
@@ -245,13 +272,46 @@ function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
                   className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-[#4ade80] to-[#2fb344] text-slate-900 text-sm font-bold shadow-lg shadow-[#4ade80]/20 disabled:opacity-60 transition-shadow"
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-                  {mode === 'login' ? 'Đăng nhập' : 'Hoàn tất Đăng ký'}
+                  {firebaseIdToken ? 'Hoàn tất Đăng nhập' : mode === 'login' ? 'Đăng nhập' : 'Hoàn tất Đăng ký'}
                 </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </form>
+
+      {/* Social Login Section */}
+      {step === 1 && (
+        <div className="mt-6">
+          <div className="relative mb-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-3 text-slate-400 font-medium">HOẶC TIẾP TỤC VỚI</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <motion.button
+              type="button" onClick={() => handleSocialLogin('google')}
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors shadow-sm"
+            >
+              <FcGoogle className="w-5 h-5" />
+              <span className="text-sm font-bold text-slate-700">Google</span>
+            </motion.button>
+            <motion.button
+              type="button" onClick={() => handleSocialLogin('facebook')}
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-full hover:bg-[#1877F2]/10 transition-colors shadow-sm"
+            >
+              <FaFacebook className="w-5 h-5 text-[#1877F2]" />
+              <span className="text-sm font-bold text-slate-700">Facebook</span>
+            </motion.button>
+          </div>
+        </div>
+      )}
 
       {/* Footer: switch mode */}
       <div className="mt-8 pt-6 border-t border-slate-100/60 text-center">

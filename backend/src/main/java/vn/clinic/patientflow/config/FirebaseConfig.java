@@ -26,7 +26,13 @@ public class FirebaseConfig {
                 FirebaseOptions options;
 
                 if (configPath != null && !configPath.isEmpty()) {
-                    InputStream serviceAccount = new FileInputStream(configPath);
+                    InputStream serviceAccount;
+                    if (configPath.startsWith("classpath:")) {
+                        serviceAccount = new org.springframework.core.io.ClassPathResource(configPath.substring(10))
+                                .getInputStream();
+                    } else {
+                        serviceAccount = new FileInputStream(configPath);
+                    }
                     options = FirebaseOptions.builder()
                             .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                             .build();

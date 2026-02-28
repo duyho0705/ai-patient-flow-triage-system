@@ -23,6 +23,10 @@ import java.time.LocalDate;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.authentication.BadCredentialsException;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
+import vn.clinic.patientflow.api.dto.auth.SocialLoginRequest;
 
 /**
  * Xác thực đăng nhập – kiểm tra mật khẩu, resolve roles theo tenant/branch,
@@ -113,6 +117,87 @@ public class AuthService {
 
         return login(new LoginRequest(request.getEmail(), request.getPassword(), request.getTenantId(),
                 request.getBranchId()));
+    }
+
+    @Transactional
+    public LoginResponse socialLogin(SocialLoginRequest request) {
+        try {
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+            String email = decodedToken.getEmail();
+            if (email == null) {
+                throw new BadCredentialsException("Token không chứa email hợp lệ");
+            }
+            email = email.trim().toLowerCase();
+
+            IdentityUser user = identityService.getActiveUserByEmail(email);
+            UUID tenantId = request.getTenantId();
+            UUID branchId = request.getBranchId();
+
+            if (user == null) {
+                // Register new user automatically
+                user = new IdentityUser();
+                user.setEmail(email);
+                user.setFullNameVi(decodedToken.getName() != null ? decodedToken.getName() : "Người dùng Social");
+                user.setIsActive(true);
+                user = identityService.saveUser(user);
+
+                identityService.assignRole(user.getId(), tenantId, branchId, "patient");
+
+                Tenant tenant = tenantRepository.findById(tenantId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Tenant", tenantId));
+
+                Patient patient = new Patient();
+                patient.setTenant(tenant);
+                patient.setIdentityUser(user);
+                patient.setExternalId(user.getId().toString());
+                patient.setFullNameVi(user.getFullNameVi());
+                patient.setEmail(user.getEmail());
+                patient.setIsActive(true);
+                patient.setDateOfBirth(LocalDate.of(1990, 1, 1));
+                patientRepository.save(patient);
+            }
+
+            List<String> roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
+            if (roles.isEmpty()) {
+                // User exists but has no roles here -> add patient role
+                identityService.assignRole(user.getId(), tenantId, branchId, "patient");
+                roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
+
+                Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
+                if (tenant != null) {
+                    Patient patient = new Patient();
+                    patient.setTenant(tenant);
+                    patient.setIdentityUser(user);
+                    patient.setExternalId(user.getId().toString());
+                    patient.setFullNameVi(user.getFullNameVi());
+                    patient.setEmail(user.getEmail());
+                    patient.setIsActive(true);
+                    patient.setDateOfBirth(LocalDate.of(1990, 1, 1));
+                    patientRepository.save(patient);
+                }
+            }
+
+            identityService.updateLastLoginAt(user);
+            Instant expiresAt = Instant.now().plusMillis(jwtProperties.getExpirationMs());
+            String token = jwtUtil.generateToken(user.getId(), user.getEmail(), tenantId, branchId, roles);
+            AuthUserDto userDto = AuthUserDto.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .fullNameVi(user.getFullNameVi())
+                    .roles(roles)
+                    .tenantId(tenantId)
+                    .branchId(branchId)
+                    .build();
+            return LoginResponse.builder()
+                    .token(token)
+                    .expiresAt(expiresAt)
+                    .user(userDto)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Firebase social login failed", e);
+            throw new BadCredentialsException("Xác thực social thất bại: " + e.getMessage());
+        }
     }
 
     @Transactional

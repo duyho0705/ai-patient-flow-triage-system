@@ -27,6 +27,7 @@ import { getDoctorChatConversations, getDoctorChatHistory, sendDoctorChatMessage
 import { useTenant } from '@/context/TenantContext'
 import toast from 'react-hot-toast'
 import type { PatientChatConversationDto, PatientChatMessageDto } from '@/types/api'
+import VideoCall from '@/components/VideoCall'
 
 interface ExtendedConversation extends PatientChatConversationDto {
     risk?: 'HIGH' | 'WARNING' | 'NORMAL';
@@ -115,6 +116,7 @@ export default function DoctorChat() {
     const [selectedPatientId, setSelectedPatientId] = useState<string | null>(conversations[0]?.patientId || null)
     const [message, setMessage] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
+    const [isVideoCallOpen, setIsVideoCallOpen] = useState(false)
 
     // 2. Fetch Chat History
     const { data: realChatHistory, isLoading: loadingHistory } = useQuery({
@@ -278,7 +280,7 @@ export default function DoctorChat() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button className="flex items-center gap-2 bg-emerald-400 text-slate-900 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-400/20 active:scale-95">
+                                <button onClick={() => setIsVideoCallOpen(true)} className="flex items-center gap-2 bg-emerald-400 text-slate-900 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-400/20 active:scale-95">
                                     <Video className="w-3.5 h-3.5" />
                                     Gọi khám
                                 </button>
@@ -526,6 +528,15 @@ export default function DoctorChat() {
                         </div>
                     </div>
                 </aside>
+            )}
+
+            {isVideoCallOpen && (
+                <VideoCall
+                    roomID="telehealth-room"
+                    userID={`doctor-${Math.floor(Math.random() * 10000)}`}
+                    userName="Bác sĩ"
+                    onClose={() => setIsVideoCallOpen(false)}
+                />
             )}
         </div>
     )

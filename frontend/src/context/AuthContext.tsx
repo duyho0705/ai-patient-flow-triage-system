@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
 import { getStoredToken } from '@/api/client'
 import * as authApi from '@/api/auth'
-import type { AuthUserDto, LoginRequest, RegisterRequest, LoginResponse } from '@/types/api'
+import type { AuthUserDto, LoginRequest, RegisterRequest, LoginResponse, SocialLoginRequest } from '@/types/api'
 
 type AuthContextValue = {
   user: AuthUserDto | null
@@ -9,6 +9,7 @@ type AuthContextValue = {
   isAuthenticated: boolean
   isLoading: boolean
   login: (req: LoginRequest) => Promise<LoginResponse>
+  socialLogin: (req: SocialLoginRequest) => Promise<LoginResponse>
   register: (req: RegisterRequest) => Promise<LoginResponse>
   logout: () => void
   refreshUser: () => Promise<void>
@@ -56,6 +57,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   )
 
+  const socialLogin = useCallback(
+    async (req: SocialLoginRequest) => {
+      const res = await authApi.socialLogin(req)
+      setToken(res.token)
+      setUser(res.user)
+      return res
+    },
+    []
+  )
+
   const register = useCallback(
     async (req: RegisterRequest) => {
       const res = await authApi.register(req)
@@ -78,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user && !!token,
     isLoading,
     login,
+    socialLogin,
     register,
     logout,
     refreshUser,

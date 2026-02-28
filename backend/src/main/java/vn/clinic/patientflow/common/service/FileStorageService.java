@@ -1,70 +1,46 @@
 package vn.clinic.patientflow.common.service;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class FileStorageService {
 
-    private final Path root;
+    private final Cloudinary cloudinary;
 
-    public FileStorageService(@Value("${app.upload.dir:./uploads}") String uploadDir) {
-        this.root = Paths.get(uploadDir);
-        try {
-            Files.createDirectories(root);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not initialize folder for upload!");
-        }
+    public FileStorageService(Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
     }
 
     public String saveAvatar(MultipartFile file, UUID patientId) {
-        try {
-            String extension = getFileExtension(file.getOriginalFilename());
-            String filename = "avatar_" + patientId + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
-            Files.copy(file.getInputStream(), this.root.resolve(filename));
-            return "/uploads/" + filename;
-        } catch (Exception e) {
-            throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
-        }
+        return uploadToCloudinary(file, "avatars",
+                "avatar_" + patientId + "_" + UUID.randomUUID().toString().substring(0, 8));
     }
 
     public String saveVitalImage(MultipartFile file, UUID patientId) {
-        try {
-            String extension = getFileExtension(file.getOriginalFilename());
-            String filename = "vital_" + patientId + "_" + System.currentTimeMillis() + extension;
-            Path vitalsDir = this.root.resolve("vitals");
-            Files.createDirectories(vitalsDir);
-            Files.copy(file.getInputStream(), vitalsDir.resolve(filename));
-            return "/uploads/vitals/" + filename;
-        } catch (Exception e) {
-            throw new RuntimeException("Could not store the vital image. Error: " + e.getMessage());
-        }
+        return uploadToCloudinary(file, "vitals", "vital_" + patientId + "_" + System.currentTimeMillis());
     }
 
     public String saveChatFile(MultipartFile file, UUID patientId) {
-        try {
-            String extension = getFileExtension(file.getOriginalFilename());
-            String filename = "chat_" + patientId + "_" + System.currentTimeMillis() + extension;
-            Path chatDir = this.root.resolve("chat");
-            Files.createDirectories(chatDir);
-            Files.copy(file.getInputStream(), chatDir.resolve(filename));
-            return "/uploads/chat/" + filename;
-        } catch (Exception e) {
-            throw new RuntimeException("Could not store the chat file. Error: " + e.getMessage());
-        }
+        return uploadToCloudinary(file, "chat", "chat_" + patientId + "_" + System.currentTimeMillis());
     }
 
-    private String getFileExtension(String fileName) {
-        if (fileName == null)
-            return ".png";
-        int lastIndex = fileName.lastIndexOf('.');
-        return lastIndex == -1 ? ".png" : fileName.substring(lastIndex);
+    private String uploadToCloudinary(MultipartFile file, String folder, String publicId) {
+        try {
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                    "folder", folder,
+                    "public_id", publicId,
+                    "resource_type", "auto" // Automatically detect image vs raw file (like pdf)
+            ));
+            return uploadResult.get("secure_url").toString();
+        } catch (IOException e) {
+            throw new RuntimeException("Could not store the file to Cloudinary. Error: " + e.getMessage());
+        }
     }
 }

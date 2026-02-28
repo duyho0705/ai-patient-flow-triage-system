@@ -1,28 +1,31 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyCJ-lTXX83ocINOlbCQTKbiADzz3Loy5pQ",
+    authDomain: "chronic-disease-manageme-bcba9.firebaseapp.com",
+    projectId: "chronic-disease-manageme-bcba9",
+    storageBucket: "chronic-disease-manageme-bcba9.firebasestorage.app",
+    messagingSenderId: "621812476686",
+    appId: "1:621812476686:web:e307781cae95fe089fc55f",
+    measurementId: "G-8W9LH8CKX8"
 };
 
 const app = initializeApp(firebaseConfig);
 export const messaging = getMessaging(app);
+export const auth = getAuth(app);
 
 const isPlaceholder = (val: string) => val.startsWith("YOUR_");
 
 export const requestForToken = async () => {
-    if (isPlaceholder(firebaseConfig.apiKey) || isPlaceholder("YOUR_VAPID_KEY")) {
+    if (isPlaceholder(firebaseConfig.apiKey) || isPlaceholder("BEfsxY3t_YU2atsdHctnmVsa7hwdIyVZUXaddEpBpxDwUwhu5npU-5GIk4--P8CTxUdvHgR07HoscH_05riRzKc")) {
         console.warn("FCM placeholders detected. Skipping token request.");
         return null;
     }
     try {
         const currentToken = await getToken(messaging, {
-            vapidKey: "YOUR_VAPID_KEY",
+            vapidKey: "BEfsxY3t_YU2atsdHctnmVsa7hwdIyVZUXaddEpBpxDwUwhu5npU-5GIk4--P8CTxUdvHgR07HoscH_05riRzKc",
         });
         if (currentToken) {
             console.log("Current token for client: ", currentToken);

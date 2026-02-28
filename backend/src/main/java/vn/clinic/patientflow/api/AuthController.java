@@ -68,6 +68,25 @@ public class AuthController {
                                 .body(ApiResponse.success(response));
         }
 
+        @PostMapping("/social-login")
+        @Operation(summary = "Đăng nhập Google/Facebook", description = "Xác thực Firebase Token và cấp JWT.")
+        public ResponseEntity<ApiResponse<LoginResponse>> socialLogin(
+                        @Valid @RequestBody vn.clinic.patientflow.api.dto.auth.SocialLoginRequest request) {
+                LoginResponse response = authService.socialLogin(request);
+
+                ResponseCookie cookie = ResponseCookie.from("jwt", response.getToken())
+                                .httpOnly(true)
+                                .secure(false) // Set true in production with HTTPS
+                                .path("/")
+                                .maxAge(24 * 60 * 60)
+                                .sameSite("Lax")
+                                .build();
+
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                                .body(ApiResponse.success(response));
+        }
+
         @PostMapping("/logout")
         @Operation(summary = "Đăng xuất", description = "Xóa JWT Cookie.")
         public ResponseEntity<ApiResponse<Void>> logout() {
