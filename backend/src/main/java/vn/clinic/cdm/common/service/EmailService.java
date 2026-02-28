@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.common.service;
+package vn.clinic.cdm.common.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.util.ByteArrayDataSource;

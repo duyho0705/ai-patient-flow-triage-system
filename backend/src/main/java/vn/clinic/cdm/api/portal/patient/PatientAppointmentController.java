@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.portal.patient;
+package vn.clinic.cdm.api.portal.patient;
 
 import vn.clinic.cdm.api.dto.common.ApiResponse;
 import vn.clinic.cdm.api.dto.scheduling.AppointmentDto;

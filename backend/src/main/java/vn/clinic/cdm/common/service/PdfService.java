@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.common.service;
+package vn.clinic.cdm.common.service;
 
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.BaseFont;

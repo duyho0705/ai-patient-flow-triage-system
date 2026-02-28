@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api;
+package vn.clinic.cdm.api;
 
 // DTO imports are handled specifically below
 import io.swagger.v3.oas.annotations.Operation;

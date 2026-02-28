@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.common.domain;
+package vn.clinic.cdm.common.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;

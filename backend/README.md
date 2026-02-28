@@ -1,4 +1,4 @@
-﻿# Backend â€“ Patient Flow & Triage (Enterprise)
+# Backend â€“ Patient Flow & Triage (Enterprise)
 
 Spring Boot **modular monolith** cho há»‡ thá»‘ng luá»“ng bá»‡nh nhÃ¢n vÃ  phÃ¢n loáº¡i Æ°u tiÃªn báº±ng AI (phÃ²ng khÃ¡m Viá»‡t Nam).
 
@@ -14,7 +14,7 @@ Spring Boot **modular monolith** cho há»‡ thá»‘ng luá»“ng bá»‡nh
 ## Cáº¥u trÃºc (Modular Monolith)
 
 ```
-src/main/java/vn/clinic/patientflow/
+src/main/java/vn/clinic/cdm/
 â”œâ”€â”€ CdmApplication.java
 â”œâ”€â”€ api/                    # REST controllers
 â”œâ”€â”€ common/                 # Shared: base entity, tenant context, exceptions
@@ -79,7 +79,7 @@ Profile máº·c Ä‘á»‹nh: `dev`. Prod: `SPRING_PROFILES_ACTIVE=prod` vÃ�
 ```bash
 mvn clean package
 # Hoáº·c bá» qua test khi chÆ°a cÃ³ DB: mvn clean package -DskipTests
-java -jar target/patient-flow-triage-0.1.0-SNAPSHOT.jar
+java -jar target/cdm-platform-triage-0.1.0-SNAPSHOT.jar
 ```
 
 Test `CdmApplicationTests` dÃ¹ng profile `dev` vÃ  cáº§n PostgreSQL Ä‘Ã£ cháº¡y migration. Cháº¡y test vá»›i DB tháº­t hoáº·c dÃ¹ng `-DskipTests` khi build.
@@ -93,7 +93,7 @@ Test `CdmApplicationTests` dÃ¹ng profile `dev` vÃ  cáº§n PostgreSQL Ä‘
 
 ## TÃ i liá»‡u
 
-- ERD: `docs/erd-patient-flow-triage-vi.md`
+- ERD: `docs/erd-cdm-platform-triage-vi.md`
 - Schema SQL: `backend/db/migrations/00001_initial_schema.sql`
 - Roadmap: `docs/roadmap-tiep-theo.md`
 

@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.patient;
+package vn.clinic.cdm.api.dto.patient;
 
 import vn.clinic.cdm.api.dto.scheduling.AppointmentDto;
 import vn.clinic.cdm.api.dto.clinical.ConsultationDto;

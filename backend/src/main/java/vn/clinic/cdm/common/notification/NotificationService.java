@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.common.notification;
+package vn.clinic.cdm.common.notification;
 
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;

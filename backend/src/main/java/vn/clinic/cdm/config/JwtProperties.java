@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.config;
+package vn.clinic.cdm.config;
 
 import lombok.Getter;
 import lombok.Setter;

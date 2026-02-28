@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.admin;
+package vn.clinic.cdm.api.admin;
 
 import vn.clinic.cdm.api.dto.common.ApiResponse;
 import vn.clinic.cdm.api.dto.tenant.TenantDto;

@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.report;
+package vn.clinic.cdm.report;
 
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;

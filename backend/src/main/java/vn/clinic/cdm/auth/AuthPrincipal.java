@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.auth;
+package vn.clinic.cdm.auth;
 
 import lombok.Builder;
 import lombok.Getter;

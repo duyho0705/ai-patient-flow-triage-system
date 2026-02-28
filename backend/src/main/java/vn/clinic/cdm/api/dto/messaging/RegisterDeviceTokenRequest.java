@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.messaging;
+package vn.clinic.cdm.api.dto.messaging;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

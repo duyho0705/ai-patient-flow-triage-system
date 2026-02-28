@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.patient.repository;
+package vn.clinic.cdm.patient.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

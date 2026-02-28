@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.portal.doctor;
+package vn.clinic.cdm.api.portal.doctor;
 
 import vn.clinic.cdm.api.dto.ai.*;
 import vn.clinic.cdm.api.dto.medication.PrescriptionVerificationDto;

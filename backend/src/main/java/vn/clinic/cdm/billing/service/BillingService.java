@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.billing.service;
+package vn.clinic.cdm.billing.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

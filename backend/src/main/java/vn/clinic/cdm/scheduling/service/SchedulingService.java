@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.scheduling.service;
+package vn.clinic.cdm.scheduling.service;
 
 import java.time.LocalDate;
 import java.util.List;

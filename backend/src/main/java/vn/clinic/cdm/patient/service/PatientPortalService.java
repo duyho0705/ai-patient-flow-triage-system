@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.patient.service;
+package vn.clinic.cdm.patient.service;
 
 import vn.clinic.cdm.api.dto.patient.PatientDashboardDto;
 import vn.clinic.cdm.api.dto.patient.PatientVitalLogDto;

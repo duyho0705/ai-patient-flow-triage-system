@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.aiaudit.repository;
+package vn.clinic.cdm.aiaudit.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.clinic.cdm.aiaudit.domain.AiModelVersion;

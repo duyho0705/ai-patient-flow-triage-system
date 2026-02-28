@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.common.exception;
+package vn.clinic.cdm.common.exception;
 
 import lombok.Builder;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.aiaudit.service;
+package vn.clinic.cdm.aiaudit.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

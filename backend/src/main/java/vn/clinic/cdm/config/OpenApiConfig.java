@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.config;
+package vn.clinic.cdm.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;

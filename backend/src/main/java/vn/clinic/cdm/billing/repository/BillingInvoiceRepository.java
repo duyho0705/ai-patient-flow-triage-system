@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.billing.repository;
+package vn.clinic.cdm.billing.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

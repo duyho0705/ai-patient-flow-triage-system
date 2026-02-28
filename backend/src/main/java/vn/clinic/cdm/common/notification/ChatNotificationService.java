@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.common.notification;
+package vn.clinic.cdm.common.notification;
 
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;

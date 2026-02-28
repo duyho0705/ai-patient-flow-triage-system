@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.scheduling;
+package vn.clinic.cdm.api.dto.scheduling;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.tenant;
+package vn.clinic.cdm.api.dto.tenant;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

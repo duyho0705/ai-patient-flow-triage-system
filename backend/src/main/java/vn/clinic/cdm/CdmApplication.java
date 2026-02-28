@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm;
+package vn.clinic.cdm;
 
 /**
  * Entry point â€“ AI-powered patient flow and triage (Vietnam clinics).

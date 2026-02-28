@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.scheduling;
+package vn.clinic.cdm.api.dto.scheduling;
 
 import java.time.LocalTime;
 import java.util.UUID;

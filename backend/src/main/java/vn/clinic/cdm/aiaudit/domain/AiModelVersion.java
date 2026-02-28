@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.aiaudit.domain;
+package vn.clinic.cdm.aiaudit.domain;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.clinical.repository;
+package vn.clinic.cdm.clinical.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.clinic.cdm.clinical.domain.ConsultationFeedback;

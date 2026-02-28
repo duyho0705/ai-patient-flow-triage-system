@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.patient.service;
+package vn.clinic.cdm.patient.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.model.chat.ChatLanguageModel;

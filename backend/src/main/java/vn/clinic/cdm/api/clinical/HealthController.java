@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.clinical;
+package vn.clinic.cdm.api.clinical;
 
 // Unused wildcard imports removed
 import io.swagger.v3.oas.annotations.Operation;

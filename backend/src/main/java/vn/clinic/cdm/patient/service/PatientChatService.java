@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.patient.service;
+package vn.clinic.cdm.patient.service;
 
 import vn.clinic.cdm.api.dto.messaging.PatientChatConversationDto;
 import vn.clinic.cdm.patient.repository.PatientRepository;

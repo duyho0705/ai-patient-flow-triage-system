@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.masters.repository;
+package vn.clinic.cdm.masters.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.clinic.cdm.masters.domain.MedicalService;

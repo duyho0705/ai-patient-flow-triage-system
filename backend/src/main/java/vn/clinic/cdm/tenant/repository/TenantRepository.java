@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.tenant.repository;
+package vn.clinic.cdm.tenant.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

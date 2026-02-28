@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.auth;
+package vn.clinic.cdm.auth;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.config;
+package vn.clinic.cdm.config;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.springframework.beans.factory.annotation.Autowired;

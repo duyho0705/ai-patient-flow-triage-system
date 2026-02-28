@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.patient;
+package vn.clinic.cdm.api.dto.patient;
 
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;

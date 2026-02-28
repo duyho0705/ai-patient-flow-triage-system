@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.clinical;
+package vn.clinic.cdm.api.dto.clinical;
 
 import lombok.*;
 import vn.clinic.cdm.masters.domain.MedicalService;

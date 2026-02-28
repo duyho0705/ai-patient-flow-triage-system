@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm;
+package vn.clinic.cdm;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

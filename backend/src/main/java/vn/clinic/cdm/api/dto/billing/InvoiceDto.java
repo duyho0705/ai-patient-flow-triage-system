@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.billing;
+package vn.clinic.cdm.api.dto.billing;
 
 import lombok.*;
 import java.math.BigDecimal;

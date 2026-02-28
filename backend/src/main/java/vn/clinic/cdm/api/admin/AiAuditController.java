@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.admin;
+package vn.clinic.cdm.api.admin;
 
 import java.util.UUID;
 

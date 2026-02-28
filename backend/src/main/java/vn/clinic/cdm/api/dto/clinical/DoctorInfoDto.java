@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.clinical;
+package vn.clinic.cdm.api.dto.clinical;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

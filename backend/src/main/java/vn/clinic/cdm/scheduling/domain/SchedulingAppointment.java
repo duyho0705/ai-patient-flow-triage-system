@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.scheduling.domain;
+package vn.clinic.cdm.scheduling.domain;
 
 import jakarta.persistence.*;
 import lombok.*;

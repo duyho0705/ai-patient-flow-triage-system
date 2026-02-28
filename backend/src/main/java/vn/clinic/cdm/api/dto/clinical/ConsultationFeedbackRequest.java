@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.clinical;
+package vn.clinic.cdm.api.dto.clinical;
 
 import lombok.Data;
 import java.util.UUID;

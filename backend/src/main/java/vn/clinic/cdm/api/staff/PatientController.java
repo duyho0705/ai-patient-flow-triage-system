@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.staff;
+package vn.clinic.cdm.api.staff;
 
 import vn.clinic.cdm.api.dto.common.ApiResponse;
 import vn.clinic.cdm.api.dto.common.PagedResponse;

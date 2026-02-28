@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.config;
+package vn.clinic.cdm.config;
 
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.http.HttpServletRequest;

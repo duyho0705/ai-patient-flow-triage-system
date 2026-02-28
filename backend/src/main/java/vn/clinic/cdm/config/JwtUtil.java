@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.config;
+package vn.clinic.cdm.config;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;

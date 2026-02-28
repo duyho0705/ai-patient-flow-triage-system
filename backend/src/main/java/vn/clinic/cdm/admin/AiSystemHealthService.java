@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.admin;
+package vn.clinic.cdm.admin;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;

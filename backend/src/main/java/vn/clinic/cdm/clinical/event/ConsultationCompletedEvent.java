@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.clinical.event;
+package vn.clinic.cdm.clinical.event;
 
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;

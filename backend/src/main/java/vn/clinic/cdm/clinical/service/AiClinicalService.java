@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.clinical.service;
+package vn.clinic.cdm.clinical.service;
 
 // Unused wildcard imports removed
 import dev.langchain4j.model.chat.ChatLanguageModel;

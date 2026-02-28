@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.dto.scheduling;
+package vn.clinic.cdm.api.dto.scheduling;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

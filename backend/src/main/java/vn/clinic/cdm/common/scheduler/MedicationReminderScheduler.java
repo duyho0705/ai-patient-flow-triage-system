@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.common.scheduler;
+package vn.clinic.cdm.common.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.identity.domain;
+package vn.clinic.cdm.identity.domain;
 
 import jakarta.persistence.*;
 import lombok.*;

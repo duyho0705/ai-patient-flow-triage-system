@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.api.portal.patient;
+package vn.clinic.cdm.api.portal.patient;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

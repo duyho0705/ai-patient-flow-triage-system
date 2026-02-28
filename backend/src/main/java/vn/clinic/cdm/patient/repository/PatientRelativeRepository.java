@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.patient.repository;
+package vn.clinic.cdm.patient.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.clinic.cdm.patient.domain.Patient;

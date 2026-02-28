@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.patient.domain;
+package vn.clinic.cdm.patient.domain;
 
 import java.time.Instant;
 import java.util.UUID;

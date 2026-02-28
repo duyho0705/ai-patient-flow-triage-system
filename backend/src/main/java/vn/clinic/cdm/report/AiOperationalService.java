@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.report;
+package vn.clinic.cdm.report;
 
 import vn.clinic.cdm.api.dto.report.*;
 import vn.clinic.cdm.api.dto.tenant.BranchOperationalHeatmapDto;

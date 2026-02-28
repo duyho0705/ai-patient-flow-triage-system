@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.clinical.event;
+package vn.clinic.cdm.clinical.event;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;

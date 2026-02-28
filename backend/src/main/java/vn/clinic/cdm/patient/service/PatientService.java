@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.patient.service;
+package vn.clinic.cdm.patient.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

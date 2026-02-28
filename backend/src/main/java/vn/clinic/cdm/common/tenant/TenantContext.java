@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.common.tenant;
+package vn.clinic.cdm.common.tenant;
 
 import java.util.Optional;
 import java.util.UUID;

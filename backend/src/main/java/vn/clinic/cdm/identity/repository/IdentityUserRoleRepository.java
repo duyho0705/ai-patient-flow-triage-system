@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.identity.repository;
+package vn.clinic.cdm.identity.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.report;
+package vn.clinic.cdm.report;
 
 import java.time.LocalDate;
 import java.util.HashMap;

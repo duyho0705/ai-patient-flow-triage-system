@@ -1,4 +1,4 @@
-﻿package vn.clinic.cdm.clinical.service;
+package vn.clinic.cdm.clinical.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
