@@ -29,15 +29,15 @@ public class AuditLogService {
                 .tenantId(tenantId)
                 .branchId(branchId)
                 .userId(userId)
-                .userEmail(userEmail)
+                .email(userEmail)
                 .action(action)
                 .resourceType(resourceType)
                 .resourceId(resourceId)
                 .details(details)
-                .createdAt(Instant.now())
+                .timestamp(Instant.now())
+                .status("SUCCESS")
                 .build();
 
         auditLogRepository.save(log);
     }
 }
-
