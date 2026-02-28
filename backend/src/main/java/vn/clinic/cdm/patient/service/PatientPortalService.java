@@ -14,7 +14,6 @@ import vn.clinic.cdm.api.dto.clinical.VitalTrendDto;
 import vn.clinic.cdm.api.dto.clinical.TriageVitalDto;
 import vn.clinic.cdm.api.dto.clinical.LabResultDto;
 import vn.clinic.cdm.api.dto.clinical.DiagnosticImageDto;
-import vn.clinic.cdm.api.dto.medication.MedicationReminderDto;
 import vn.clinic.cdm.api.dto.medication.MedicationDosageLogDto;
 import vn.clinic.cdm.api.dto.scheduling.AppointmentDto;
 import vn.clinic.cdm.api.dto.scheduling.CreateAppointmentRequest;

@@ -13,6 +13,10 @@ spring:
     restart:
       enabled: false
 
+  threads:
+    virtual:
+      enabled: true
+
   jpa:
     open-in-view: false
     hibernate:
@@ -122,6 +126,8 @@ cloudinary:
 
 # Logging
 logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
     root: INFO
     vn.clinic.cdm: DEBUG

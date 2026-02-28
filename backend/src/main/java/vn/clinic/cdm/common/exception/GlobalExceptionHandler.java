@@ -13,128 +13,72 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import vn.clinic.cdm.api.dto.common.ApiResponse;
-
-import java.time.Instant;
+import org.springframework.http.ProblemDetail;
+import java.net.URI;
 import java.util.stream.Collectors;
 
 /**
- * Enterprise Global Exception Handler.
- * Responsibility: Centralized error handling, security-aware, and provides
- * structured feedback for UI and logging for Ops.
+ * Enterprise Global Exception Handler (RFC 7807 Compliant).
+ * Responsibility: Centralized error handling providing ProblemDetail responses.
  */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
         @ExceptionHandler(ApiException.class)
-        public ResponseEntity<ApiResponse<ErrorDetails>> handleApiException(ApiException ex, WebRequest request) {
-                return createResponse(ex.getMessage(), request, ex.getStatus(), ex.getErrorCode(), ex.getMessage());
+        public ProblemDetail handleApiException(ApiException ex, WebRequest request) {
+                return createProblemDetail(ex, ex.getStatus(), ex.getErrorCode(), ex.getMessage(), request);
         }
 
         @ExceptionHandler(BadCredentialsException.class)
-        public ResponseEntity<ApiResponse<ErrorDetails>> handleBadCredentialsException(BadCredentialsException ex,
-                        WebRequest request) {
+        public ProblemDetail handleBadCredentialsException(BadCredentialsException ex, WebRequest request) {
                 log.warn("Authentication failed: {}", ex.getMessage());
                 ErrorCode code = ex.getMessage().equals("REQUIRE_TENANT_SELECTION")
                                 ? ErrorCode.AUTH_TENANT_REQUIRED
                                 : ErrorCode.AUTH_BAD_CREDENTIALS;
-                return createResponse(ex.getMessage(), request, HttpStatus.UNAUTHORIZED, code, "Unauthorized");
+                return createProblemDetail(ex, HttpStatus.UNAUTHORIZED, code, "Unauthorized", request);
         }
 
         @ExceptionHandler(ResourceNotFoundException.class)
-        public ResponseEntity<ApiResponse<ErrorDetails>> handleResourceNotFoundException(ResourceNotFoundException ex,
-                        WebRequest request) {
+        public ProblemDetail handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
                 log.warn("Resource not found: {}", ex.getMessage());
-                return createResponse(ex.getMessage(), request, HttpStatus.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                                "Not Found");
-        }
-
-        @ExceptionHandler(IllegalStateException.class)
-        public ResponseEntity<ApiResponse<ErrorDetails>> handleIllegalStateException(IllegalStateException ex,
-                        WebRequest request) {
-                log.warn("Illegal state: {}", ex.getMessage());
-                return createResponse(ex.getMessage(), request, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
-                                "Bad Request");
-        }
-
-        @ExceptionHandler(IllegalArgumentException.class)
-        public ResponseEntity<ApiResponse<ErrorDetails>> handleIllegalArgumentException(IllegalArgumentException ex,
-                        WebRequest request) {
-                log.warn("Illegal argument: {}", ex.getMessage());
-                return createResponse(ex.getMessage(), request, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
-                                "Bad Request");
-        }
-
-        @ExceptionHandler(AccessDeniedException.class)
-        public ResponseEntity<ApiResponse<ErrorDetails>> handleAccessDeniedException(AccessDeniedException ex,
-                        WebRequest request) {
-                log.warn("Unauthorized access attempt: {}", ex.getMessage());
-                return createResponse("You do not have permission to perform this action", request,
-                                HttpStatus.FORBIDDEN, ErrorCode.VALIDATION_FAILED, "Forbidden");
+                return createProblemDetail(ex, HttpStatus.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, ex.getMessage(),
+                                request);
         }
 
         @ExceptionHandler(MethodArgumentNotValidException.class)
-        public ResponseEntity<ApiResponse<ErrorDetails>> handleValidationException(MethodArgumentNotValidException ex,
-                        WebRequest request) {
+        public ProblemDetail handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
                 String details = ex.getBindingResult().getFieldErrors().stream()
                                 .map(error -> String.format("%s: %s", error.getField(), error.getDefaultMessage()))
                                 .collect(Collectors.joining(", "));
                 log.warn("Request validation failed: {}", details);
-                return createResponse("Validation error", request, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
-                                details);
+                return createProblemDetail(ex, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, details, request);
         }
 
-        @ExceptionHandler(HttpMessageNotReadableException.class)
-        public ResponseEntity<ApiResponse<ErrorDetails>> handleHttpMessageNotReadable(
-                        HttpMessageNotReadableException ex,
-                        WebRequest request) {
-                log.warn("Malformed JSON request: {}", ex.getMessage());
-                return createResponse("Malformed JSON request", request, HttpStatus.BAD_REQUEST,
-                                ErrorCode.VALIDATION_FAILED, "Bad Request");
+        @ExceptionHandler(AccessDeniedException.class)
+        public ProblemDetail handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+                log.warn("Unauthorized access attempt: {}", ex.getMessage());
+                return createProblemDetail(ex, HttpStatus.FORBIDDEN, ErrorCode.VALIDATION_FAILED, "Forbidden", request);
         }
 
         @ExceptionHandler(Exception.class)
-        public ResponseEntity<ApiResponse<ErrorDetails>> handleGlobalException(Exception ex, WebRequest request) {
+        public ProblemDetail handleGlobalException(Exception ex, WebRequest request) {
                 log.error("CRITICAL: Unexpected internal error", ex);
-                return createResponse("An unexpected internal error occurred. Our engineers have been notified.",
-                                request, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_SERVER_ERROR,
-                                "Internal Server Error");
+                return createProblemDetail(ex, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_SERVER_ERROR,
+                                "An unexpected internal error occurred.", request);
         }
 
-        private ResponseEntity<ApiResponse<ErrorDetails>> createResponse(String message, WebRequest request,
-                        HttpStatus status, ErrorCode errorCode,
-                        String errorName) {
-                return createResponse(message, request, status, errorCode, errorName, request.getDescription(false));
-        }
-
-        private ResponseEntity<ApiResponse<ErrorDetails>> createResponse(String message, WebRequest request,
-                        HttpStatus status, ErrorCode errorCode,
-                        String errorName, String details) {
-                ErrorDetails errorDetails = ErrorDetails.builder()
-                                .timestamp(Instant.now())
-                                .message(message)
-                                .errorCode(errorCode.getCode())
-                                .details(details)
-                                .status(status.value())
-                                .error(errorName)
-                                .build();
-                return new ResponseEntity<>(ApiResponse.<ErrorDetails>builder()
-                                .success(false)
-                                .message(message)
-                                .data(errorDetails)
-                                .timestamp(Instant.now())
-                                .build(), status);
-        }
-
-        @Getter
-        @Builder
-        public static class ErrorDetails {
-                private Instant timestamp;
-                private String message;
-                private String errorCode;
-                private String details;
-                private int status;
-                private String error;
+        private ProblemDetail createProblemDetail(Exception ex, HttpStatus status, ErrorCode errorCode, String detail,
+                        WebRequest request) {
+                ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(status, detail);
+                problemDetail.setTitle(ex.getClass().getSimpleName());
+                problemDetail.setType(URI.create("urn:problem-type:" + errorCode.getCode()));
+                problemDetail.setProperty("errorCode", errorCode.getCode());
+                problemDetail.setProperty("timestamp", Instant.now());
+                // For backwards compatibility with old frontend clients that expect generic
+                // error message
+                problemDetail.setProperty("message", detail);
+                problemDetail.setProperty("success", false);
+                return problemDetail;
         }
 }
