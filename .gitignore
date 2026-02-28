@@ -59,6 +59,7 @@ Desktop.ini
 .env.local
 .env.*.local
 firebase-adminsdk.json
+application-local.yml
 
 # ===================== Uploads (dev artifacts) =====================
 backend/uploads/
