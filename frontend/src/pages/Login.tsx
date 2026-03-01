@@ -5,15 +5,14 @@ import { useTenant } from '@/context/TenantContext'
 import { listTenants } from '@/api/tenants'
 import { useQuery } from '@tanstack/react-query'
 import {
-  X, LogIn, Mail, Lock, Building2, AlertCircle, Loader2,
-  BriefcaseMedical, ChevronRight, User, Eye, EyeOff, ShieldCheck, Heart,
-  Activity, ArrowLeft,
+  X, LogIn, Mail, Lock, AlertCircle, Loader2,
+  BriefcaseMedical, User, Eye, EyeOff, ShieldCheck, Heart,
+  Activity,
 } from 'lucide-react'
 import { FaFacebook } from 'react-icons/fa'
 import { FcGoogle } from 'react-icons/fc'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { RegisterRequest } from '@/types/api'
-import { CustomSelect } from '@/components/CustomSelect'
 import { GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth } from '@/firebase'
 import { ERROR_CODES } from '@/constants'
@@ -61,6 +60,7 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
   const [fullNameVi, setFullNameVi] = useState('')
   const [tenantId, setTenantId] = useState('')
   const [error, setError] = useState('')
+  const [hasFailed, setHasFailed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [firebaseIdToken, setFirebaseIdToken] = useState<string | null>(initialFirebaseToken || null)
@@ -82,7 +82,7 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
   useEffect(() => {
     let active = true
     const attemptAutoLogin = async () => {
-      if (firebaseIdToken && tenants.length === 1 && tenantId && !submitting) {
+      if (firebaseIdToken && tenants.length === 1 && tenantId && !submitting && !hasFailed) {
         setSubmitting(true)
         try {
           const res = await socialLogin({ idToken: firebaseIdToken, tenantId: tenantId, branchId: undefined })
@@ -95,15 +95,16 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
           }
         } catch (err: any) {
           if (active) {
-            setError(err?.message || 'Có lỗi xảy ra khi xác thực.')
-            setSubmitting(false)
+            setError(EnterpriseErrorUtils.getMessage(err))
+            setHasFailed(true)
           }
+          setSubmitting(false)
         }
       }
     }
     attemptAutoLogin()
     return () => { active = false }
-  }, [firebaseIdToken, tenants.length, tenantId, navigation, onSuccess, socialLogin, setTenant, submitting])
+  }, [firebaseIdToken, tenants.length, tenantId, navigation, onSuccess, socialLogin, setTenant, hasFailed])
 
   const pwStrength = useMemo(() => getPasswordStrength(password), [password])
 
@@ -111,6 +112,7 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setHasFailed(false)
 
     if (!firebaseIdToken) {
       if (!email) { setError('Vui lòng nhập email.'); setStep(1); return }
@@ -127,14 +129,9 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
       }
     }
 
-    if (step === 1) {
-      if (!firebaseIdToken) {
-        setStep(2);
-        return;
-      }
-    }
+    // Simplified: always stay on step 1 or just skip checks for step 2
+    // if (!tenantId) { setError('Vui lòng chọn phòng khám.'); return }
 
-    if (step === 2 && !tenantId) { setError('Vui lòng chọn phòng khám.'); return }
 
     setSubmitting(true)
     try {
@@ -158,7 +155,11 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
       onSuccess?.()
     } catch (err: any) {
       setError(EnterpriseErrorUtils.getMessage(err))
-      setStep(1)
+      if (firebaseIdToken) {
+        setHasFailed(true)
+      } else {
+        setStep(1)
+      }
     } finally {
       setSubmitting(false)
     }
@@ -202,22 +203,8 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
 
   return (
     <>
-      {/* Step indicator */}
-      <div className="flex items-center gap-2 mb-5">
-        {[1, 2].map(s => (
-          <motion.div
-            key={s}
-            className="w-2 h-2 rounded-full"
-            animate={{
-              scale: step === s ? 1.3 : 1,
-              backgroundColor: step === s ? '#4ade80' : step > s ? '#22c55e' : '#e2e8f0',
-            }}
-          />
-        ))}
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-          {step === 1 ? 'Thông tin đăng nhập' : 'Chọn hệ thống'}
-        </span>
-      </div>
+      {/* Logo + heading could go here if needed, but keeping it clean */}
+
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Error message */}
@@ -234,99 +221,63 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
           )}
         </AnimatePresence>
 
-        <AnimatePresence mode="wait">
-          {step === 1 ? (
-            /* ── Step 1: Credentials ── */
-            <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              {/* Full name (register only) */}
-              {mode === 'register' && (
-                <Field label="Họ và tên" icon={<User />} value={fullNameVi} onChange={setFullNameVi} placeholder="Nguyễn Văn A" />
-              )}
-
-              {/* Email */}
-              <Field label="Email" icon={<Mail />} type="email" value={email} onChange={setEmail} placeholder="name@example.com" />
-
-              {/* Password */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Mật khẩu</label>
-                <div className="relative group">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 group-focus-within:text-[#4ade80] transition-colors pointer-events-none" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-800 placeholder:text-slate-300 outline-none focus:bg-white focus:border-[#4ade80] focus:ring-[3px] focus:ring-[#4ade80]/10 transition-all"
-                    placeholder="••••••••"
-                    required
-                  />
-                  <button
-                    type="button" tabIndex={-1}
-                    onClick={() => setShowPassword(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-
-                {/* Password strength (register) */}
-                {mode === 'register' && password && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2.5 mt-1">
-                    <div className="flex-1 h-1 rounded-full bg-slate-200 overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full"
-                        animate={{ width: `${(pwStrength.level / 4) * 100}%`, backgroundColor: pwStrength.color }}
-                      />
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: pwStrength.color }}>
-                      {pwStrength.label}
-                    </span>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Next button */}
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-[#4ade80] to-[#2fb344] text-slate-900 text-sm font-bold shadow-lg shadow-[#4ade80]/20 hover:shadow-xl hover:shadow-[#4ade80]/30 transition-shadow"
-              >
-                Tiếp tục <ChevronRight className="w-4 h-4" />
-              </motion.button>
-            </motion.div>
-          ) : (
-            /* ── Step 2: Tenant / Branch ── */
-            <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Phòng khám</label>
-                <CustomSelect
-                  options={tenants} value={tenantId}
-                  onChange={setTenantId}
-                  labelKey="nameVi" valueKey="id"
-                  placeholder="Chọn phòng khám"
-                  icon={<Building2 className="w-5 h-5" />}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-1">
-                <motion.button
-                  type="button" onClick={() => { setStep(1); setFirebaseIdToken(null) }}
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-1.5 px-5 py-3.5 rounded-full border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" /> Quay lại
-                </motion.button>
-                <motion.button
-                  type="submit" disabled={submitting}
-                  whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
-                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-[#4ade80] to-[#2fb344] text-slate-900 text-sm font-bold shadow-lg shadow-[#4ade80]/20 disabled:opacity-60 transition-shadow"
-                >
-                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-                  {firebaseIdToken ? 'Hoàn tất Đăng nhập' : mode === 'login' ? 'Đăng nhập' : 'Hoàn tất Đăng ký'}
-                </motion.button>
-              </div>
-            </motion.div>
+        <div className="space-y-4">
+          {/* Full name (register only) */}
+          {mode === 'register' && (
+            <Field label="Họ và tên" icon={<User />} value={fullNameVi} onChange={setFullNameVi} placeholder="Nguyễn Văn A" />
           )}
-        </AnimatePresence>
+
+          {/* Email */}
+          <Field label="Email" icon={<Mail />} type="email" value={email} onChange={setEmail} placeholder="name@example.com" />
+
+          {/* Password */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Mật khẩu</label>
+            <div className="relative group">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 group-focus-within:text-[#4ade80] transition-colors pointer-events-none" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-800 placeholder:text-slate-300 outline-none focus:bg-white focus:border-[#4ade80] focus:ring-[3px] focus:ring-[#4ade80]/10 transition-all"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button" tabIndex={-1}
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {/* Password strength (register) */}
+            {mode === 'register' && password && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2.5 mt-1">
+                <div className="flex-1 h-1 rounded-full bg-slate-200 overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full"
+                    animate={{ width: `${(pwStrength.level / 4) * 100}%`, backgroundColor: pwStrength.color }}
+                  />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: pwStrength.color }}>
+                  {pwStrength.label}
+                </span>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Always show login button, skip tenant selection UI */}
+          <motion.button
+            type="submit" disabled={submitting}
+            whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-[#4ade80] to-[#2fb344] text-slate-900 text-sm font-bold shadow-lg shadow-[#4ade80]/20 disabled:opacity-60 transition-shadow"
+          >
+            {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+            {firebaseIdToken ? 'Hoàn tất Đăng nhập' : mode === 'login' ? 'Đăng nhập' : 'Hoàn tất Đăng ký'}
+          </motion.button>
+        </div>
       </form>
 
       {/* Social Login Section */}

@@ -52,10 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const u = await authApi.me()
       setUser(u)
       setToken(t)
-    } catch {
-      authApi.logout()
-      setUser(null)
-      setToken(null)
+    } catch (err: any) {
+      console.error('Failed to refresh user:', err)
+      // Only logout and clear state if it's an authentication error (401)
+      if (err.status === 401 || err.errorCode === 'UNAUTHORIZED' || err.message?.includes('401')) {
+        authApi.logout()
+        setUser(null)
+        setToken(null)
+      }
     } finally {
       setIsLoading(false)
     }

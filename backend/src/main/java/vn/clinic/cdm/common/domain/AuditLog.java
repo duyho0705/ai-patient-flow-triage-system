@@ -32,8 +32,12 @@ public class AuditLog {
     @Column(nullable = false)
     private String action; // e.g., LOGIN_SUCCESS, CREATE_PATIENT
 
-    private String resourceType; // e.g., PATIENT, CLINICAL_RECORD
-    private String resourceId;
+    @Column(name = "entity_name", nullable = false)
+    @Builder.Default
+    private String resourceType = "SYSTEM"; // e.g., PATIENT, CLINICAL_RECORD
+
+    @Column(name = "entity_id")
+    private UUID resourceId;
 
     @Column(columnDefinition = "TEXT")
     private String details;

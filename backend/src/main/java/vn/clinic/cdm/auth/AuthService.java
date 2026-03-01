@@ -117,9 +117,20 @@ public class AuthService {
 
     @Transactional
     public LoginResponse socialLogin(SocialLoginRequest request) {
+        log.info("Starting social login verification for firebase token. TenantId: {}, BranchId: {}",
+                request.getTenantId(), request.getBranchId());
         try {
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+            FirebaseToken decodedToken;
+            try {
+                decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+            } catch (Exception e) {
+                log.error("Firebase ID token verification failed: {}", e.getMessage());
+                throw new ApiException(ErrorCode.AUTH_BAD_CREDENTIALS, HttpStatus.UNAUTHORIZED,
+                        "Token Firebase không hợp lệ: " + e.getMessage());
+            }
+
             String email = decodedToken.getEmail();
+            log.debug("Firebase token verified for email: {}", email);
 
             // Fallback for providers that don't always return email (like Facebook)
             if (email == null || email.isBlank()) {
@@ -130,6 +141,13 @@ public class AuthService {
             email = email.trim().toLowerCase();
 
             IdentityUser user = identityService.getActiveUserByEmail(email);
+            if (user == null) {
+                // If not found by email, try searching by username (which is often the Firebase
+                // UID for social users)
+                log.debug("User not found by email {}, trying search by UID: {}", email, decodedToken.getUid());
+                user = identityService.getActiveUserByUsername(decodedToken.getUid());
+            }
+
             UUID tenantId = request.getTenantId();
             UUID branchId = request.getBranchId();
 
@@ -137,19 +155,42 @@ public class AuthService {
                 if (user != null && user.getTenant() != null) {
                     tenantId = user.getTenant().getId();
                 } else {
-                    throw new ApiException(ErrorCode.AUTH_TENANT_REQUIRED, HttpStatus.BAD_REQUEST,
-                            "REQUIRE_TENANT_SELECTION");
+                    // Default to the first tenant if only one exists, or find the one with code
+                    // 'DEFAULT'
+                    List<Tenant> allTenants = tenantRepository.findAll();
+                    if (allTenants.size() == 1) {
+                        tenantId = allTenants.get(0).getId();
+                        log.info("Auto-selecting only available tenant: {}", tenantId);
+                    } else {
+                        tenantId = allTenants.stream()
+                                .filter(t -> "DEFAULT".equals(t.getCode()))
+                                .map(Tenant::getId)
+                                .findFirst()
+                                .orElse(allTenants.isEmpty() ? null : allTenants.get(0).getId());
+
+                        if (tenantId != null) {
+                            log.info("Auto-selecting default tenant for social login: {}", tenantId);
+                        } else {
+                            log.info("Tenant selection required for social login user: {}", email);
+                            throw new ApiException(ErrorCode.AUTH_TENANT_REQUIRED, HttpStatus.BAD_REQUEST,
+                                    "REQUIRE_TENANT_SELECTION");
+                        }
+                    }
                 }
             }
+
+            log.info("Processing social login for email: {} in Tenant: {}", email, tenantId);
 
             if (user == null) {
                 // Register new user automatically using RegisterService
                 String name = decodedToken.getName() != null ? decodedToken.getName() : "Người dùng Social";
+                log.info("Registering new social user: {}", email);
                 user = registerService.registerNewPatient(email, name, null, tenantId, branchId);
             }
 
             List<String> roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
             if (roles.isEmpty()) {
+                log.info("Assigning default PATIENT role to user {} in tenant {}", email, tenantId);
                 // User exists but has no roles here -> add patient role
                 identityService.assignRole(user.getId(), tenantId, branchId, ManagementConstants.Roles.PATIENT);
                 roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
@@ -162,8 +203,12 @@ public class AuthService {
 
             List<String> permissions = identityService.getPermissionCodesForUserInTenantAndBranch(user.getId(),
                     tenantId, branchId);
+
+            log.debug("User roles: {}, permissions count: {}", roles, permissions.size());
+
             identityService.updateLastLoginAt(user);
             Instant expiresAt = Instant.now().plusMillis(jwtProperties.getExpirationMs());
+
             String accessToken = jwtUtil.generateToken(user.getId(), user.getEmail(), tenantId, branchId, roles,
                     permissions, user.getTokenVersion());
             String refreshToken = createRefreshToken(user);
@@ -179,6 +224,9 @@ public class AuthService {
                     .tenantId(tenantId)
                     .branchId(branchId)
                     .build();
+
+            log.info("Social login completed successfully for: {}", email);
+
             return LoginResponse.builder()
                     .token(accessToken)
                     .refreshToken(refreshToken)
@@ -186,11 +234,12 @@ public class AuthService {
                     .user(userDto)
                     .build();
 
-        } catch (BadCredentialsException e) {
+        } catch (ApiException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Firebase social login failed", e);
-            throw new ApiException(ErrorCode.AUTH_SOCIAL_LOGIN_FAILED, HttpStatus.UNAUTHORIZED, e.getMessage());
+            log.error("CRITICAL: Social login failed unexpectedly for request {}", request, e);
+            throw new ApiException(ErrorCode.AUTH_SOCIAL_LOGIN_FAILED, HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Hệ thống gặp sự cố khi xử lý đăng nhập xã hội: " + e.getMessage());
         }
     }
 

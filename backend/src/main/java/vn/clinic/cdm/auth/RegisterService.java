@@ -60,6 +60,10 @@ public class RegisterService {
 
     @Transactional
     public void createPatientProfile(IdentityUser user, Tenant tenant) {
+        if (patientRepository.findFirstByIdentityUser_Id(user.getId()).isPresent()) {
+            log.info("Patient profile already exists for: {}. Skipping creation.", user.getEmail());
+            return;
+        }
         Patient patient = new Patient();
         patient.setTenant(tenant);
         patient.setIdentityUser(user);

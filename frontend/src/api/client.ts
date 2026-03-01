@@ -106,11 +106,14 @@ export async function api<T>(
 
   if (!res.ok) {
     if (res.status === 401 && !path.includes('/auth/refresh') && !path.includes('/auth/login')) {
-      // Try silent refresh
-      const newToken = await silentRefresh()
-      if (newToken) {
-        // Retry original request with new token
-        return api(path, { ...options, headers: { ...options.headers, 'Authorization': `Bearer ${newToken}` } })
+      const isRetry = (options as any)._retry
+      if (!isRetry) {
+        // Try silent refresh
+        const newToken = await silentRefresh()
+        if (newToken) {
+          // Retry original request with new token
+          return api(path, { ...options, _retry: true, headers: { ...options.headers, 'Authorization': `Bearer ${newToken}` } } as any)
+        }
       }
     }
 

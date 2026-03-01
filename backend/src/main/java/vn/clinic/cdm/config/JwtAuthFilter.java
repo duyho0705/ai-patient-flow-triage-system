@@ -2,6 +2,7 @@ package vn.clinic.cdm.config;
 
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
@@ -44,11 +46,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (claims != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UUID userId = jwtUtil.getUserId(claims);
-            Integer tokenVersion = jwtUtil.getTokenVersion(claims);
+            Integer tokenVersionInToken = jwtUtil.getTokenVersion(claims);
 
             // Token Version Validation
             vn.clinic.cdm.identity.domain.IdentityUser user = identityService.getUserById(userId);
-            if (tokenVersion == null || !tokenVersion.equals(user.getTokenVersion())) {
+            if (tokenVersionInToken == null || !tokenVersionInToken.equals(user.getTokenVersion())) {
+                log.warn("Token version mismatch for user {}. Token version: {}, DB version: {}",
+                        userId, tokenVersionInToken, user.getTokenVersion());
                 filterChain.doFilter(request, response);
                 return;
             }

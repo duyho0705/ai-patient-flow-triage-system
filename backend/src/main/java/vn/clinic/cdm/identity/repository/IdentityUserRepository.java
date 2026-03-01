@@ -17,6 +17,8 @@ public interface IdentityUserRepository extends JpaRepository<IdentityUser, UUID
 
     Optional<IdentityUser> findByEmailAndIsActiveTrue(String email);
 
+    Optional<IdentityUser> findByUsernameAndIsActiveTrue(String username);
+
     boolean existsByEmail(String email);
 
     /** User cÃ³ Ã­t nháº¥t má»™t role trong tenant (cho admin list). */
@@ -26,4 +28,3 @@ public interface IdentityUserRepository extends JpaRepository<IdentityUser, UUID
     @Query("SELECT DISTINCT u FROM IdentityUser u JOIN u.userRoles ur WHERE ur.tenant.id = :tenantId AND ur.role.code = :roleCode")
     List<IdentityUser> findByTenantIdAndRoleCode(@Param("tenantId") UUID tenantId, @Param("roleCode") String roleCode);
 }
-

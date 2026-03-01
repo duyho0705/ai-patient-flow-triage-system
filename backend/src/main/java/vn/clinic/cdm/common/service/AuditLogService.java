@@ -32,7 +32,7 @@ public class AuditLogService {
                 .email(userEmail)
                 .action(action)
                 .resourceType(resourceType)
-                .resourceId(resourceId)
+                .resourceId(resourceId != null ? UUID.fromString(resourceId) : null)
                 .details(details)
                 .timestamp(Instant.now())
                 .status("SUCCESS")

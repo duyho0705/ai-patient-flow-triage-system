@@ -44,6 +44,11 @@ public class IdentityService {
     }
 
     @Transactional(readOnly = true)
+    public IdentityUser getActiveUserByUsername(String username) {
+        return identityUserRepository.findByUsernameAndIsActiveTrue(username).orElse(null);
+    }
+
+    @Transactional(readOnly = true)
     public List<IdentityUserRole> getUserRolesForTenant(UUID userId, UUID tenantId) {
         return identityUserRoleRepository.findByUserIdAndTenantId(userId, tenantId);
     }

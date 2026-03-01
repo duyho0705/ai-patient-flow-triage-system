@@ -1,12 +1,8 @@
-﻿# ---------------------------------------------------------------------------
-# Development profile â€“ local DB, relaxed validation, debug
-# ---------------------------------------------------------------------------
-
-spring:
+﻿spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:cdm_platform_db}?options=-c%20timezone=UTC
-    username: ${DB_USER:cdm_service_app}
-    password: ${DB_PASSWORD:Cdm_Secure_Pass_2026!}
+    url: jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?options=-c%20timezone=UTC&prepareThreshold=0
+    username: postgres.kijlmurakaimfrpaqrmq
+    password: Denyeubama1
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2

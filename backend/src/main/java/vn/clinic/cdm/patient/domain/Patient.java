@@ -20,7 +20,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@org.hibernate.annotations.Filter(name = "tenantFilter")
+@org.hibernate.annotations.FilterDef(name = "tenantFilter", defaultCondition = "tenant_id = :tenantId", parameters = @org.hibernate.annotations.ParamDef(name = "tenantId", type = UUID.class))
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class Patient extends BaseAuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
