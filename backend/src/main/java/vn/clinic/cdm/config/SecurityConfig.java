@@ -25,63 +25,70 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+        private final JwtAuthFilter jwtAuthFilter;
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder(10);
+        }
 
-    @Bean
-    public SecurityFilterChain apiSecurity(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/api/**")
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(a -> a
-                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/social-login",
-                                "/api/auth/refresh")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/tenants/**").permitAll()
-                        .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/**").authenticated())
-                .exceptionHandling(e -> e
-                        .authenticationEntryPoint(
-                                new org.springframework.security.web.authentication.HttpStatusEntryPoint(
-                                        org.springframework.http.HttpStatus.UNAUTHORIZED)))
-                .headers(h -> h
-                        .addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter(
-                                "Cross-Origin-Opener-Policy", "unsafe-none")))
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-        return http.build();
-    }
+        @Bean
+        @Order(1)
+        public SecurityFilterChain apiSecurity(HttpSecurity http) throws Exception {
+                http
+                                .securityMatcher("/api/**")
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(a -> a
+                                                .requestMatchers("/api/auth/login", "/api/auth/register",
+                                                                "/api/auth/social-login",
+                                                                "/api/auth/refresh")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/tenants/**").permitAll()
+                                                .requestMatchers("/api/public/**").permitAll()
+                                                .requestMatchers("/api/**").authenticated())
+                                .exceptionHandling(e -> e
+                                                .authenticationEntryPoint(
+                                                                new org.springframework.security.web.authentication.HttpStatusEntryPoint(
+                                                                                org.springframework.http.HttpStatus.UNAUTHORIZED)))
+                                .headers(h -> h
+                                                .addHeaderWriter(
+                                                                new org.springframework.security.web.header.writers.StaticHeadersWriter(
+                                                                                "Cross-Origin-Opener-Policy",
+                                                                                "unsafe-none")))
+                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                return http.build();
+        }
 
-    @Bean
-    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
-        org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-        // Cáº§n thiáº¿t Ä‘á»ƒ gá»­i Cookie tá»« Frontend khÃ¡c origin
-        configuration.setAllowedOriginPatterns(java.util.List.of("http://localhost:[*]", "http://127.0.0.1:[*]"));
-        configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(java.util.List.of(
-                "Authorization", "Content-Type", "Accept", "X-Tenant-Id", "X-Branch-Id", "X-Requested-With"));
-        configuration.setExposedHeaders(java.util.List.of("X-Rate-Limit-Remaining"));
-        configuration.setAllowCredentials(true);
+        @Bean
+        public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+                org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
+                // Cáº§n thiáº¿t Ä‘á»ƒ gá»­i Cookie tá»« Frontend khÃ¡c origin
+                configuration.setAllowedOriginPatterns(
+                                java.util.List.of("http://localhost:[*]", "http://127.0.0.1:[*]"));
+                configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+                configuration.setAllowedHeaders(java.util.List.of(
+                                "Authorization", "Content-Type", "Accept", "X-Tenant-Id", "X-Branch-Id",
+                                "X-Requested-With"));
+                configuration.setExposedHeaders(java.util.List.of("X-Rate-Limit-Remaining"));
+                configuration.setAllowCredentials(true);
 
-        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+                org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
 
-    @Bean
-    @Order(2)
-    public SecurityFilterChain publicSecurity(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(a -> a
-                        .requestMatchers("/actuator/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
-                        .permitAll()
-                        .anyRequest().permitAll());
-        return http.build();
-    }
+        @Bean
+        @Order(2)
+        public SecurityFilterChain publicSecurity(HttpSecurity http) throws Exception {
+                http
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .authorizeHttpRequests(a -> a
+                                                .requestMatchers("/actuator/**", "/v3/api-docs/**", "/swagger-ui/**",
+                                                                "/swagger-ui.html")
+                                                .permitAll()
+                                                .anyRequest().permitAll());
+                return http.build();
+        }
 }

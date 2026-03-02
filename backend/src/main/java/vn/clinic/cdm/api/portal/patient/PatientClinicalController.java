@@ -37,7 +37,7 @@ public class PatientClinicalController {
         @Operation(summary = "Dữ liệu tổng quan cho trang chủ bệnh nhân")
         public ResponseEntity<ApiResponse<PatientDashboardDto>> getDashboard() {
                 Patient p = portalService.getAuthenticatedPatient();
-                return ResponseEntity.ok(ApiResponse.success(portalService.getDashboardData(p.getId())));
+                return ResponseEntity.ok(ApiResponse.success(portalService.getDashboardData(p)));
         }
 
         @GetMapping("/medical-history")

@@ -242,8 +242,15 @@ public class AuthService {
                     IdentityUser user = token.getUser();
                     refreshTokenRepository.delete(token);
                     UUID tenantId = user.getTenant() != null ? user.getTenant().getId() : null;
-                    List<String> roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId,
+                    List<String> rawRoles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId,
                             null);
+                    List<String> roles = new ArrayList<>(rawRoles);
+
+                    // Đảm bảo mọi user refresh token đều có quyền PATIENT mặc định
+                    if (!roles.contains(ManagementConstants.Roles.PATIENT)) {
+                        roles.add(ManagementConstants.Roles.PATIENT);
+                    }
+
                     List<String> permissions = identityService.getPermissionCodesForUserInTenantAndBranch(user.getId(),
                             tenantId, null);
 

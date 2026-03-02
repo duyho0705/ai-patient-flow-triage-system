@@ -82,8 +82,8 @@ public class PatientPortalService {
                 return patientService.getByUserId(userId);
         }
 
-        public PatientDashboardDto getDashboardData(UUID patientId) {
-                Patient p = patientService.getById(patientId);
+        public PatientDashboardDto getDashboardData(Patient p) {
+                UUID patientId = p.getId();
                 var appointments = schedulingService.getUpcomingAppointmentsByPatient(patientId);
                 var recentVisits = clinicalService.getRecentConsultationsByPatient(patientId, 5);
 
