@@ -2,6 +2,8 @@ package vn.clinic.cdm.common.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -34,19 +36,27 @@ public class AuditLog {
 
     @Column(name = "entity_name", nullable = false)
     @Builder.Default
-    private String resourceType = "SYSTEM"; // e.g., PATIENT, CLINICAL_RECORD
+    private String entityName = "SYSTEM"; // e.g., PATIENT, CLINICAL_RECORD
 
     @Column(name = "entity_id")
-    private UUID resourceId;
+    private UUID entityId;
 
     @Column(columnDefinition = "TEXT")
     private String details;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "old_value", columnDefinition = "jsonb")
+    private String oldValue;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "new_value", columnDefinition = "jsonb")
+    private String newValue;
+
     private String ipAddress;
     private String userAgent;
 
-    @Column(nullable = false)
-    private Instant timestamp;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
     @Builder.Default
     private String status = "SUCCESS";

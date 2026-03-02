@@ -36,5 +36,10 @@ public abstract class BaseAuditableEntity extends BaseEntity {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-}
 
+    @Column(name = "created_by", updatable = false)
+    private java.util.UUID createdBy;
+
+    @Column(name = "updated_by")
+    private java.util.UUID updatedBy;
+}

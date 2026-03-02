@@ -31,10 +31,10 @@ public class AuditLogService {
                 .userId(userId)
                 .email(userEmail)
                 .action(action)
-                .resourceType(resourceType)
-                .resourceId(resourceId != null ? UUID.fromString(resourceId) : null)
+                .entityName(resourceType)
+                .entityId(resourceId != null ? UUID.fromString(resourceId) : null)
                 .details(details)
-                .timestamp(Instant.now())
+                .createdAt(Instant.now())
                 .status("SUCCESS")
                 .build();
 

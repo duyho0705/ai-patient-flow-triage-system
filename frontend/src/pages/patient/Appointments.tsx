@@ -235,8 +235,8 @@ export default function PatientAppointments() {
                     </div>
                     <div className="bg-[#fcfdfc] dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
                         <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-                                <span key={d} className="text-[10px] font-bold text-slate-400 uppercase">{d}</span>
+                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => (
+                                <span key={`${d}-${idx}`} className="text-[10px] font-bold text-slate-400 uppercase">{d}</span>
                             ))}
                         </div>
                         <div className="grid grid-cols-7 gap-1 text-center">

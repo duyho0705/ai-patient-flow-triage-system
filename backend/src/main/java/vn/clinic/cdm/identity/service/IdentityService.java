@@ -112,6 +112,6 @@ public class IdentityService {
                     .orElseThrow(() -> new ResourceNotFoundException("TenantBranch", branchId)));
         }
 
-        identityUserRoleRepository.save(userRole);
+        identityUserRoleRepository.saveAndFlush(userRole);
     }
 }

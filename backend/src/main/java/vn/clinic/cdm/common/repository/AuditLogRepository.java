@@ -10,9 +10,9 @@ import java.util.List;
 
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
-    List<AuditLog> findByTenantIdOrderByTimestampDesc(UUID tenantId);
+    List<AuditLog> findByTenantIdOrderByCreatedAtDesc(UUID tenantId);
 
-    List<AuditLog> findByUserIdOrderByTimestampDesc(UUID userId);
+    List<AuditLog> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
-    Page<AuditLog> findByTenantIdOrderByTimestampDesc(UUID tenantId, Pageable pageable);
+    Page<AuditLog> findByTenantIdOrderByCreatedAtDesc(UUID tenantId, Pageable pageable);
 }

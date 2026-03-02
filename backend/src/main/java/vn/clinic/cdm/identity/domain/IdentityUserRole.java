@@ -2,7 +2,7 @@ package vn.clinic.cdm.identity.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import vn.clinic.cdm.common.domain.BaseEntity;
+import vn.clinic.cdm.common.domain.BaseAuditableEntity;
 import vn.clinic.cdm.tenant.domain.Tenant;
 import vn.clinic.cdm.tenant.domain.TenantBranch;
 
@@ -19,7 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class IdentityUserRole extends BaseEntity {
+public class IdentityUserRole extends BaseAuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -37,18 +37,7 @@ public class IdentityUserRole extends BaseEntity {
     @JoinColumn(name = "branch_id")
     private TenantBranch branch;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = Instant.now();
-        }
-    }
-
     public IdentityUserRole(UUID id) {
         super(id);
     }
 }
-

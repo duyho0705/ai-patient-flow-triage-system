@@ -39,7 +39,7 @@ export const requestForToken = async () => {
             return null;
         }
     } catch (err) {
-        console.log("An error occurred while retrieving token. ", err);
+        // Notification permission is a soft error, no need to clutter console
         return null;
     }
 };

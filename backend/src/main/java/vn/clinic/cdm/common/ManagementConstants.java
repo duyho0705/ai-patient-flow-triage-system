@@ -11,7 +11,7 @@ public final class ManagementConstants {
         public static final String PATIENT = "PATIENT";
         public static final String DOCTOR = "DOCTOR";
         public static final String CLINIC_MANAGER = "CLINIC_MANAGER";
-        public static final String ADMIN = "ADMIN";
+        public static final String ADMIN = "SYSTEM_ADMIN";
     }
 
     public static final class Profile {

@@ -36,58 +36,69 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
+        String token = null;
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        } else if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                if ("jwt".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
         }
 
-        String token = authHeader.substring(7);
-        Claims claims = jwtUtil.validateAndParse(token);
+        if (token != null) {
+            try {
+                Claims claims = jwtUtil.validateAndParse(token);
+                if (claims != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UUID userId = jwtUtil.getUserId(claims);
+                    Integer tokenVersionInToken = jwtUtil.getTokenVersion(claims);
 
-        if (claims != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UUID userId = jwtUtil.getUserId(claims);
-            Integer tokenVersionInToken = jwtUtil.getTokenVersion(claims);
+                    // Token Version Validation
+                    vn.clinic.cdm.identity.domain.IdentityUser user = identityService.getUserById(userId);
+                    if (user != null && user.getIsActive()
+                            && (tokenVersionInToken == null || tokenVersionInToken.equals(user.getTokenVersion()))) {
+                        String email = jwtUtil.getEmail(claims);
+                        UUID tenantId = jwtUtil.getTenantId(claims);
+                        UUID branchId = jwtUtil.getBranchId(claims);
+                        List<String> roles = jwtUtil.getRoles(claims);
+                        List<String> permissions = jwtUtil.getPermissions(claims);
 
-            // Token Version Validation
-            vn.clinic.cdm.identity.domain.IdentityUser user = identityService.getUserById(userId);
-            if (tokenVersionInToken == null || !tokenVersionInToken.equals(user.getTokenVersion())) {
-                log.warn("Token version mismatch for user {}. Token version: {}, DB version: {}",
-                        userId, tokenVersionInToken, user.getTokenVersion());
-                filterChain.doFilter(request, response);
-                return;
-            }
+                        List<SimpleGrantedAuthority> authorities = roles.stream()
+                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                                .collect(Collectors.toList());
 
-            String email = jwtUtil.getEmail(claims);
-            UUID tenantId = jwtUtil.getTenantId(claims);
-            UUID branchId = jwtUtil.getBranchId(claims);
-            List<String> roles = jwtUtil.getRoles(claims);
-            List<String> permissions = jwtUtil.getPermissions(claims);
+                        permissions.forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));
 
-            List<SimpleGrantedAuthority> authorities = roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                    .collect(Collectors.toList());
+                        AuthPrincipal principal = AuthPrincipal.builder()
+                                .userId(userId)
+                                .email(email)
+                                .tenantId(tenantId)
+                                .branchId(branchId)
+                                .roles(roles)
+                                .permissions(permissions)
+                                .build();
 
-            permissions.forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));
+                        log.debug("JWT Authenticated: User={}, Email={}, Roles={}, Tenant={}", userId, email, roles,
+                                tenantId);
 
-            AuthPrincipal principal = AuthPrincipal.builder()
-                    .userId(jwtUtil.getUserId(claims))
-                    .email(email)
-                    .tenantId(tenantId)
-                    .branchId(branchId)
-                    .roles(roles)
-                    .permissions(permissions)
-                    .build();
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                principal, null, authorities);
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    principal, null, authorities);
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
 
-            SecurityContextHolder.getContext().setAuthentication(authToken);
-
-            // Set Tenant Context for the request
-            if (tenantId != null) {
-                TenantContext.setTenantId(tenantId);
-                TenantContext.setBranchId(branchId);
+                        if (tenantId != null) {
+                            TenantContext.setTenantId(tenantId);
+                            TenantContext.setBranchId(branchId);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("JWT authentication failed: {}", e.getMessage());
+                // Don't throw, just let it be anonymous
             }
         }
 

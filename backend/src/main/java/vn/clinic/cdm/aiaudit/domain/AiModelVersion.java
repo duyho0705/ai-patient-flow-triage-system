@@ -2,6 +2,8 @@ package vn.clinic.cdm.aiaudit.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import vn.clinic.cdm.common.domain.BaseEntity;
 
 import java.time.Instant;
@@ -22,6 +24,7 @@ public class AiModelVersion extends BaseEntity {
     @Column(name = "version", nullable = false, length = 32)
     private String version;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "config_json", columnDefinition = "jsonb")
     private String configJson;
 
@@ -45,4 +48,3 @@ public class AiModelVersion extends BaseEntity {
         super(id);
     }
 }
-

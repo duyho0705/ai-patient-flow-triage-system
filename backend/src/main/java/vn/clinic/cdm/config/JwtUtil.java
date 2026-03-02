@@ -71,6 +71,7 @@ public class JwtUtil {
         Instant now = Instant.now();
         Instant exp = now.plusMillis(jwtProperties.getRefreshExpirationMs());
         return Jwts.builder()
+                .id(UUID.randomUUID().toString()) // Add JTI for uniqueness
                 .subject(userId.toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))

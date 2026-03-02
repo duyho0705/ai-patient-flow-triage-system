@@ -377,6 +377,7 @@ function VitalTrendCard({ title, value, unit, chartData, gradientId, statusLabel
                     <p className="text-xs font-bold text-slate-400 tracking-widest">{title}</p>
                     <div className="flex items-baseline gap-2 mt-2">
                         <p className="text-4xl font-black text-slate-900 dark:text-white">{value || '—'}</p>
+                        {value && <span className="text-xs font-bold text-slate-400">{unit}</span>}
                         {value && (
                             <div className={`text-${statusColor === 'emerald' ? 'emerald' : 'rose'}-500 text-xs font-bold flex items-center bg-${statusColor === 'emerald' ? 'emerald' : 'rose'}-50 dark:bg-${statusColor === 'emerald' ? 'emerald' : 'rose'}-900/20 px-1.5 py-0.5 rounded-lg`}>
                                 {statusColor === 'emerald' ? <TrendingDown className="w-3 h-3 mr-1" /> : <TrendingUp className="w-3 h-3 mr-1" />} 1.0%
@@ -405,7 +406,7 @@ function VitalTrendCard({ title, value, unit, chartData, gradientId, statusLabel
                         })}
                     </div>
                 ) : (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="99%" height={128}>
                         <AreaChart data={chartData}>
                             <defs>
                                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">

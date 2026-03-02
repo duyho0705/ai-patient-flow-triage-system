@@ -171,9 +171,18 @@ public class AuthController {
                 String newRefreshToken = response.getRefreshToken();
                 response.setRefreshToken(null);
 
+                ResponseCookie jwtCookie = ResponseCookie.from("jwt", response.getToken())
+                                .httpOnly(true)
+                                .secure(false)
+                                .path("/")
+                                .maxAge(24 * 60 * 60)
+                                .sameSite("Lax")
+                                .build();
+
                 ResponseCookie refreshCookie = createRefreshCookie(newRefreshToken);
 
                 return ResponseEntity.ok()
+                                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                                 .body(ApiResponse.success(response));
         }

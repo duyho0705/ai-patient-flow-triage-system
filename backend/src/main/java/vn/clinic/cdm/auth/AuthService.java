@@ -19,6 +19,7 @@ import vn.clinic.cdm.tenant.domain.Tenant;
 import vn.clinic.cdm.tenant.repository.TenantRepository;
 import org.springframework.http.HttpStatus;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -44,10 +45,6 @@ public class AuthService {
     private final vn.clinic.cdm.identity.repository.RefreshTokenRepository refreshTokenRepository;
     private final vn.clinic.cdm.common.service.AuditService auditService;
 
-    /**
-     * Đăng nhập: kiểm tra email/password, lấy roles theo tenant (và branch nếu có),
-     * phát JWT.
-     */
     @Transactional
     public LoginResponse login(LoginRequest request) {
         IdentityUser user = identityService.getActiveUserByEmail(request.getEmail());
@@ -64,20 +61,22 @@ public class AuthService {
             tenantId = user.getTenant().getId();
         }
         UUID branchId = request.getBranchId();
-        List<String> roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
+        List<String> rawRoles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
+        List<String> roles = new ArrayList<>(rawRoles);
+
+        // Mọi tài khoản đăng nhập vô đều có mặc định role là PATIENT
+        if (!roles.contains(ManagementConstants.Roles.PATIENT)) {
+            roles.add(ManagementConstants.Roles.PATIENT);
+        }
+
         List<String> permissions = identityService.getPermissionCodesForUserInTenantAndBranch(user.getId(), tenantId,
                 branchId);
-        if (roles.isEmpty()) {
-            log.warn("Login failed: No roles found for user {} in tenant {}", request.getEmail(), tenantId);
-            throw new BadCredentialsException("Báº¡n khÃ´ng cÃ³ quyá»n truy cáº­p tenant/chi nhÃ¡nh nÃ y");
-        }
         identityService.updateLastLoginAt(user);
         Instant expiresAt = Instant.now().plusMillis(jwtProperties.getExpirationMs());
         String accessToken = jwtUtil.generateToken(user.getId(), user.getEmail(), tenantId, branchId, roles,
                 permissions, user.getTokenVersion());
         String refreshToken = createRefreshToken(user);
 
-        // Audit Logging
         auditService.logSuccess(user.getId(), user.getEmail(), "LOGIN", "Logged in via Email/Password", null, null);
 
         AuthUserDto userDto = AuthUserDto.builder()
@@ -91,7 +90,7 @@ public class AuthService {
 
         return LoginResponse.builder()
                 .token(accessToken)
-                .refreshToken(refreshToken) // Added temporarily for controller to set cookie
+                .refreshToken(refreshToken)
                 .expiresAt(expiresAt)
                 .user(userDto)
                 .build();
@@ -117,7 +116,7 @@ public class AuthService {
 
     @Transactional
     public LoginResponse socialLogin(SocialLoginRequest request) {
-        log.info("Starting social login verification for firebase token. TenantId: {}, BranchId: {}",
+        log.info("Social login attempt for TenantId: {}, BranchId: {}",
                 request.getTenantId(), request.getBranchId());
         try {
             FirebaseToken decodedToken;
@@ -126,25 +125,17 @@ public class AuthService {
             } catch (Exception e) {
                 log.error("Firebase ID token verification failed: {}", e.getMessage());
                 throw new ApiException(ErrorCode.AUTH_BAD_CREDENTIALS, HttpStatus.UNAUTHORIZED,
-                        "Token Firebase không hợp lệ: " + e.getMessage());
+                        "Token Firebase không hợp lệ");
             }
 
             String email = decodedToken.getEmail();
-            log.debug("Firebase token verified for email: {}", email);
-
-            // Fallback for providers that don't always return email (like Facebook)
             if (email == null || email.isBlank()) {
-                log.warn("Social login token has no email. Falling back to UID based identifier for UID: {}",
-                        decodedToken.getUid());
                 email = decodedToken.getUid() + "@social-login.local";
             }
             email = email.trim().toLowerCase();
 
             IdentityUser user = identityService.getActiveUserByEmail(email);
             if (user == null) {
-                // If not found by email, try searching by username (which is often the Firebase
-                // UID for social users)
-                log.debug("User not found by email {}, trying search by UID: {}", email, decodedToken.getUid());
                 user = identityService.getActiveUserByUsername(decodedToken.getUid());
             }
 
@@ -155,12 +146,9 @@ public class AuthService {
                 if (user != null && user.getTenant() != null) {
                     tenantId = user.getTenant().getId();
                 } else {
-                    // Default to the first tenant if only one exists, or find the one with code
-                    // 'DEFAULT'
                     List<Tenant> allTenants = tenantRepository.findAll();
                     if (allTenants.size() == 1) {
                         tenantId = allTenants.get(0).getId();
-                        log.info("Auto-selecting only available tenant: {}", tenantId);
                     } else {
                         tenantId = allTenants.stream()
                                 .filter(t -> "DEFAULT".equals(t.getCode()))
@@ -168,10 +156,7 @@ public class AuthService {
                                 .findFirst()
                                 .orElse(allTenants.isEmpty() ? null : allTenants.get(0).getId());
 
-                        if (tenantId != null) {
-                            log.info("Auto-selecting default tenant for social login: {}", tenantId);
-                        } else {
-                            log.info("Tenant selection required for social login user: {}", email);
+                        if (tenantId == null) {
                             throw new ApiException(ErrorCode.AUTH_TENANT_REQUIRED, HttpStatus.BAD_REQUEST,
                                     "REQUIRE_TENANT_SELECTION");
                         }
@@ -179,32 +164,23 @@ public class AuthService {
                 }
             }
 
-            log.info("Processing social login for email: {} in Tenant: {}", email, tenantId);
-
             if (user == null) {
-                // Register new user automatically using RegisterService
                 String name = decodedToken.getName() != null ? decodedToken.getName() : "Người dùng Social";
-                log.info("Registering new social user: {}", email);
                 user = registerService.registerNewPatient(email, name, null, tenantId, branchId);
             }
 
-            List<String> roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
-            if (roles.isEmpty()) {
-                log.info("Assigning default PATIENT role to user {} in tenant {}", email, tenantId);
-                // User exists but has no roles here -> add patient role
-                identityService.assignRole(user.getId(), tenantId, branchId, ManagementConstants.Roles.PATIENT);
-                roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId, branchId);
+            List<String> rawRoles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId,
+                    branchId);
+            List<String> roles = new ArrayList<>(rawRoles);
 
-                Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
-                if (tenant != null) {
-                    registerService.createPatientProfile(user, tenant);
-                }
+            // ÉP QUYỀN PATIENT: Đảm bảo mọi user đăng nhập đều có quyền PATIENT mặc định
+            if (!roles.contains(ManagementConstants.Roles.PATIENT)) {
+                log.info("Social User {} is missing PATIENT role. Adding automatically.", email);
+                roles.add(ManagementConstants.Roles.PATIENT);
             }
 
             List<String> permissions = identityService.getPermissionCodesForUserInTenantAndBranch(user.getId(),
                     tenantId, branchId);
-
-            log.debug("User roles: {}, permissions count: {}", roles, permissions.size());
 
             identityService.updateLastLoginAt(user);
             Instant expiresAt = Instant.now().plusMillis(jwtProperties.getExpirationMs());
@@ -225,8 +201,6 @@ public class AuthService {
                     .branchId(branchId)
                     .build();
 
-            log.info("Social login completed successfully for: {}", email);
-
             return LoginResponse.builder()
                     .token(accessToken)
                     .refreshToken(refreshToken)
@@ -237,27 +211,21 @@ public class AuthService {
         } catch (ApiException e) {
             throw e;
         } catch (Exception e) {
-            log.error("CRITICAL: Social login failed unexpectedly for request {}", request, e);
+            log.error("CRITICAL: Social login failed unexpectedly", e);
             throw new ApiException(ErrorCode.AUTH_SOCIAL_LOGIN_FAILED, HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Hệ thống gặp sự cố khi xử lý đăng nhập xã hội: " + e.getMessage());
+                    "Hệ thống gặp sự cố khi xử lý đăng nhập xã hội");
         }
     }
 
     @Transactional
     public String createRefreshToken(IdentityUser user) {
-        // Delete existing refresh tokens for this user (optional: logout from all
-        // devices)
-        // For simple rotation, we can keep multiple or just one.
-        // Let's delete old ones to be strict (Single active session per user)
         refreshTokenRepository.deleteByUser(user);
-
         String token = jwtUtil.generateRefreshToken(user.getId());
         vn.clinic.cdm.identity.domain.RefreshToken refreshToken = vn.clinic.cdm.identity.domain.RefreshToken.builder()
                 .user(user)
                 .token(token)
                 .expiryDate(Instant.now().plusMillis(jwtProperties.getRefreshExpirationMs()))
                 .build();
-
         refreshTokenRepository.save(refreshToken);
         return token;
     }
@@ -271,17 +239,8 @@ public class AuthService {
                         throw new ApiException(ErrorCode.AUTH_BAD_CREDENTIALS, HttpStatus.UNAUTHORIZED,
                                 "Refresh token expired");
                     }
-
                     IdentityUser user = token.getUser();
-                    // Rotation: Generate new access + new refresh, revoke old refresh
                     refreshTokenRepository.delete(token);
-
-                    // We need tenant/branch info for the new access token.
-                    // Simplified: Use the user's primary tenant or previous context.
-                    // Better: Store tenantId/branchId in RefreshToken entity.
-                    // For now, let's assume primary tenant or just re-login if needed.
-                    // But in Enterprise, we usually store context in RefreshToken.
-
                     UUID tenantId = user.getTenant() != null ? user.getTenant().getId() : null;
                     List<String> roles = identityService.getRoleCodesForUserInTenantAndBranch(user.getId(), tenantId,
                             null);

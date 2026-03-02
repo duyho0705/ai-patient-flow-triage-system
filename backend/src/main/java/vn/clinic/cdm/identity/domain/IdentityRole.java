@@ -2,6 +2,8 @@ package vn.clinic.cdm.identity.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import vn.clinic.cdm.common.domain.BaseAuditableEntity;
 
 import java.util.UUID;
@@ -27,6 +29,7 @@ public class IdentityRole extends BaseAuditableEntity {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "permissions_json", columnDefinition = "jsonb")
     private String permissionsJson;
 
@@ -34,4 +37,3 @@ public class IdentityRole extends BaseAuditableEntity {
         super(id);
     }
 }
-

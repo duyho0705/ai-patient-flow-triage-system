@@ -2,12 +2,15 @@ package vn.clinic.cdm.tenant.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import vn.clinic.cdm.common.domain.BaseAuditableEntity;
 
 import java.util.UUID;
 
 /**
- * ÄÆ¡n vá»‹ thuÃª (phÃ²ng khÃ¡m / táº­p Ä‘oÃ n phÃ²ng khÃ¡m). Gá»‘c multi-tenant.
+ * ÄÆ¡n vá»‹ thuÃª (phÃ²ng khÃ¡m / táº­p Ä‘oÃ n phÃ²ng khÃ¡m). Gá»‘c
+ * multi-tenant.
  */
 @Entity
 @Table(name = "tenant")
@@ -38,6 +41,7 @@ public class Tenant extends BaseAuditableEntity {
     @Builder.Default
     private String timezone = "Asia/Ho_Chi_Minh";
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "settings_json", columnDefinition = "jsonb")
     private String settingsJson;
 
@@ -49,4 +53,3 @@ public class Tenant extends BaseAuditableEntity {
         super(id);
     }
 }
-

@@ -74,11 +74,14 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
     }
   }, [initialFirebaseToken])
 
+  /* 
   useEffect(() => {
     if (tenants.length === 1 && !tenantId) setTenantId(tenants[0].id)
   }, [tenants, tenantId])
+  */
 
-  // auto login if we have a token and exactly one tenant
+  /* 
+  // Disable auto-login to ensure user always goes through the selection step as requested
   useEffect(() => {
     let active = true
     const attemptAutoLogin = async () => {
@@ -105,6 +108,7 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
     attemptAutoLogin()
     return () => { active = false }
   }, [firebaseIdToken, tenants.length, tenantId, navigation, onSuccess, socialLogin, setTenant, hasFailed])
+  */
 
   const pwStrength = useMemo(() => getPasswordStrength(password), [password])
 
@@ -174,23 +178,7 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
       if (result.user) {
         const token = await result.user.getIdToken()
         setFirebaseIdToken(token)
-
-        // Try to login automatically first
-        try {
-          const res = await socialLogin({ idToken: token, tenantId: undefined, branchId: undefined })
-          setTenant(res.user.tenantId, res.user.branchId ?? undefined)
-          setTimeout(() => {
-            navigation.navigateAfterLogin(res.user, redirectTo?.pathname)
-            onSuccess?.()
-          }, 100)
-        } catch (socialErr: any) {
-          console.log("Social login needs tenant selection:", socialErr)
-          if (socialErr.errorCode === ERROR_CODES.AUTH_TENANT_REQUIRED || socialErr.message === 'REQUIRE_TENANT_SELECTION') {
-            setStep(2)
-          } else {
-            setError(EnterpriseErrorUtils.getMessage(socialErr))
-          }
-        }
+        setStep(2) // Luôn đi đến bước chọn phòng khám as requested
       }
     } catch (err: any) {
       console.error(err)
@@ -206,112 +194,188 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken }: LoginFormPro
       {/* Logo + heading could go here if needed, but keeping it clean */}
 
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Error message */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }}
-              exit={{ opacity: 0, y: -8, height: 0 }}
-              className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600"
-            >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <p>{error}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <AnimatePresence mode="wait">
+        {step === 1 ? (
+          <motion.div
+            key="step1"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Error message */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }}
+                    exit={{ opacity: 0, y: -8, height: 0 }}
+                    className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600"
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <p>{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-        <div className="space-y-4">
-          {/* Full name (register only) */}
-          {mode === 'register' && (
-            <Field label="Họ và tên" icon={<User />} value={fullNameVi} onChange={setFullNameVi} placeholder="Nguyễn Văn A" />
-          )}
+              <div className="space-y-4">
+                {/* Full name (register only) */}
+                {mode === 'register' && (
+                  <Field label="Họ và tên" icon={<User className="w-4 h-4" />} value={fullNameVi} onChange={setFullNameVi} placeholder="Nguyễn Văn A" />
+                )}
 
-          {/* Email */}
-          <Field label="Email" icon={<Mail />} type="email" value={email} onChange={setEmail} placeholder="name@example.com" />
+                {/* Email */}
+                <Field label="Email" icon={<Mail className="w-4 h-4" />} type="email" value={email} onChange={setEmail} placeholder="name@example.com" />
 
-          {/* Password */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Mật khẩu</label>
-            <div className="relative group">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 group-focus-within:text-[#4ade80] transition-colors pointer-events-none" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-800 placeholder:text-slate-300 outline-none focus:bg-white focus:border-[#4ade80] focus:ring-[3px] focus:ring-[#4ade80]/10 transition-all"
-                placeholder="••••••••"
-                required
-              />
-              <button
-                type="button" tabIndex={-1}
-                onClick={() => setShowPassword(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                {/* Password */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Mật khẩu</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 group-focus-within:text-[#4ade80] transition-colors pointer-events-none" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-800 placeholder:text-slate-300 outline-none focus:bg-white focus:border-[#4ade80] focus:ring-[3px] focus:ring-[#4ade80]/10 transition-all"
+                      placeholder="••••••••"
+                      required
+                    />
+                    <button
+                      type="button" tabIndex={-1}
+                      onClick={() => setShowPassword(v => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  {/* Password strength (register) */}
+                  {mode === 'register' && password && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2.5 mt-1">
+                      <div className="flex-1 h-1 rounded-full bg-slate-200 overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          animate={{ width: `${(pwStrength.level / 4) * 100}%`, backgroundColor: pwStrength.color }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: pwStrength.color }}>
+                        {pwStrength.label}
+                      </span>
+                    </motion.div>
+                  )}
+                </div>
+
+                <motion.button
+                  type="submit" disabled={submitting}
+                  whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-[#4ade80] to-[#2fb344] text-slate-900 text-sm font-bold shadow-lg shadow-[#4ade80]/20 disabled:opacity-60 transition-shadow"
+                >
+                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+                  {mode === 'login' ? 'Tiếp tục' : 'Tiếp tục đăng ký'}
+                </motion.button>
+              </div>
+            </form>
+
+            {/* Social Login Section */}
+            <div className="mt-6">
+              <div className="relative mb-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white px-3 text-slate-400 font-medium uppercase tracking-widest">Hoặc tiếp tục với</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <motion.button
+                  type="button" onClick={() => handleSocialLogin('google')}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors shadow-sm"
+                >
+                  <FcGoogle className="w-5 h-5" />
+                  <span className="text-sm font-bold text-slate-700">Google</span>
+                </motion.button>
+                <motion.button
+                  type="button" onClick={() => handleSocialLogin('facebook')}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-full hover:bg-[#1877F2]/10 transition-colors shadow-sm"
+                >
+                  <FaFacebook className="w-5 h-5 text-[#1877F2]" />
+                  <span className="text-sm font-bold text-slate-700">Facebook</span>
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="step2"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-[#4ade80]/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <BriefcaseMedical className="w-6 h-6 text-[#4ade80]" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Chọn phòng khám</h3>
+              <p className="text-xs text-slate-500 font-medium">Vui lòng chọn cơ sở y tế bạn muốn truy cập</p>
+            </div>
+
+            <div className="max-h-[300px] overflow-y-auto pr-1 space-y-3 custom-scrollbar">
+              {tenants.map((t: any) => (
+                <motion.div
+                  key={t.id}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setTenantId(t.id)}
+                  className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex items-center gap-4 ${tenantId === t.id
+                    ? 'border-[#4ade80] bg-[#4ade80]/5 shadow-md shadow-[#4ade80]/10'
+                    : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-white'
+                    }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tenantId === t.id ? 'bg-[#4ade80] text-white' : 'bg-slate-200 text-slate-400'
+                    }`}>
+                    <BriefcaseMedical className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold truncate ${tenantId === t.id ? 'text-slate-900' : 'text-slate-600'}`}>
+                      {t.nameVi}
+                    </p>
+                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                      {t.code}
+                    </p>
+                  </div>
+                  {tenantId === t.id && (
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                      <ShieldCheck className="w-5 h-5 text-[#4ade80]" />
+                    </motion.div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <motion.button
+                onClick={handleSubmit} disabled={submitting || !tenantId}
+                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-[#4ade80] to-[#2fb344] text-slate-900 text-sm font-bold shadow-lg shadow-[#4ade80]/20 disabled:opacity-60 transition-shadow"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
+                Xác nhận & Vào hệ thống
+              </motion.button>
+
+              <button
+                type="button" onClick={() => setStep(1)}
+                className="text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest py-2"
+              >
+                Quay lại
               </button>
             </div>
-
-            {/* Password strength (register) */}
-            {mode === 'register' && password && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2.5 mt-1">
-                <div className="flex-1 h-1 rounded-full bg-slate-200 overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full"
-                    animate={{ width: `${(pwStrength.level / 4) * 100}%`, backgroundColor: pwStrength.color }}
-                  />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: pwStrength.color }}>
-                  {pwStrength.label}
-                </span>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Always show login button, skip tenant selection UI */}
-          <motion.button
-            type="submit" disabled={submitting}
-            whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-r from-[#4ade80] to-[#2fb344] text-slate-900 text-sm font-bold shadow-lg shadow-[#4ade80]/20 disabled:opacity-60 transition-shadow"
-          >
-            {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-            {firebaseIdToken ? 'Hoàn tất Đăng nhập' : mode === 'login' ? 'Đăng nhập' : 'Hoàn tất Đăng ký'}
-          </motion.button>
-        </div>
-      </form>
-
-      {/* Social Login Section */}
-      {step === 1 && (
-        <div className="mt-6">
-          <div className="relative mb-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-3 text-slate-400 font-medium">HOẶC TIẾP TỤC VỚI</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <motion.button
-              type="button" onClick={() => handleSocialLogin('google')}
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors shadow-sm"
-            >
-              <FcGoogle className="w-5 h-5" />
-              <span className="text-sm font-bold text-slate-700">Google</span>
-            </motion.button>
-            <motion.button
-              type="button" onClick={() => handleSocialLogin('facebook')}
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-full hover:bg-[#1877F2]/10 transition-colors shadow-sm"
-            >
-              <FaFacebook className="w-5 h-5 text-[#1877F2]" />
-              <span className="text-sm font-bold text-slate-700">Facebook</span>
-            </motion.button>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Footer: switch mode */}
       <div className="mt-8 pt-6 border-t border-slate-100/60 text-center">

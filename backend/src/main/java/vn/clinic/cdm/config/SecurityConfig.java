@@ -46,6 +46,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/tenants/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/**").authenticated())
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(
+                                new org.springframework.security.web.authentication.HttpStatusEntryPoint(
+                                        org.springframework.http.HttpStatus.UNAUTHORIZED)))
+                .headers(h -> h
+                        .addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter(
+                                "Cross-Origin-Opener-Policy", "unsafe-none")))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

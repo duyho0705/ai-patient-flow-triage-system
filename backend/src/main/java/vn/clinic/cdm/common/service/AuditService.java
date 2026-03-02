@@ -30,9 +30,9 @@ public class AuditService {
                     .status(status)
                     .ipAddress(ip)
                     .userAgent(ua)
-                    .timestamp(Instant.now())
+                    .createdAt(Instant.now())
                     .build();
-            auditLogRepository.save(auditLog);
+            auditLogRepository.saveAndFlush(auditLog);
         } catch (Exception e) {
             log.error("Failed to save audit log: {}", e.getMessage());
         }
