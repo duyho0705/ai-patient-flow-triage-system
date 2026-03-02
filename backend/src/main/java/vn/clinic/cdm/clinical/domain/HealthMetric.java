@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import vn.clinic.cdm.common.domain.BaseAuditableEntity;
 import vn.clinic.cdm.patient.domain.Patient;
+import vn.clinic.cdm.tenant.domain.Tenant;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -24,6 +25,10 @@ public class HealthMetric extends BaseAuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     @Column(name = "metric_type", nullable = false, length = 50)
     private String metricType;
@@ -51,4 +56,3 @@ public class HealthMetric extends BaseAuditableEntity {
         super(id);
     }
 }
-

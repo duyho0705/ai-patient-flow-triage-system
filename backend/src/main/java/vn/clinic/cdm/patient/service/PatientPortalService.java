@@ -1,5 +1,7 @@
 package vn.clinic.cdm.patient.service;
 
+import vn.clinic.cdm.common.tenant.TenantContext;
+
 import vn.clinic.cdm.api.dto.patient.PatientDashboardDto;
 import vn.clinic.cdm.api.dto.patient.PatientVitalLogDto;
 import vn.clinic.cdm.api.dto.patient.PatientDto;
@@ -79,7 +81,13 @@ public class PatientPortalService {
 
         public Patient getAuthenticatedPatient() {
                 UUID userId = AuthPrincipal.getCurrentUserId();
-                return patientService.getByUserId(userId);
+                Patient p = patientService.getByUserId(userId);
+                // Ensure tenant context is set for portal flows if header was missing from
+                // frontend
+                if (TenantContext.getTenantId().isEmpty()) {
+                        TenantContext.setTenantId(p.getTenant().getId());
+                }
+                return p;
         }
 
         public PatientDashboardDto getDashboardData(Patient p) {
@@ -208,6 +216,7 @@ public class PatientPortalService {
         public PatientVitalLogDto logVitalMetric(Patient p, PatientVitalLogDto dto) {
                 var log = HealthMetric.builder()
                                 .patient(p)
+                                .tenant(p.getTenant())
                                 .metricType(dto.getVitalType())
                                 .value(dto.getValueNumeric())
                                 .unit(dto.getUnit())
@@ -424,6 +433,7 @@ public class PatientPortalService {
 
                 var log = HealthMetric.builder()
                                 .patient(p)
+                                .tenant(p.getTenant())
                                 .metricType(dto.getVitalType())
                                 .value(dto.getValueNumeric())
                                 .unit(dto.getUnit())

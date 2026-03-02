@@ -6,7 +6,6 @@ import vn.clinic.cdm.common.domain.BaseAuditableEntity;
 import vn.clinic.cdm.tenant.domain.Tenant;
 import vn.clinic.cdm.tenant.domain.TenantBranch;
 
-import java.time.Instant;
 import java.util.UUID;
 
 /**

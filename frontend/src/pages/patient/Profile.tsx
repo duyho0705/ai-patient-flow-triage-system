@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import {
     User,
-    Mail,
     Phone,
     MapPin,
     ShieldCheck,
@@ -209,7 +208,7 @@ export default function PatientProfile() {
     return (
         <div className="space-y-8 pb-20 py-8">
             {/* 1. Header Card */}
-            <header className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-[#4ade80]/5 border border-slate-100 dark:border-slate-800 relative overflow-hidden">
+            <header className="bg-white dark:bg-slate-900 rounded-[25px] p-8 md:p-10 shadow-xl shadow-[#4ade80]/5 border border-slate-100 dark:border-slate-800 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#4ade80]/5 rounded-full -mr-32 -mt-32 blur-3xl" />
 
                 <div className="relative flex flex-col md:flex-row gap-8 items-center">
@@ -232,16 +231,16 @@ export default function PatientProfile() {
                         />
                         <label
                             htmlFor="avatar-upload-header"
-                            className="absolute bottom-1 right-1 bg-[#4ade80] text-slate-900 p-2.5 rounded-full border-4 border-white dark:border-slate-900 cursor-pointer shadow-lg hover:scale-110 transition-transform"
+                            className={`absolute bottom-1 right-1 bg-[#4ade80] text-slate-900 p-2.5 rounded-full border-4 border-white dark:border-slate-900 cursor-pointer shadow-lg hover:scale-110 transition-transform ${uploadMutation.isPending ? 'opacity-50 pointer-events-none' : ''}`}
                         >
-                            <Camera className="w-4 h-4" />
+                            {uploadMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                         </label>
                     </div>
 
                     <div className="flex-1 text-center md:text-left space-y-4">
                         <div className="flex flex-col md:flex-row md:items-center gap-4">
                             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
-                                {profile?.fullNameVi}
+                                {isEditing ? formData.fullNameVi : profile?.fullNameVi}
                             </h2>
                             <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 w-fit mx-auto md:mx-0">
                                 Đang theo dõi sức khỏe
@@ -277,14 +276,14 @@ export default function PatientProfile() {
                     <div className="flex flex-col gap-3 w-full md:w-auto">
                         <button
                             onClick={() => setIsEditing(!isEditing)}
-                            className="flex items-center justify-center gap-2 px-8 py-3.5 bg-[#4ade80] text-slate-900 font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-[#4ade80]/20 hover:bg-[#4ade80]/90 hover:-translate-y-0.5 transition-all"
+                            className="flex items-center justify-center gap-2 px-8 py-3.5 bg-[#4ade80] text-slate-900 font-black text-xs uppercase tracking-widest rounded-[25px] shadow-xl shadow-[#4ade80]/20 hover:bg-[#4ade80]/90 hover:-translate-y-0.5 transition-all"
                         >
                             <Edit3 className="w-4 h-4" />
                             {isEditing ? 'Hủy chỉnh sửa' : 'Chỉnh sửa hồ sơ'}
                         </button>
                         <button
                             onClick={() => window.print()}
-                            className="flex items-center justify-center gap-2 px-8 py-3.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all"
+                            className="flex items-center justify-center gap-2 px-8 py-3.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-[25px] border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all"
                         >
                             <Download className="w-4 h-4" />
                             Tải tóm tắt bệnh án
@@ -297,13 +296,13 @@ export default function PatientProfile() {
                 {/* 2. Personal & Contact Info (Left/Middle) */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Information Form/View */}
-                    <section className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/20 border border-slate-100 dark:border-slate-800">
+                    <section className="bg-white dark:bg-slate-900 rounded-[25px] p-8 md:p-10 shadow-xl shadow-slate-200/20 border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center justify-between mb-10">
                             <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                                <div className="p-2.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl">
+                                <div className="p-2.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-[25px]">
                                     <User className="w-5 h-5 text-[#4ade80]" />
                                 </div>
-                                Thông tin hồ sơ bệnh án
+                                Hồ sơ chi tiết
                             </h3>
                             {isEditing && (
                                 <button
@@ -312,145 +311,194 @@ export default function PatientProfile() {
                                     className="flex items-center gap-2 px-6 py-3 bg-[#4ade80] text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-[#4ade80]/20 active:scale-95 transition-all"
                                 >
                                     {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                    Lưu ngay
+                                    Lưu thay đổi
                                 </button>
                             )}
                         </div>
 
-                        <div className="grid sm:grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                                <div className="group">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Số CCCD / Hộ chiếu</p>
-                                    {isEditing && !profile?.cccd ? (
+                        <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
+                            {/* Họ và tên */}
+                            <div className="group">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Họ và tên</p>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={formData.fullNameVi}
+                                        onChange={e => setFormData({ ...formData, fullNameVi: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[25px] border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-300"
+                                        placeholder="Nhập họ tên đầy đủ..."
+                                    />
+                                ) : (
+                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-[25px] border border-slate-100 dark:border-slate-700/50">
+                                        {profile?.fullNameVi || '—'}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* CCCD */}
+                            <div className="group">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Số CCCD / Hộ chiếu</p>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={formData.cccd}
+                                        onChange={e => setFormData({ ...formData, cccd: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[25px] border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-300"
+                                        placeholder="Nhập số CCCD..."
+                                    />
+                                ) : (
+                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-[25px] border border-slate-100 dark:border-slate-700/50">
+                                        {profile?.cccd || '—'}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Ngày sinh */}
+                            <div className="group">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Ngày sinh</p>
+                                {isEditing ? (
+                                    <input
+                                        type="date"
+                                        value={formData.dateOfBirth}
+                                        onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[25px] border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all"
+                                    />
+                                ) : (
+                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-[25px] border border-slate-100 dark:border-slate-700/50">
+                                        {profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('vi-VN') : '—'}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Giới tính */}
+                            <div className="group">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Giới tính</p>
+                                {isEditing ? (
+                                    <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-[25px] border border-slate-100 dark:border-slate-700 h-[58px]">
+                                        {Object.entries(genderMap).map(([value, label]) => (
+                                            <button
+                                                key={value}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, gender: value })}
+                                                className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${formData.gender === value ? 'bg-white dark:bg-slate-700 text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-[25px] border border-slate-100 dark:border-slate-700/50">
+                                        {genderMap[profile?.gender || ''] || '—'}
+                                    </p>
+                                )}
+                            </div>
+
+
+
+                            {/* Section: Liên hệ */}
+                            <div className="sm:col-span-2 pt-6 pb-2">
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-3">
+                                    <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
+                                        <Phone className="w-4 h-4 text-blue-500" />
+                                    </div>
+                                    Liên lạc & Địa chỉ
+                                </h3>
+                            </div>
+
+                            {/* SĐT */}
+                            <div className="group">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Số điện thoại</p>
+                                {isEditing ? (
+                                    <input
+                                        type="tel"
+                                        value={formData.phone}
+                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[25px] border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-300"
+                                        placeholder="0912345678..."
+                                    />
+                                ) : (
+                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-[25px] border border-slate-100 dark:border-slate-700/50">
+                                        {profile?.phone || '—'}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Email */}
+                            <div className="group">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Địa chỉ Email</p>
+                                {isEditing ? (
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[25px] border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-300"
+                                        placeholder="example@gmail.com..."
+                                    />
+                                ) : (
+                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-[25px] border border-slate-100 dark:border-slate-700/50">
+                                        {profile?.email || '—'}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Địa chỉ - Số nhà */}
+                            <div className="group sm:col-span-2">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Địa chỉ (Số nhà, tên đường)</p>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={formData.addressLine}
+                                        onChange={e => setFormData({ ...formData, addressLine: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[25px] border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-300"
+                                        placeholder="123 Đường ABC..."
+                                    />
+                                ) : null}
+                            </div>
+
+                            {isEditing ? (
+                                <>
+                                    <div className="group">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Phường / Xã</p>
                                         <input
                                             type="text"
-                                            value={formData.cccd}
-                                            onChange={e => setFormData({ ...formData, cccd: e.target.value })}
-                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all"
-                                            placeholder="Nhập số CCCD..."
+                                            value={formData.ward}
+                                            onChange={e => setFormData({ ...formData, ward: e.target.value })}
+                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[25px] border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all"
+                                            placeholder="Phường..."
                                         />
-                                    ) : (
-                                        <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                                            {profile?.cccd || '—'}
+                                    </div>
+                                    <div className="group">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Quận / Huyện</p>
+                                        <input
+                                            type="text"
+                                            value={formData.district}
+                                            onChange={e => setFormData({ ...formData, district: e.target.value })}
+                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[25px] border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all"
+                                            placeholder="Quận..."
+                                        />
+                                    </div>
+                                    <div className="group">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Tỉnh / Thành phố</p>
+                                        <input
+                                            type="text"
+                                            value={formData.city}
+                                            onChange={e => setFormData({ ...formData, city: e.target.value })}
+                                            className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[25px] border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all"
+                                            placeholder="Thành phố..."
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="group sm:col-span-2">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Địa chỉ thường trú</p>
+                                    <div className="flex items-start gap-4 p-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-[25px] border border-slate-100 dark:border-slate-700/50">
+                                        <MapPin className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm font-black text-slate-700 dark:text-slate-200 leading-relaxed uppercase tracking-tight">
+                                            {[profile?.addressLine, profile?.ward, profile?.district, profile?.city].filter(Boolean).join(', ') || 'Chưa cập nhật'}
                                         </p>
-                                    )}
-                                </div>
-                                <div className="group">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Ngày sinh</p>
-                                    {isEditing ? (
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="date"
-                                                value={formData.dateOfBirth}
-                                                onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                                                className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                                            {profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('vi-VN') : '—'}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="group">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Giới tính</p>
-                                    {isEditing ? (
-                                        <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
-                                            {Object.entries(genderMap).map(([value, label]) => (
-                                                <button
-                                                    key={value}
-                                                    type="button"
-                                                    onClick={() => setFormData({ ...formData, gender: value })}
-                                                    className={`flex-1 py-2.5 text-xs font-black rounded-xl transition-all ${formData.gender === value ? 'bg-white dark:bg-slate-700 text-emerald-600 shadow-sm' : 'text-slate-400'}`}
-                                                >
-                                                    {label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                                            {genderMap[profile?.gender || ''] || '—'}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="group">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Dân tộc & Quốc tịch</p>
-                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                                        {profile?.ethnicity || 'Kinh'} • {profile?.nationality || 'Việt Nam'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-12 pt-10 border-t border-slate-50 dark:border-slate-800">
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 mb-8">
-                                <div className="p-2.5 bg-blue-50 dark:bg-blue-500/10 rounded-2xl">
-                                    <Phone className="w-5 h-5 text-blue-500" />
-                                </div>
-                                Thông tin liên hệ
-                            </h3>
-
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-5 group">
-                                    <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:text-emerald-500 transition-all">
-                                        <Phone className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Số điện thoại</p>
-                                        {isEditing ? (
-                                            <input
-                                                type="tel"
-                                                value={formData.phone}
-                                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                                className="w-full bg-transparent border-none font-black text-slate-700 dark:text-slate-200 focus:ring-0 p-0 text-sm"
-                                            />
-                                        ) : (
-                                            <p className="text-sm font-black text-slate-700 dark:text-slate-200">{profile?.phone || 'Chưa cập nhật'}</p>
-                                        )}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-5 group">
-                                    <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:text-emerald-500 transition-all">
-                                        <Mail className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Địa chỉ Email</p>
-                                        {isEditing ? (
-                                            <input
-                                                type="email"
-                                                value={formData.email}
-                                                onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                                className="w-full bg-transparent border-none font-black text-slate-700 dark:text-slate-200 focus:ring-0 p-0 text-sm"
-                                            />
-                                        ) : (
-                                            <p className="text-sm font-black text-slate-700 dark:text-slate-200">{profile?.email || 'Chưa cập nhật'}</p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-5 group">
-                                    <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:text-emerald-500 transition-all">
-                                        <MapPin className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Địa chỉ thường trú</p>
-                                        {isEditing ? (
-                                            <textarea
-                                                value={`${formData.addressLine || ''}, ${formData.ward || ''}, ${formData.district || ''}, ${formData.city || ''}`}
-                                                onChange={e => setFormData({ ...formData, addressLine: e.target.value })}
-                                                className="w-full bg-transparent border-none font-black text-slate-700 dark:text-slate-200 focus:ring-0 p-0 text-sm resize-none"
-                                                rows={1}
-                                            />
-                                        ) : (
-                                            <p className="text-sm font-black text-slate-700 dark:text-slate-200">
-                                                {[profile?.addressLine, profile?.ward, profile?.district, profile?.city].filter(Boolean).join(', ') || 'Chưa cập nhật'}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </section>
                 </div>
@@ -458,9 +506,9 @@ export default function PatientProfile() {
                 {/* 3. Summary & Emergency (Right Column) */}
                 <div className="space-y-8">
                     {/* Medical Quick Summary */}
-                    <section className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/20 border border-slate-100 dark:border-slate-800">
+                    <section className="bg-white dark:bg-slate-900 rounded-[25px] p-8 shadow-xl shadow-slate-200/20 border border-slate-100 dark:border-slate-800">
                         <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 mb-8">
-                            <div className="p-2.5 bg-rose-50 dark:bg-rose-500/10 rounded-2xl">
+                            <div className="p-2.5 bg-rose-50 dark:bg-rose-500/10 rounded-[25px]">
                                 <History className="w-5 h-5 text-rose-500" />
                             </div>
                             Tóm tắt y tế
@@ -513,7 +561,7 @@ export default function PatientProfile() {
                     </section>
 
                     {/* Emergency Contact */}
-                    <section className="bg-emerald-500/5 dark:bg-emerald-500/10 rounded-[2.5rem] p-8 border-2 border-dashed border-emerald-500/20 relative">
+                    <section className="bg-emerald-500/5 dark:bg-emerald-500/10 rounded-[25px] p-8 border-2 border-dashed border-emerald-500/20 relative">
                         <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-3 mb-6">
                             <div className="p-2 bg-emerald-500 text-white rounded-xl">
                                 <AlertCircle className="w-5 h-5" />
@@ -521,7 +569,7 @@ export default function PatientProfile() {
                             Liên hệ khẩn cấp
                         </h3>
 
-                        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-emerald-500/10">
+                        <div className="bg-white dark:bg-slate-800 rounded-[25px] p-6 shadow-sm border border-emerald-500/10">
                             <p className="text-sm font-black text-slate-900 dark:text-white mb-0.5">
                                 {profileData?.emergencyContact?.name || 'Chưa cài đặt'}
                             </p>
@@ -529,7 +577,7 @@ export default function PatientProfile() {
                                 Quan hệ: {profileData?.emergencyContact?.relationship || '—'}
                             </p>
 
-                            <div className="flex items-center gap-3 text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 p-3 rounded-2xl w-fit">
+                            <div className="flex items-center gap-3 text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 p-3 rounded-[25px] w-fit">
                                 <Phone className="w-4 h-4" />
                                 <span className="text-sm font-black">{profileData?.emergencyContact?.phone || '—'}</span>
                             </div>
@@ -537,7 +585,7 @@ export default function PatientProfile() {
 
                         <button
                             onClick={() => setIsPassModalOpen(true)}
-                            className="mt-6 w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl hover:scale-105 transition-all"
+                            className="mt-6 w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[25px] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl hover:scale-105 transition-all"
                         >
                             <Lock className="w-4 h-4" />
                             Đổi mật khẩu bảo mật
@@ -561,7 +609,7 @@ export default function PatientProfile() {
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 w-full max-w-md relative z-10 shadow-24 border border-slate-100 dark:border-slate-800"
+                            className="bg-white dark:bg-slate-900 rounded-[25px] p-10 w-full max-w-md relative z-10 shadow-24 border border-slate-100 dark:border-slate-800"
                         >
                             <button
                                 onClick={() => setIsPassModalOpen(false)}
@@ -588,7 +636,7 @@ export default function PatientProfile() {
                                                     setPassData({ ...passData, oldPassword: e.target.value })
                                                     if (passErrors.oldPassword) setPassErrors({ ...passErrors, oldPassword: '' })
                                                 }}
-                                                className={`w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border transition-all pr-12 font-black text-sm ${passErrors.oldPassword ? 'border-rose-300 bg-rose-50' : 'border-slate-100 dark:border-slate-700 focus:border-emerald-500'}`}
+                                                className={`w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-[25px] border transition-all pr-12 font-black text-sm ${passErrors.oldPassword ? 'border-rose-300 bg-rose-50' : 'border-slate-100 dark:border-slate-700 focus:border-emerald-500'}`}
                                             />
                                             <button
                                                 type="button"
@@ -611,7 +659,7 @@ export default function PatientProfile() {
                                                     setPassData({ ...passData, newPassword: e.target.value })
                                                     if (passErrors.newPassword) setPassErrors({ ...passErrors, newPassword: '' })
                                                 }}
-                                                className={`w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border transition-all pr-12 font-black text-sm ${passErrors.newPassword ? 'border-rose-300 bg-rose-50' : 'border-slate-100 dark:border-slate-700 focus:border-emerald-500'}`}
+                                                className={`w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-[25px] border transition-all pr-12 font-black text-sm ${passErrors.newPassword ? 'border-rose-300 bg-rose-50' : 'border-slate-100 dark:border-slate-700 focus:border-emerald-500'}`}
                                             />
                                             <button
                                                 type="button"
@@ -627,7 +675,7 @@ export default function PatientProfile() {
                                 <button
                                     type="submit"
                                     disabled={passwordMutation.isPending}
-                                    className="w-full py-5 bg-slate-900 dark:bg-emerald-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-800 dark:hover:bg-emerald-600 transition-all flex items-center justify-center gap-3"
+                                    className="w-full py-5 bg-slate-900 dark:bg-emerald-500 text-white rounded-[25px] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-800 dark:hover:bg-emerald-600 transition-all flex items-center justify-center gap-3"
                                 >
                                     {passwordMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                                     Cập nhật mật khẩu ngay

@@ -1,5 +1,5 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getPortalDashboard, logPortalVital } from '@/api/portal'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getPortalDashboard, logPortalVital, logMedicationTaken } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
 import { usePatientRealtime } from '@/hooks/usePatientRealtime'
 import {
@@ -20,7 +20,7 @@ import {
     Thermometer,
     Droplets,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useMemo } from 'react'
 import { AreaChart, Area, ResponsiveContainer } from 'recharts'
@@ -88,6 +88,8 @@ function buildChartData(vitalHistory: TriageVitalDto[] | undefined, type: string
 
 export default function PatientDashboard() {
     const { headers } = useTenant()
+    const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const [isVitalModalOpen, setIsVitalModalOpen] = useState(false)
 
     const { data: dashboard, isLoading: loadingDash } = useQuery({
@@ -126,6 +128,19 @@ export default function PatientDashboard() {
     // Prescription info
     const latestPrescription = dashboard?.latestPrescription
 
+    const { mutate: confirmMedication } = useMutation({
+        mutationFn: (med: any) => logMedicationTaken({
+            medicationReminderId: med.id,
+            medicineName: med.medicineName,
+            takenAt: new Date().toISOString()
+        }, headers),
+        onSuccess: () => {
+            toast.success('Ghi nhận đã uống thuốc!')
+            queryClient.invalidateQueries({ queryKey: ['portal-dashboard'] })
+        },
+        onError: () => toast.error('Không thể ghi nhận. Vui lòng thử lại.')
+    })
+
     if (loadingDash) return <div className="p-8 text-center font-bold text-slate-400">Đang tải bảng điều khiển...</div>
 
     return (
@@ -157,14 +172,14 @@ export default function PatientDashboard() {
                     </div>
 
                     <SecondaryVitalsGrid vitals={secondaryVitals} />
-                    <MedicationWidget reminders={medicationReminders} />
+                    <MedicationWidget reminders={medicationReminders} onConfirm={confirmMedication} />
                     {latestPrescription && <PrescriptionWidget prescription={latestPrescription} />}
                 </div>
 
                 <div className="space-y-8">
                     <HealthAlertsWidget alerts={healthAlerts} />
-                    <AppointmentWidget appointment={dashboard?.nextAppointment} />
-                    <DoctorChatWidget doctorName={dashboard?.assignedDoctorName} />
+                    <AppointmentWidget appointment={dashboard?.nextAppointment} navigate={navigate} />
+                    <DoctorChatWidget doctorName={dashboard?.assignedDoctorName} navigate={navigate} />
                 </div>
             </div>
 
@@ -331,9 +346,11 @@ function ProfileSummary({ dashboard, weightVital }: { dashboard: any, weightVita
                 <InfoBlock label="Thể trạng" value={weightVital ? `${weightVital.valueNumeric} kg` : null} />
                 <InfoBlock label="Tiền sử" value={dashboard?.chronicConditions} fallback="Không có" />
             </div>
-            <button className="px-6 py-2.5 bg-[#4ade80] text-slate-900 rounded-xl font-bold text-sm hover:bg-[#4ade80]/90 transition-all shadow-lg shadow-[#4ade80]/20 active:scale-95 whitespace-nowrap">
-                Chỉnh sửa hồ sơ
-            </button>
+            <Link to="/patient/profile">
+                <button className="px-6 py-2.5 bg-[#4ade80] text-slate-900 rounded-xl font-bold text-sm hover:bg-[#4ade80]/90 transition-all shadow-lg shadow-[#4ade80]/20 active:scale-95 whitespace-nowrap">
+                    Chỉnh sửa hồ sơ
+                </button>
+            </Link>
         </motion.section>
     )
 }
@@ -450,7 +467,7 @@ function SecondaryVitalsGrid({ vitals }: { vitals: TriageVitalDto[] }) {
     )
 }
 
-function MedicationWidget({ reminders }: { reminders: any[] }) {
+function MedicationWidget({ reminders, onConfirm }: { reminders: any[], onConfirm: (med: any) => void }) {
     return (
         <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/30">
@@ -472,7 +489,14 @@ function MedicationWidget({ reminders }: { reminders: any[] }) {
                                 <p className="text-sm font-black text-slate-900 dark:text-white">{med.medicineName}{med.dosage ? ` — ${med.dosage}` : ''}</p>
                                 <p className="text-[10px] text-slate-400 font-black tracking-widest mt-0.5">{med.reminderTime} • {med.notes || (isDone ? 'Đã uống' : 'Chờ')}</p>
                             </div>
-                            {isCurrent && <button className="bg-[#4ade80] text-slate-900 px-4 py-2 rounded-xl text-[10px] font-black tracking-widest hover:bg-[#4ade80]/90 transition-all shadow-md active:scale-95">Xác nhận</button>}
+                            {isCurrent && (
+                                <button
+                                    onClick={() => onConfirm(med)}
+                                    className="bg-[#4ade80] text-slate-900 px-4 py-2 rounded-xl text-[10px] font-black tracking-widest hover:bg-[#4ade80]/90 transition-all shadow-md active:scale-95"
+                                >
+                                    Xác nhận
+                                </button>
+                            )}
                         </div>
                     )
                 }) : <div className="text-center py-6 text-slate-400 text-xs font-bold">Không có lịch uống thuốc</div>}
@@ -518,9 +542,12 @@ function HealthAlertsWidget({ alerts }: { alerts: string[] }) {
     )
 }
 
-function AppointmentWidget({ appointment }: { appointment: any }) {
+function AppointmentWidget({ appointment, navigate }: { appointment: any, navigate: any }) {
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-6">
+        <div
+            className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate('/patient/appointments')}
+        >
             <h3 className="font-black mb-6 flex items-center gap-3 text-sm tracking-widest text-slate-800 dark:text-slate-200"><Calendar className="w-5 h-5 text-emerald-500" /> Lịch khám</h3>
             {appointment ? (
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] border-l-8 border-emerald-400">
@@ -533,9 +560,13 @@ function AppointmentWidget({ appointment }: { appointment: any }) {
     )
 }
 
-function DoctorChatWidget({ doctorName }: { doctorName?: string }) {
+function DoctorChatWidget({ doctorName, navigate }: { doctorName?: string, navigate: any }) {
     return (
-        <motion.div whileHover={{ scale: 1.02 }} className="bg-emerald-400 rounded-[2rem] p-5 flex items-center gap-4 shadow-xl shadow-emerald-400/20 group cursor-pointer" onClick={() => { }}>
+        <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-emerald-400 rounded-[2rem] p-5 flex items-center gap-4 shadow-xl shadow-emerald-400/20 group cursor-pointer"
+            onClick={() => navigate('/patient/chat')}
+        >
             <div className="h-14 w-14 rounded-2xl bg-slate-900 relative overflow-hidden"><img alt="Doctor" className="object-cover h-full w-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcFUhTbj4SPfWKM3951CEKYvigAczulFrCd8MjzxK28AaIMv7rvM-pUcSN0_6i5RwtX13a876QeZic-WXjKbruzJO_MU1VLhaf8sTaTC6xMBJBLlegIlBVQ7-ay4KFBKDc9Kp4d4VxiW4W55X3BgzMhYJVpEUOsX5zvapaAutwwZ5jNXGYRXvYYdfIxJ3NoXT7vE_s_WQFoBz8nq_gOTbZG2UuGnw6hWILVqM-4JvKFVl6gyFJVzgir_vEEj_UoPOP31YKYoxzHN8" /></div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-black text-slate-900 truncate">{doctorName || 'BS. CDMS'}</p>

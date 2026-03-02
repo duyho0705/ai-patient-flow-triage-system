@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { getPortalAppointments } from '@/api/portal'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getPortalAppointments, getPortalBranches, getPortalSlots, createPortalAppointment } from '@/api/portal'
 import { useTenant } from '@/context/TenantContext'
 import {
     Calendar,
@@ -10,21 +10,63 @@ import {
     Filter,
     Search,
     Lightbulb,
-    CalendarPlus
+    CalendarPlus,
+    X,
+    Loader2
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { format, isAfter, isBefore, parseISO } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 export default function PatientAppointments() {
     const { headers } = useTenant()
-    const navigate = useNavigate()
+    const queryClient = useQueryClient()
+    const [showBooking, setShowBooking] = useState(false)
+    const [bookingData, setBookingData] = useState({
+        branchId: '',
+        appointmentDate: '',
+        slotStartTime: '',
+        slotEndTime: '',
+        appointmentType: 'Trực tiếp',
+        notes: ''
+    })
 
     const { data: appointments, isLoading } = useQuery({
         queryKey: ['portal-appointments'],
         queryFn: () => getPortalAppointments(headers),
         enabled: !!headers?.tenantId
+    })
+
+    const { data: branches } = useQuery({
+        queryKey: ['portal-branches'],
+        queryFn: () => getPortalBranches(headers),
+        enabled: !!headers?.tenantId && showBooking
+    })
+
+    const { data: slots } = useQuery({
+        queryKey: ['portal-slots', bookingData.branchId, bookingData.appointmentDate],
+        queryFn: () => getPortalSlots(bookingData.branchId, bookingData.appointmentDate, headers),
+        enabled: !!bookingData.branchId && !!bookingData.appointmentDate && showBooking
+    })
+
+    const createMutation = useMutation({
+        mutationFn: () => createPortalAppointment({
+            branchId: bookingData.branchId,
+            appointmentDate: bookingData.appointmentDate,
+            slotStartTime: bookingData.slotStartTime,
+            slotEndTime: bookingData.slotEndTime,
+            appointmentType: bookingData.appointmentType,
+            notes: bookingData.notes
+        }, headers),
+        onSuccess: () => {
+            toast.success('Đặt lịch thành công!')
+            queryClient.invalidateQueries({ queryKey: ['portal-appointments'] })
+            setShowBooking(false)
+            setBookingData({ branchId: '', appointmentDate: '', slotStartTime: '', slotEndTime: '', appointmentType: 'Trực tiếp', notes: '' })
+        },
+        onError: (err: any) => toast.error(err.message || 'Có lỗi xảy ra khi đặt lịch.')
     })
 
     const upcomingAppointments = appointments?.filter(apt =>
@@ -64,7 +106,7 @@ export default function PatientAppointments() {
                         <p className="text-slate-500 dark:text-slate-400">Quản lý và theo dõi các buổi khám của bạn</p>
                     </div>
                     <button
-                        onClick={() => navigate('/patient/booking')}
+                        onClick={() => setShowBooking(true)}
                         className="bg-[#4ade80] hover:bg-[#4ade80]/90 text-slate-900 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-[#4ade80]/20 active:scale-95"
                     >
                         <PlusCircle className="w-5 h-5" />
@@ -301,6 +343,132 @@ export default function PatientAppointments() {
                     <div className="absolute -right-4 -bottom-4 size-24 bg-[#4ade80]/20 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-700"></div>
                 </section>
             </aside>
+
+            {/* Booking Modal */}
+            <AnimatePresence>
+                {showBooking && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowBooking(false)}
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 w-full max-w-lg relative z-10 shadow-2xl border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto"
+                        >
+                            <button
+                                onClick={() => setShowBooking(false)}
+                                className="absolute top-8 right-8 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all"
+                            >
+                                <X className="w-6 h-6 text-slate-300" />
+                            </button>
+
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Đặt lịch khám mới</h3>
+                            <p className="text-slate-400 font-bold text-xs mb-8">Chọn chi nhánh, ngày giờ phù hợp</p>
+
+                            <div className="space-y-6">
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Chi nhánh</p>
+                                    <select
+                                        value={bookingData.branchId}
+                                        onChange={e => setBookingData({ ...bookingData, branchId: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 font-bold text-sm text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all"
+                                    >
+                                        <option value="">Chọn chi nhánh...</option>
+                                        {(branches || []).map((b: any) => (
+                                            <option key={b.id} value={b.id}>{b.nameVi || b.code}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Ngày khám</p>
+                                    <input
+                                        type="date"
+                                        value={bookingData.appointmentDate}
+                                        min={format(new Date(), 'yyyy-MM-dd')}
+                                        onChange={e => setBookingData({ ...bookingData, appointmentDate: e.target.value, slotStartTime: '', slotEndTime: '' })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 font-bold text-sm text-slate-700 dark:text-slate-200 focus:border-emerald-500 outline-none transition-all"
+                                    />
+                                </div>
+
+                                {bookingData.branchId && bookingData.appointmentDate && (
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Khung giờ</p>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {(slots || []).length > 0 ? (slots || []).map((s: any, i: number) => (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => setBookingData({ ...bookingData, slotStartTime: s.startTime, slotEndTime: s.endTime || '' })}
+                                                    className={`p-3 rounded-xl text-xs font-bold border transition-all ${bookingData.slotStartTime === s.startTime
+                                                        ? 'bg-[#4ade80] text-slate-900 border-[#4ade80] shadow-md'
+                                                        : s.available === false
+                                                            ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed'
+                                                            : 'bg-white dark:bg-slate-800 text-slate-600 border-slate-200 dark:border-slate-700 hover:border-[#4ade80]'
+                                                        }`}
+                                                    disabled={s.available === false}
+                                                >
+                                                    {s.startTime}
+                                                </button>
+                                            )) : (
+                                                <p className="col-span-3 text-center text-slate-400 text-xs font-bold py-4">Không có khung giờ trống</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Loại khám</p>
+                                    <div className="flex gap-3">
+                                        {['Trực tiếp', 'Online'].map(type => (
+                                            <button
+                                                key={type}
+                                                onClick={() => setBookingData({ ...bookingData, appointmentType: type })}
+                                                className={`flex-1 p-3 rounded-xl text-xs font-bold border transition-all ${bookingData.appointmentType === type
+                                                    ? 'bg-[#4ade80] text-slate-900 border-[#4ade80]'
+                                                    : 'bg-white dark:bg-slate-800 text-slate-600 border-slate-200 dark:border-slate-700'
+                                                    }`}
+                                            >
+                                                {type === 'Online' ? '🖥️' : '🏥'} {type}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Ghi chú (tùy chọn)</p>
+                                    <textarea
+                                        value={bookingData.notes}
+                                        onChange={e => setBookingData({ ...bookingData, notes: e.target.value })}
+                                        placeholder="VD: Tái khám tim mạch, mang theo kết quả xét nghiệm..."
+                                        rows={2}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 font-medium text-sm text-slate-600 dark:text-slate-300 focus:border-emerald-500 outline-none transition-all resize-none"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        if (!bookingData.branchId) { toast.error('Vui lòng chọn chi nhánh'); return }
+                                        if (!bookingData.appointmentDate) { toast.error('Vui lòng chọn ngày khám'); return }
+                                        if (!bookingData.slotStartTime) { toast.error('Vui lòng chọn khung giờ'); return }
+                                        createMutation.mutate()
+                                    }}
+                                    disabled={createMutation.isPending}
+                                    className="w-full py-5 bg-[#4ade80] text-slate-900 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[#4ade80]/20 hover:bg-[#4ade80]/90 transition-all flex items-center justify-center gap-3"
+                                >
+                                    {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarPlus className="w-4 h-4" />}
+                                    Xác nhận đặt lịch
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
