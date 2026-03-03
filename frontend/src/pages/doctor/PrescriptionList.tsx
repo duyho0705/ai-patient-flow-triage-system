@@ -88,17 +88,10 @@ export function PrescriptionList() {
         <div className="flex-1 space-y-8 animate-in fade-in duration-700">
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">
-                        Quản lý toa thuốc
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">
-                        Quản lý và theo dõi các đơn thuốc dài hạn của bệnh nhân mãn tính
-                    </p>
-                </div>
+                <div />
                 <Link
                     to="/consultation"
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-emerald-400 text-slate-900 rounded-[13px] font-bold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-400/20 active:scale-95"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-slate-900 rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95"
                 >
                     <PlusCircle className="w-5 h-5" />
                     <span>Tạo toa thuốc mới</span>

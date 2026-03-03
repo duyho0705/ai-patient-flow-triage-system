@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 
-<html lang="vi"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>VitalCare - Chỉ số sức khỏe</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -21,380 +26,381 @@
                     fontFamily: {
                         "display": ["Manrope"]
                     },
-                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
                 },
             },
         }
     </script>
-<style>
+    <style>
         body {
             font-family: 'Manrope', sans-serif;
         }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
         }
-        .filled-icon {
-            font-variation-settings: 'FILL' 1;
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1e5d9;
+            border-radius: 10px;
         }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
-<div class="flex h-full min-h-screen">
-<!-- Side Navigation -->
-<aside class="w-64 border-r border-primary/10 bg-white dark:bg-slate-900 hidden md:flex flex-col sticky top-0 h-screen">
-<div class="p-6 flex items-center gap-3">
-<div class="bg-primary size-10 rounded-lg flex items-center justify-center text-white">
-<span class="material-symbols-outlined text-2xl">medical_services</span>
-</div>
-<div class="flex flex-col">
-<h1 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">VitalCare</h1>
-<p class="text-primary text-xs font-medium">Quản lý bệnh mãn tính</p>
-</div>
-</div>
-<nav class="flex-1 px-4 py-4 space-y-1">
-<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" href="#">
-<span class="material-symbols-outlined">dashboard</span>
-<span class="text-sm font-medium">Bảng điều khiển</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" href="#">
-<span class="material-symbols-outlined">pill</span>
-<span class="text-sm font-medium">Đơn thuốc</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 bg-primary text-white rounded-lg shadow-sm shadow-primary/20" href="#">
-<span class="material-symbols-outlined filled-icon">monitoring</span>
-<span class="text-sm font-medium">Chỉ số sức khỏe</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" href="#">
-<span class="material-symbols-outlined">calendar_today</span>
-<span class="text-sm font-medium">Lịch hẹn</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" href="#">
-<span class="material-symbols-outlined">chat_bubble</span>
-<span class="text-sm font-medium">Tin nhắn bác sĩ</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors mt-auto" href="#">
-<span class="material-symbols-outlined">person</span>
-<span class="text-sm font-medium">Hồ sơ cá nhân</span>
-</a>
-</nav>
-<div class="p-4 border-t border-primary/10">
-<div class="bg-primary/5 rounded-xl p-3">
-<p class="text-xs text-slate-500 mb-1">Cần giúp đỡ?</p>
-<button class="text-xs font-bold text-primary flex items-center gap-1">Liên hệ hỗ trợ <span class="material-symbols-outlined text-[14px]">arrow_forward</span></button>
-</div>
-</div>
-</aside>
-<!-- Main Content -->
-<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
-<!-- Header -->
-<header class="h-16 border-b border-primary/10 bg-white dark:bg-slate-900 flex items-center justify-between px-6 sticky top-0 z-10">
-<div class="flex-1 max-w-md">
-<div class="relative">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-<input class="w-full pl-10 pr-4 py-2 bg-background-light dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-primary text-sm" placeholder="Tìm kiếm kết quả, báo cáo..." type="text"/>
-</div>
-</div>
-<div class="flex items-center gap-4">
-<button class="relative p-2 text-slate-500 hover:bg-background-light rounded-full transition-colors">
-<span class="material-symbols-outlined">notifications</span>
-<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white"></span>
-</button>
-<button class="p-2 text-slate-500 hover:bg-background-light rounded-full transition-colors">
-<span class="material-symbols-outlined">settings</span>
-</button>
-<div class="h-8 w-px bg-primary/20 mx-1"></div>
-<div class="flex items-center gap-3 pl-2">
-<div class="text-right hidden sm:block">
-<p class="text-sm font-bold text-slate-900 dark:text-white">Nguyễn Văn A</p>
-<p class="text-[10px] text-slate-500 uppercase font-semibold">Bệnh nhân</p>
-</div>
-<img alt="Avatar" class="size-9 rounded-full bg-primary/20 border border-primary/20" data-alt="Ảnh đại diện người dùng Nguyễn Văn A" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYJOxefHu9UuwBIIHX0Lsun5eTd0M-fgStXzt2UhM1QacDyyyGBxav8lME9XTPu_DUobsNB9XYodX5dlRGLOL0qH5GqomjWH-an2RVE9ZpT6CKkP29RvpcXC5NUXJ9XzmWBCRvZ2kyZdUROfNzS_GOiMyBekVdvRrOlcQUtpER45VPBHGGeLNCagRkMF3eknh9g3zRlIR9ds3Uh5iLa9YikrjZmmZhkVRTjFjuyi7nKrDRXiVxXSuckbOT6R_9h6Py524VLcKcbW0"/>
-</div>
-</div>
-</header>
-<div class="p-6 space-y-6 overflow-y-auto">
-<!-- Title and CTA -->
-<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-<div>
-<h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Chỉ số sức khỏe</h2>
-<p class="text-slate-500 mt-1">Theo dõi các chỉ số sinh tồn của bạn trong thời gian thực</p>
-</div>
-<button class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-transform active:scale-95">
-<span class="material-symbols-outlined">add</span>
-                        Nhập chỉ số mới
-                    </button>
-</div>
-<!-- Filters -->
-<div class="flex bg-white dark:bg-slate-900 p-1 rounded-xl border border-primary/10 w-fit">
-<button class="px-6 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Ngày</button>
-<button class="px-6 py-1.5 text-sm font-bold text-primary bg-primary/10 rounded-lg">Tuần</button>
-<button class="px-6 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Tháng</button>
-<button class="px-6 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Năm</button>
-</div>
-<!-- Metric Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-<!-- Card: Đường huyết -->
-<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-primary ring-2 ring-primary/10">
-<div class="flex justify-between items-start mb-4">
-<div class="p-2 bg-primary/10 text-primary rounded-lg">
-<span class="material-symbols-outlined text-xl">glucose</span>
-</div>
-<span class="text-[10px] font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-full">ỔN ĐỊNH</span>
-</div>
-<p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Đường huyết</p>
-<div class="flex items-baseline gap-1 mt-1">
-<span class="text-2xl font-black text-slate-900 dark:text-white">5.6</span>
-<span class="text-xs text-slate-400">mmol/L</span>
-</div>
-<div class="mt-2 flex items-center gap-1 text-primary">
-<span class="material-symbols-outlined text-sm">trending_down</span>
-<span class="text-xs font-bold">-2% so với hôm qua</span>
-</div>
-</div>
-<!-- Card: Huyết áp -->
-<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-primary/10">
-<div class="flex justify-between items-start mb-4">
-<div class="p-2 bg-orange-100 text-orange-600 rounded-lg">
-<span class="material-symbols-outlined text-xl">vital_signs</span>
-</div>
-<span class="text-[10px] font-bold px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full uppercase">Cần chú ý</span>
-</div>
-<p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Huyết áp</p>
-<div class="flex items-baseline gap-1 mt-1">
-<span class="text-2xl font-black text-slate-900 dark:text-white">120/80</span>
-<span class="text-xs text-slate-400">mmHg</span>
-</div>
-<div class="mt-2 flex items-center gap-1 text-orange-600">
-<span class="material-symbols-outlined text-sm">trending_up</span>
-<span class="text-xs font-bold">+5% so với hôm qua</span>
-</div>
-</div>
-<!-- Card: Nhịp tim -->
-<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-primary/10">
-<div class="flex justify-between items-start mb-4">
-<div class="p-2 bg-red-100 text-red-600 rounded-lg">
-<span class="material-symbols-outlined text-xl">favorite</span>
-</div>
-<span class="text-[10px] font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-full">ỔN ĐỊNH</span>
-</div>
-<p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Nhịp tim</p>
-<div class="flex items-baseline gap-1 mt-1">
-<span class="text-2xl font-black text-slate-900 dark:text-white">72</span>
-<span class="text-xs text-slate-400">bpm</span>
-</div>
-<div class="mt-2 flex items-center gap-1 text-slate-400">
-<span class="material-symbols-outlined text-sm">horizontal_rule</span>
-<span class="text-xs font-bold">0% không đổi</span>
-</div>
-</div>
-<!-- Card: Cân nặng -->
-<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-primary/10">
-<div class="flex justify-between items-start mb-4">
-<div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
-<span class="material-symbols-outlined text-xl">weight</span>
-</div>
-<span class="text-[10px] font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-full">ỔN ĐỊNH</span>
-</div>
-<p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Cân nặng</p>
-<div class="flex items-baseline gap-1 mt-1">
-<span class="text-2xl font-black text-slate-900 dark:text-white">68.5</span>
-<span class="text-xs text-slate-400">kg</span>
-</div>
-<div class="mt-2 flex items-center gap-1 text-primary">
-<span class="material-symbols-outlined text-sm">trending_down</span>
-<span class="text-xs font-bold">-1% tuần này</span>
-</div>
-</div>
-<!-- Card: SpO2 -->
-<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-primary/10">
-<div class="flex justify-between items-start mb-4">
-<div class="p-2 bg-cyan-100 text-cyan-600 rounded-lg">
-<span class="material-symbols-outlined text-xl">air</span>
-</div>
-<span class="text-[10px] font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-full uppercase">Bình thường</span>
-</div>
-<p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Nồng độ Oxy (SpO2)</p>
-<div class="flex items-baseline gap-1 mt-1">
-<span class="text-2xl font-black text-slate-900 dark:text-white">98</span>
-<span class="text-xs text-slate-400">%</span>
-</div>
-<div class="mt-2 flex items-center gap-1 text-slate-400">
-<span class="material-symbols-outlined text-sm">horizontal_rule</span>
-<span class="text-xs font-bold">0% không đổi</span>
-</div>
-</div>
-</div>
-<!-- Chart and Analysis -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-<!-- Detailed Chart -->
-<div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10">
-<div class="flex items-center justify-between mb-6">
-<div>
-<h3 class="font-bold text-lg">Biểu đồ Đường huyết chi tiết</h3>
-<p class="text-xs text-slate-500">Dữ liệu thu thập trong 7 ngày qua</p>
-</div>
-<select class="text-xs border-primary/20 rounded-lg bg-background-light dark:bg-slate-800">
-<option>Đường huyết (mmol/L)</option>
-<option>Huyết áp (mmHg)</option>
-<option>Nhịp tim (bpm)</option>
-</select>
-</div>
-<div class="h-64 relative">
-<!-- Placeholder for Chart using SVG -->
-<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 800 200">
-<defs>
-<lineargradient id="gradient" x1="0%" x2="0%" y1="0%" y2="100%">
-<stop offset="0%" style="stop-color:rgba(74, 222, 128, 0.3)"></stop>
-<stop offset="100%" style="stop-color:rgba(74, 222, 128, 0)"></stop>
-</lineargradient>
-</defs>
-<path d="M0,150 Q50,140 100,160 T200,130 T300,140 T400,110 T500,120 T600,90 T700,100 T800,80 L800,200 L0,200 Z" fill="url(#gradient)"></path>
-<path d="M0,150 Q50,140 100,160 T200,130 T300,140 T400,110 T500,120 T600,90 T700,100 T800,80" fill="none" stroke="#4ade80" stroke-width="3"></path>
-<circle cx="100" cy="160" fill="#4ade80" r="4"></circle>
-<circle cx="200" cy="130" fill="#4ade80" r="4"></circle>
-<circle cx="300" cy="140" fill="#4ade80" r="4"></circle>
-<circle cx="400" cy="110" fill="#4ade80" r="4"></circle>
-<circle cx="500" cy="120" fill="#4ade80" r="4"></circle>
-<circle cx="600" cy="90" fill="#4ade80" r="4"></circle>
-<circle cx="700" cy="100" fill="#4ade80" r="4"></circle>
-</svg>
-<div class="absolute bottom-0 w-full flex justify-between text-[10px] font-bold text-slate-400 pt-2">
-<span>Thứ 2</span>
-<span>Thứ 3</span>
-<span>Thứ 4</span>
-<span>Thứ 5</span>
-<span>Thứ 6</span>
-<span>Thứ 7</span>
-<span>Chủ nhật</span>
-</div>
-</div>
-</div>
-<!-- AI/Doctor Analysis -->
-<div class="bg-primary/5 dark:bg-primary/10 p-6 rounded-xl border border-primary/20 flex flex-col">
-<div class="flex items-center gap-2 mb-4">
-<span class="material-symbols-outlined text-primary">auto_awesome</span>
-<h3 class="font-bold text-slate-900 dark:text-white">Phân tích từ AI &amp; Bác sĩ</h3>
-</div>
-<div class="space-y-4 flex-1">
-<div class="bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm">
-<p class="text-sm text-slate-600 dark:text-slate-300 italic">"Chỉ số đường huyết của bạn đang có xu hướng giảm nhẹ và ổn định hơn so với tuần trước. Tuy nhiên, huyết áp ghi nhận vào buổi sáng đôi khi hơi cao. Hãy duy trì việc tập thể dục nhẹ nhàng và giảm muối trong khẩu phần ăn."</p>
-<div class="mt-3 flex items-center gap-2">
-<div class="size-6 bg-primary rounded-full flex items-center justify-center text-[10px] text-white font-bold">BS</div>
-<p class="text-[10px] font-bold text-slate-500 uppercase">BS. Trần Thị Thu</p>
-</div>
-</div>
-<div class="bg-primary/20 p-3 rounded-lg">
-<h4 class="text-xs font-bold text-primary flex items-center gap-1 mb-1">
-<span class="material-symbols-outlined text-sm">lightbulb</span> Lời khuyên
-                                </h4>
-<p class="text-xs text-slate-700 dark:text-slate-200">Uống đủ 2L nước mỗi ngày và hạn chế caffeine sau 14:00 để ổn định nhịp tim.</p>
-</div>
-</div>
-</div>
-</div>
-<!-- Recent History Table -->
-<div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 overflow-hidden">
-<div class="p-6 border-b border-primary/10 flex items-center justify-between">
-<h3 class="font-bold text-lg text-slate-900 dark:text-white">Lịch sử nhập liệu gần đây</h3>
-<button class="text-primary text-sm font-bold hover:underline">Xem tất cả</button>
-</div>
-<div class="overflow-x-auto">
-<table class="w-full text-left">
-<thead>
-<tr class="bg-background-light dark:bg-slate-800/50">
-<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Thời gian</th>
-<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Chỉ số</th>
-<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Giá trị</th>
-<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-<th class="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Ghi chú</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-primary/5">
-<tr>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="text-sm font-medium text-slate-900 dark:text-white">Hôm nay, 08:30</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-primary text-sm">glucose</span>
-<span class="text-sm text-slate-600 dark:text-slate-300">Đường huyết</span>
-</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="text-sm font-bold text-slate-900 dark:text-white">5.6 mmol/L</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<span class="px-2 py-1 text-[10px] font-bold bg-primary/10 text-primary rounded-full">BÌNH THƯỜNG</span>
-</td>
-<td class="px-6 py-4">
-<div class="text-sm text-slate-500 truncate max-w-[200px]">Đo sau khi ăn sáng 1 tiếng.</div>
-</td>
-</tr>
-<tr>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="text-sm font-medium text-slate-900 dark:text-white">Hôm qua, 20:15</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-orange-500 text-sm">vital_signs</span>
-<span class="text-sm text-slate-600 dark:text-slate-300">Huyết áp</span>
-</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="text-sm font-bold text-slate-900 dark:text-white">125/85 mmHg</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<span class="px-2 py-1 text-[10px] font-bold bg-orange-100 text-orange-600 rounded-full">HƠI CAO</span>
-</td>
-<td class="px-6 py-4">
-<div class="text-sm text-slate-500 truncate max-w-[200px]">Cảm thấy hơi chóng mặt nhẹ.</div>
-</td>
-</tr>
-<tr>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="text-sm font-medium text-slate-900 dark:text-white">Hôm qua, 07:00</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-blue-500 text-sm">weight</span>
-<span class="text-sm text-slate-600 dark:text-slate-300">Cân nặng</span>
-</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="text-sm font-bold text-slate-900 dark:text-white">68.5 kg</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<span class="px-2 py-1 text-[10px] font-bold bg-primary/10 text-primary rounded-full">ỔN ĐỊNH</span>
-</td>
-<td class="px-6 py-4">
-<div class="text-sm text-slate-500 truncate max-w-[200px]">Đo lúc vừa ngủ dậy.</div>
-</td>
-</tr>
-<tr>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="text-sm font-medium text-slate-900 dark:text-white">15 Thg 10, 10:00</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-red-500 text-sm">favorite</span>
-<span class="text-sm text-slate-600 dark:text-slate-300">Nhịp tim</span>
-</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<div class="text-sm font-bold text-slate-900 dark:text-white">75 bpm</div>
-</td>
-<td class="px-6 py-4 whitespace-nowrap">
-<span class="px-2 py-1 text-[10px] font-bold bg-primary/10 text-primary rounded-full">BÌNH THƯỜNG</span>
-</td>
-<td class="px-6 py-4">
-<div class="text-sm text-slate-500 truncate max-w-[200px]">Đo sau khi đi bộ 15 phút.</div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</main>
-</div>
-</body></html>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 overflow-hidden">
+    <div class="flex h-screen w-full">
+        <!-- Sidebar Navigation -->
+        <aside
+            class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col p-4">
+            <div class="flex items-center gap-3 mb-8 px-2">
+                <div class="size-10 rounded-full bg-primary flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined">health_metrics</span>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-slate-900 dark:text-white text-base font-bold">Sống Khỏe</h1>
+                    <p class="text-primary text-xs font-medium">Hệ thống quản lý</p>
+                </div>
+            </div>
+            <nav class="flex-1 space-y-1">
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span class="text-sm font-medium">Tổng quan</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">group</span>
+                    <span class="text-sm font-medium">Bệnh nhân</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary/10 text-slate-900 dark:text-white font-bold"
+                    href="#">
+                    <span class="material-symbols-outlined text-primary"
+                        style="font-variation-settings: 'FILL' 1">chat_bubble</span>
+                    <span class="text-sm">Tin nhắn</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    <span class="text-sm font-medium">Lịch hẹn</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span class="text-sm font-medium">Cài đặt</span>
+                </a>
+            </nav>
+            <button
+                class="mt-auto flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-sm">
+                <span class="material-symbols-outlined text-sm">logout</span>
+                Đăng xuất
+            </button>
+        </aside>
+        <!-- Main Content Area -->
+        <main class="flex flex-1 flex-col overflow-hidden">
+            <!-- Global Header -->
+            <header
+                class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between px-6">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-lg font-bold">Tin nhắn</h2>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <span class="material-symbols-outlined p-2 text-slate-500 cursor-pointer">notifications</span>
+                        <span
+                            class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white"></span>
+                    </div>
+                    <div class="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-slate-800">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold leading-none">BS. Lê Văn Nam</p>
+                            <p class="text-xs text-slate-500">Khoa Nội tổng quát</p>
+                        </div>
+                        <img class="size-10 rounded-full object-cover" data-alt="Bác sĩ đang mỉm cười thân thiện"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCE2djEH8Ges3W-VAgDMRwfRhpjBiJ0GRq2kcgeT6bKSvPXL_dIU5f6ktogGhLfB94Hx-ZzkCX_u-rLV6tUoLUZPd1eRqhykvrQ4Jfpr7ZlAw-9nrPx27rEBFZsYPg3oFSVcC9dZdDqDsMUWtghhxZ5PH49pH6NzjqLVCu5rPvMIUUAI0oPl5HrcFyD0wascdwIzNfTAIkULhGO-Tb2wtJ150Nu8CkiD_QSB4RL5BPH4wYtPVcR7EIWrhWcdO2hj33oPXJWUqHYDj4" />
+                    </div>
+                </div>
+            </header>
+            <div class="flex flex-1 overflow-hidden">
+                <!-- Left Column: Contact List -->
+                <section
+                    class="w-80 border-r border-slate-200 dark:border-slate-800 flex flex-col bg-white dark:bg-slate-900/50">
+                    <div class="p-4">
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+                            <input
+                                class="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/50"
+                                placeholder="Tìm kiếm bệnh nhân..." type="text" />
+                        </div>
+                    </div>
+                    <div class="flex border-b border-slate-200 dark:border-slate-800">
+                        <button class="flex-1 py-3 text-sm font-bold text-primary border-b-2 border-primary">Tất
+                            cả</button>
+                        <button class="flex-1 py-3 text-sm font-medium text-slate-500 hover:text-slate-700">Chưa
+                            đọc</button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto custom-scrollbar">
+                        <!-- Patient Items -->
+                        <div class="p-3 space-y-2">
+                            <div
+                                class="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 cursor-pointer">
+                                <div class="relative">
+                                    <img class="size-12 rounded-full object-cover"
+                                        data-alt="Chân dung bệnh nhân Nguyễn Văn A"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoRl8NTd68SRL_B98uIoSixtoSFJ_WzA_ARggqrddikGEZU5TvmSR2m3O5T1qeyIddTDbGEQsvKPHA9OaIHqdKNbaEb5u1y6Z7lJWYLA551IOrhSYBeCp6TvkUP0oZmg2-z7exCQilm2RhKk0JK8sQVbBkzugjOEBNCgSHCs-VPqtPnPKKBpqqAOzq715qm4QoA0LGmVrHKy2xEvxEK6dE-Oul3-ud2Yg-oRnIg92B1uE_UK7HuaIQHwfRC0N3gSrAxqZqnfedqwU" />
+                                    <span
+                                        class="absolute bottom-0 right-0 size-3 bg-green-500 border-2 border-white rounded-full"></span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <h3 class="text-sm font-bold truncate">Nguyễn Văn A</h3>
+                                        <span class="text-[10px] text-slate-400">10:45</span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 dark:text-slate-400 truncate">Bác sĩ ơi, chỉ số
+                                        huyết áp...</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span
+                                            class="px-1.5 py-0.5 bg-red-100 text-red-600 text-[10px] rounded-md font-bold">Nguy
+                                            cơ cao</span>
+                                    </div>
+                                </div>
+                                <div
+                                    class="size-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold">
+                                    2</div>
+                            </div>
+                            <div
+                                class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                                <img class="size-12 rounded-full object-cover grayscale"
+                                    data-alt="Chân dung bệnh nhân Trần Thị B"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBhD6WWkEmCMteDAhlg1khjJmteYcqGR_yWPtw7M8cvkR3Pz1-1ppF9o5AMWC6HaT2f-5pYOc8QcYtyOYqIwns5BwN129P-TJ0KCcF__-O9EC29r_C_OwDHLBNK4gPhThgBbxZTnZh6_65fKk1BuXOPABOf5XFyVqBB3elRY41Rw1LVHLJb67lK83eFMaCHBlpb8wxLmEDLfeNEowQbIJP7cHp5YfLb_9os0KnEGIqfCwFAk7CcH4yVH_nP5tWbnE2ExIYImKwspU" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <h3 class="text-sm font-bold truncate">Trần Thị B</h3>
+                                        <span class="text-[10px] text-slate-400">Hôm qua</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 truncate">Vâng, tôi đã nhận được đơn thuốc.</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span
+                                            class="px-1.5 py-0.5 bg-green-100 text-green-600 text-[10px] rounded-md font-bold">Bình
+                                            thường</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                                <img class="size-12 rounded-full object-cover" data-alt="Chân dung bệnh nhân Lê Văn C"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAc-MU_mpYw71RWBRumDqWQSpX2jT6lqY_yymf4_8OwEvcAeGZzV7l3yAxJ5MF7jROH6_6fdNdNvtucQdPatsAfzP-B49W4vIFviX6tGN97yhtJTuP3BrvS6YgON1wqQxZEmplohMDKvuNYebXLrTKsq0q12FH8pdkhC93H4v8cZNbJLFkBV_JVSSRhTFssTOzM27hXOpef5uBaFNc9JV_YDbeJBtL4rMTTD0AGoZ3LRXHFIL1qr8Avgse8OBgMCCLHYBPdo6QmmNo" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <h3 class="text-sm font-bold truncate">Lê Văn C</h3>
+                                        <span class="text-[10px] text-slate-400">Thứ 2</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 truncate">Cảm ơn bác sĩ nhiều lắm!</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span
+                                            class="px-1.5 py-0.5 bg-green-100 text-green-600 text-[10px] rounded-md font-bold">Bình
+                                            thường</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- Middle Column: Chat Window -->
+                <section class="flex-1 flex flex-col bg-background-light dark:bg-background-dark">
+                    <!-- Chat Header -->
+                    <div
+                        class="h-16 px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="size-10 rounded-full bg-slate-200 overflow-hidden">
+                                <img class="w-full h-full object-cover" data-alt="Bệnh nhân Nguyễn Văn A"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdl4_kksFbT62gfvrg2CtlonSa7Z4-XZM2ZIIqD7GDwP0MfR5hA225V5R9ZKlvhjbsete2hJmTwvUHA_aosstZHoV6tM2vXEU5Q7nW9_5dd5svAhpeCbuKH5HmqayCaC04rkWo-EfotJUxEp69MkUz4mEdX8saH1A0UNs5zJJID7n-JJeGjmcq0eSP0Mso0S5aDqFBNhamVQmSpaLrCkNv4TaoqSZ06oNBkzC6TNiRCcAwxJsvIX-khxQ-w5pAG3Of0yZJFNenY1M" />
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold leading-none">Nguyễn Văn A</h3>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="size-2 rounded-full bg-green-500"></span>
+                                    <span class="text-xs text-slate-500">Đang hoạt động • 10:45 AM</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                                <span class="material-symbols-outlined">call</span>
+                            </button>
+                            <button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                                <span class="material-symbols-outlined">videocam</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Chat History -->
+                    <div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                        <div class="flex justify-center">
+                            <span
+                                class="text-[10px] bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500 font-medium">HÔM
+                                NAY</span>
+                        </div>
+                        <!-- Patient Message -->
+                        <div class="flex gap-3 max-w-[80%]">
+                            <img class="size-8 rounded-full self-end" data-alt="Avatar bệnh nhân"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCugxZ95a_v-3AW68QiUMCSrPj_G-Cfl0ygNoDoBH7sjAURggNcXC4KC--moLZZMx3B4m2TOx_TS2VSfyS5bdD4YaETWmaqCLr3CZ7R9OdnTHG8Bgj9y_85jABmvPBkBLEG3k9NC8VUHMJaiWJj3VxNxeKgSWQO0R8WO6MAqJUiDUhV_5kwUUr6_pM0uyhB9LlpdE78cWs5v7fs5GdNu-IK_wZy9ueZZJtcxuEnj3qcCXD--kAUEoOF6ST-sWqLlqrhX0FhvBFloJs" />
+                            <div
+                                class="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-bl-none shadow-sm border border-slate-100 dark:border-slate-700">
+                                <p class="text-sm">Bác sĩ ơi, chỉ số huyết áp của tôi sáng nay đo là 160/95 mmHg. Tôi
+                                    cảm thấy hơi chóng mặt, có cần điều chỉnh thuốc không ạ?</p>
+                                <span class="text-[10px] text-slate-400 mt-1 block">10:42 AM</span>
+                            </div>
+                        </div>
+                        <!-- Doctor Message -->
+                        <div class="flex flex-row-reverse gap-3 max-w-[80%] ml-auto">
+                            <div class="bg-primary text-white p-3 rounded-2xl rounded-br-none shadow-md">
+                                <p class="text-sm">Chào anh A, chỉ số 160/95 là khá cao. Anh hãy nghỉ ngơi tại chỗ trong
+                                    15-20 phút, tránh vận động mạnh và đo lại nhé.</p>
+                                <span class="text-[10px] opacity-70 mt-1 block text-right">10:44 AM</span>
+                            </div>
+                        </div>
+                        <!-- Patient Message -->
+                        <div class="flex gap-3 max-w-[80%]">
+                            <img class="size-8 rounded-full self-end" data-alt="Avatar bệnh nhân"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbj29KgBXLWBPKSZdaUeM5dWr-bzaBrxa3Dw06ijYcBv7WpYsmU9h9wHJI4ypLmiHnLjbeN_T8jHyd8Qhvi4Cj_v2O2TiOU06IqDmQ0GSixl8-bDsmQxuEgYA4Vfr4z0dld7KPJWUkoFonI5L0C3uYrACQqyPeSvoYFOj5lGL2m9-gAQbUit8mJzvKR7fBr9KqNks5Mlez4_BHEEe_Rr1mqNlJy6Er3yK2YSfLiI8LgKltFrE3Olj4Qx_LS47T4cc8LK8zvADUjmQ" />
+                            <div
+                                class="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-bl-none shadow-sm border border-slate-100 dark:border-slate-700">
+                                <p class="text-sm">Vâng, tôi đang nằm nghỉ rồi ạ. Tôi có nên uống thêm liều thuốc hạ áp
+                                    dự phòng không?</p>
+                                <span class="text-[10px] text-slate-400 mt-1 block">10:45 AM</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Message Input Area -->
+                    <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                        <div class="flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar">
+                            <button
+                                class="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-full whitespace-nowrap">
+                                <span class="material-symbols-outlined text-sm">recommend</span>
+                                Gửi khuyến nghị
+                            </button>
+                            <button
+                                class="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-600 text-xs font-bold rounded-full whitespace-nowrap">
+                                <span class="material-symbols-outlined text-sm">warning</span>
+                                Gửi cảnh báo
+                            </button>
+                            <button
+                                class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-600 text-xs font-bold rounded-full whitespace-nowrap">
+                                <span class="material-symbols-outlined text-sm">medication</span>
+                                Đơn thuốc mới
+                            </button>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <div class="flex gap-1 mb-2">
+                                <button class="p-2 text-slate-400 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined">image</span>
+                                </button>
+                                <button class="p-2 text-slate-400 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined">attach_file</span>
+                                </button>
+                            </div>
+                            <div class="flex-1 relative">
+                                <textarea
+                                    class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/50 resize-none"
+                                    placeholder="Nhập tin nhắn..." rows="1"></textarea>
+                            </div>
+                            <button
+                                class="bg-primary hover:bg-primary/90 text-white p-3 rounded-xl shadow-lg transition-transform active:scale-95">
+                                <span class="material-symbols-outlined">send</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+                <!-- Right Column: Patient Summary -->
+                <section
+                    class="w-72 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col p-5 overflow-y-auto custom-scrollbar">
+                    <div class="text-center mb-6">
+                        <div class="size-20 mx-auto rounded-full border-4 border-primary/20 p-1 mb-3">
+                            <img class="w-full h-full rounded-full object-cover" data-alt="Chân dung chi tiết bệnh nhân"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFISugC6Rpeutv2EMF1mKJgLNRCsl5qg11rlHsyeW10Tt4IwD3QZojRXX5GNm14e17phWogUWTZ9RbzM7u4B4JLFRLuUJHOm6CwJeyKFiNRnfIKR4EjL8PovYrTnfnrwp4tmXdx_mSmmk1h5zbrLbXWbNLQfGgExg9bpqRJ7FKBe7b4iOWCETJ8kbntW4QnsM9NZPvhI__l-PXLbH3vDpL6RlU37IfywN4bCq7fGM2znIa4C9kC0i69IVkBLa1reGlZjaIyPGD1CA" />
+                        </div>
+                        <h3 class="font-bold text-lg">Nguyễn Văn A</h3>
+                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Nam, 58 tuổi</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs font-bold text-slate-500">CHỈ SỐ SINH TỒN</h4>
+                                <span class="text-[10px] text-primary font-bold">Cập nhật 1h trước</span>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="material-symbols-outlined text-red-500 text-sm">blood_pressure</span>
+                                        <span class="text-xs text-slate-600 dark:text-slate-400">Huyết áp</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-red-500">160/95</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-blue-500 text-sm">favorite</span>
+                                        <span class="text-xs text-slate-600 dark:text-slate-400">Nhịp tim</span>
+                                    </div>
+                                    <span class="text-sm font-bold">82 bpm</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="material-symbols-outlined text-orange-500 text-sm">water_drop</span>
+                                        <span class="text-xs text-slate-600 dark:text-slate-400">Đường huyết</span>
+                                    </div>
+                                    <span class="text-sm font-bold">6.8 mmol/L</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Lối tắt nhanh
+                            </h4>
+                            <button
+                                class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary">description</span>
+                                    <span class="text-sm font-medium">Xem hồ sơ đầy đủ</span>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">chevron_right</span>
+                            </button>
+                            <button
+                                class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary">pill</span>
+                                    <span class="text-sm font-medium">Kê đơn thuốc</span>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">chevron_right</span>
+                            </button>
+                            <button
+                                class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary">history</span>
+                                    <span class="text-sm font-medium">Lịch sử khám</span>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-8 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="material-symbols-outlined text-primary text-lg">info</span>
+                            <h5 class="text-xs font-bold text-primary">Ghi chú nhanh</h5>
+                        </div>
+                        <p class="text-[11px] text-slate-600 dark:text-slate-400 italic">Bệnh nhân có tiền sử cao huyết
+                            áp mãn tính, cần theo dõi sát sao vào buổi sáng.</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

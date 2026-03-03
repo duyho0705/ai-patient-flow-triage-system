@@ -32,6 +32,7 @@ import { PatientAllocation } from '@/pages/admin/PatientAllocation'
 import { FinancialReport } from '@/pages/admin/FinancialReport'
 import { MonthlyReport } from '@/pages/admin/MonthlyReport'
 import { DoctorPerformance } from '@/pages/admin/DoctorPerformance'
+import Scheduling from '@/pages/doctor/Scheduling'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
@@ -136,6 +137,7 @@ function App() {
                 <Route path="patients" element={<PatientList />} />
                 <Route path="patients/:patientId/ehr" element={<PatientEhr />} />
                 <Route path="chat" element={<DoctorChat />} />
+                <Route path="scheduling" element={<Scheduling />} />
               </Route>
 
               {/* Risk Analysis: Doctor, Clinic Manager & Admin */}

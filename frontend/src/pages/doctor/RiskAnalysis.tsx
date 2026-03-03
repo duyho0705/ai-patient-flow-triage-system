@@ -15,7 +15,6 @@ import {
     LifeBuoy,
     Video,
     FileText,
-    Filter,
     CheckCircle,
     Activity
 } from 'lucide-react'
@@ -24,35 +23,7 @@ import { motion } from 'framer-motion'
 export function RiskAnalysis() {
     return (
         <div className="flex-1 space-y-8 animate-in fade-in duration-700">
-            {/* Page Title & Filters */}
-            <div>
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">
-                            Phân tích nguy cơ & Cảnh báo sớm
-                        </h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-1">
-                            Dữ liệu phân tích thời gian thực dựa trên các chỉ số sinh tồn và bệnh sử.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <select className="rounded-[13px] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm">
-                            <option>Tất cả khoa</option>
-                            <option>Khoa Tim mạch</option>
-                            <option>Khoa Nội tiết</option>
-                        </select>
-                        <select className="rounded-[13px] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm">
-                            <option>Tất cả loại bệnh</option>
-                            <option>Tiểu đường Type 2</option>
-                            <option>Cao huyết áp</option>
-                            <option>Suy thận mạn</option>
-                        </select>
-                        <button className="bg-emerald-400 text-slate-900 px-4 py-2 rounded-[13px] text-sm font-bold flex items-center gap-2 hover:bg-emerald-500 transition-all shadow-sm active:scale-95">
-                            <Filter className="w-4 h-4" /> Lọc dữ liệu
-                        </button>
-                    </div>
-                </div>
-            </div>
+
 
             {/* Statistics Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -335,7 +306,7 @@ export function RiskAnalysis() {
                             ))}
                         </div>
 
-                        <button className="w-full mt-2 py-3 bg-emerald-400 text-slate-900 rounded-[13px] text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-400/20 relative z-10 active:scale-[0.98]">
+                        <button className="w-full mt-2 py-3 bg-primary text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 relative z-10 active:scale-95">
                             Gửi tất cả thông báo AI
                         </button>
                     </section>

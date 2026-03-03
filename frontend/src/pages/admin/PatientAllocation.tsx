@@ -13,71 +13,11 @@ import { useState } from 'react'
 export function PatientAllocation() {
     const [activeTab, setActiveTab] = useState('waiting')
 
-    const patients = [
-        {
-            id: '10294',
-            name: 'Nguyễn Văn Lợi',
-            initials: 'NL',
-            symptoms: 'Đau ngực, khó thở',
-            specialty: 'NỘI TỔNG QUÁT',
-            priority: 'Khẩn cấp',
-            priorityColor: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-            hasPulse: true
-        },
-        {
-            id: '10298',
-            name: 'Phạm Hoàng Hoa',
-            initials: 'PH',
-            symptoms: 'Khám sức khỏe thai nhi',
-            specialty: 'SẢN PHỤ KHOA',
-            priority: 'Thường',
-            priorityColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-            hasPulse: false
-        },
-        {
-            id: '10301',
-            name: 'Lý Thái Tổ',
-            initials: 'LT',
-            symptoms: 'Sốt cao, ho kéo dài',
-            specialty: 'NHI KHOA',
-            priority: 'Ưu tiên',
-            priorityColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-            hasPulse: false
-        }
-    ]
+    const patients: any[] = []
 
-    const doctors = [
-        {
-            name: 'BS. Trần Hùng',
-            specialty: 'Nội tổng quát',
-            load: '2/8',
-            percentage: 25,
-            status: 'Sẵn sàng',
-            color: 'bg-green-500',
-            indicator: 'bg-green-500',
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAAxemtxcCEvnhCuGyAAnjcXxbJws6Jj2LW5t7RxG1GzXWoWflaLJfMPwaWx62CF1MK-TEubMrIBa2ypZZK-u5PaXk9kVrSDBlEeJ7yZqHDkSc6zB6W7l2MhjB5QNZk98pK8z_9BKhRiR2U-AcHqysvEz4RR1AXxYlca5jhv3ioLUNwTlwJsx_XO00vrSW309e32PJDzACU4e_8t-KU_t3yh-1xodhprEQXPBrYx5fbWdVXYldlY45IPO9My_q36jXdBayXRNkVyB8'
-        },
-        {
-            name: 'BS. Nguyễn An',
-            specialty: 'Sản phụ khoa',
-            load: '5/6',
-            percentage: 83,
-            status: 'Đang bận',
-            color: 'bg-amber-500',
-            indicator: 'bg-amber-500',
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuADtl_aVpT_n6QFIQnvSdVGRyFYrRGjUhsOjME7rS01-TCE7ZDCTNDw2VnBEM5PQxmFw_4b_8ux9MM75oDqiLQS921-qB5sBpn77R6rNyUdv4BVQjwHqTYBL9cUPa75h8QFbgD_f3WqSw3MnUey8sHRGM5dOPfN0mz3JmWvdAxK9qk_BlERsk5u3HQPkoLO6kUQwiZ6Qai8ui0wrCyvFFnulmF0aY8uR_gwW9YUpua1dnoSTZ6c9hJXi-3dMQOj6WBp88P37nVXJXk'
-        },
-        {
-            name: 'BS. Lê Minh',
-            specialty: 'Nhi khoa',
-            load: '10/10',
-            percentage: 100,
-            status: 'Quá tải',
-            color: 'bg-red-500',
-            indicator: 'bg-red-500',
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCihNhXVqBB7heRvsWDA6djyFFF_8LYsYyD2QXkgvgQro0ZXhHMZRhgjyg3N3gZQyiLPtv_6Oqvw5pqc6mka9O96vK44TiiL3Mz2XPvoZ9V3sKmL9Fhv4Qq63nNKKb0o4AKjBDbOXnjBWMs1VZayGhgLFF2zEIwR3rWhIrrcnURr2gEsvqtBSnwhf2DuyJzCaSYVCY0aA65PSKxSwGlgKo0-K_stBPwpRSf0W2UH39iLFX6bOExJ3d48WHOTMb34P-0uNUvEr71NHg'
-        }
-    ]
+
+    const doctors: any[] = []
+
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-10">

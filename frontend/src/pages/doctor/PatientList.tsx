@@ -1,6 +1,5 @@
 import {
     Search,
-    UserPlus,
     Filter,
     Eye,
     MessageSquare,
@@ -66,29 +65,9 @@ export function PatientList() {
     ]
 
     return (
-        <div className="space-y-8 font-sans">
-            {/* Page Title & CTA */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Danh sách bệnh nhân đang quản lý</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">Quản lý và theo dõi thông tin sức khỏe định kỳ của bệnh nhân.</p>
-                </motion.div>
-                <motion.button
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-center gap-2 bg-emerald-400 hover:bg-emerald-500 text-slate-900 px-6 py-3 rounded-[13px] font-bold transition-all shadow-lg shadow-emerald-400/20 active:scale-95 text-sm"
-                >
-                    <UserPlus className="w-4 h-4" />
-                    Thêm bệnh nhân mới
-                </motion.button>
-            </div>
-
+        <div className="space-y-8 font-display">
             {/* Filters */}
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-[13px] shadow-sm border border-slate-200/60 dark:border-slate-800">
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-primary/5">
                 <div className="flex flex-wrap gap-6 items-end">
                     <div className="flex-1 min-w-[300px]">
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Tìm kiếm</label>
@@ -129,7 +108,7 @@ export function PatientList() {
             </div>
 
             {/* Table */}
-            <div className="bg-white dark:bg-slate-900 rounded-[13px] shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-primary/5 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-separate border-spacing-0">
                         <thead>
@@ -192,15 +171,15 @@ export function PatientList() {
                                         </span>
                                     </td>
                                     <td className="px-8 py-5 text-right">
-                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                            <button className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-[13px] transition-all" title="Xem chi tiết">
-                                                <Eye className="w-5 h-5" />
+                                        <div className="flex items-center justify-end gap-1">
+                                            <button className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all" title="Xem chi tiết">
+                                                <Eye className="w-4 h-4" />
                                             </button>
-                                            <button className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-[13px] transition-all" title="Nhắn tin">
-                                                <MessageSquare className="w-5 h-5" />
+                                            <button className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all" title="Nhắn tin">
+                                                <MessageSquare className="w-4 h-4" />
                                             </button>
-                                            <button className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-[13px] transition-all" title="Tạo đơn thuốc">
-                                                <ClipboardList className="w-5 h-5" />
+                                            <button className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all" title="Tạo đơn thuốc">
+                                                <ClipboardList className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </td>
