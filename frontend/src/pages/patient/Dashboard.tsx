@@ -3,12 +3,20 @@ import { getPortalDashboard, logPortalVital, logMedicationTaken } from '@/api/po
 import { useTenant } from '@/context/TenantContext'
 import { usePatientRealtime } from '@/hooks/usePatientRealtime'
 import {
-    HeartPulse,
+    Activity,
     Plus,
-    TrendingUp,
-    TrendingDown,
     Heart,
     Wind,
+    Scale,
+    Droplets,
+    Zap,
+    Info,
+    ChevronRight,
+    Loader2,
+    Save,
+    HeartPulse,
+    TrendingUp,
+    TrendingDown,
     AlertTriangle,
     Pill,
     Check,
@@ -18,14 +26,33 @@ import {
     X,
     Dumbbell,
     Thermometer,
-    Droplets,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { AreaChart, Area, ResponsiveContainer } from 'recharts'
 import toast from 'react-hot-toast'
 import type { TriageVitalDto } from '@/types/api'
+
+// --- Types & Constants ---
+type VitalType = 'BLOOD_GLUCOSE' | 'BLOOD_PRESSURE_SYS' | 'BLOOD_PRESSURE_DIA' | 'HEART_RATE' | 'WEIGHT' | 'SPO2' | 'TEMPERATURE'
+
+const VITAL_CONFIG: Record<string, {
+    label: string
+    unit: string
+    icon: any
+    color: string
+    bgColor: string
+    ringColor: string
+    normalRange: [number, number]
+    apiType: string
+}> = {
+    BLOOD_GLUCOSE: { label: 'Đường huyết', unit: 'mmol/L', icon: Droplets, color: 'text-emerald-500', bgColor: 'bg-emerald-50', ringColor: 'ring-emerald-500/10', normalRange: [4.0, 7.0], apiType: 'BLOOD_GLUCOSE' },
+    BLOOD_PRESSURE: { label: 'Huyết áp', unit: 'mmHg', icon: Activity, color: 'text-orange-600', bgColor: 'bg-orange-50', ringColor: 'ring-orange-500/10', normalRange: [90, 140], apiType: 'BLOOD_PRESSURE_SYS' },
+    HEART_RATE: { label: 'Nhịp tim', unit: 'bpm', icon: Heart, color: 'text-red-500', bgColor: 'bg-red-50', ringColor: 'ring-red-500/10', normalRange: [60, 100], apiType: 'HEART_RATE' },
+    WEIGHT: { label: 'Cân nặng', unit: 'kg', icon: Scale, color: 'text-blue-500', bgColor: 'bg-blue-50', ringColor: 'ring-blue-500/10', normalRange: [40, 120], apiType: 'WEIGHT' },
+    SPO2: { label: 'Oxy SpO2', unit: '%', icon: Wind, color: 'text-cyan-500', bgColor: 'bg-cyan-50', ringColor: 'ring-cyan-500/10', normalRange: [94, 100], apiType: 'SPO2' },
+}
 
 // --- Helper functions ---
 function getVitalByType(vitals: TriageVitalDto[] | undefined, type: string): TriageVitalDto | undefined {
@@ -206,128 +233,385 @@ export default function PatientDashboard() {
 function VitalInputModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
     const { headers } = useTenant()
     const queryClient = useQueryClient()
-    const [loading, setLoading] = useState(false)
-    const [vitalType, setVitalType] = useState('BLOOD_GLUCOSE')
-    const [value, setValue] = useState('')
-    const [notes, setNotes] = useState('')
+    const dateInputRef = useRef<HTMLInputElement>(null)
+    const timeInputRef = useRef<HTMLInputElement>(null)
+    const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false)
+    const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false)
+    const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false)
+
+    const [inputType, setInputType] = useState<VitalType | 'BLOOD_PRESSURE'>('BLOOD_GLUCOSE')
+    const [inputValue, setInputValue] = useState('')
+    const [inputSysValue, setInputSysValue] = useState('')
+    const [inputDiaValue, setInputDiaValue] = useState('')
+    const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0])
+    const [inputTime, setInputTime] = useState(new Date().toTimeString().slice(0, 5))
+    const [inputNotes, setInputNotes] = useState('')
+
+    const logMutation = useMutation({
+        mutationFn: (data: any) => logPortalVital(data, headers),
+        onSuccess: () => {
+            toast.success('Đã lưu chỉ số thành công!')
+            queryClient.invalidateQueries({ queryKey: ['portal-dashboard'] })
+            onClose()
+            setInputValue('')
+            setInputSysValue('')
+            setInputDiaValue('')
+            setInputNotes('')
+        },
+        onError: () => toast.error('Có lỗi xảy ra.')
+    })
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!value) return
+        const recordedAt = new Date(`${inputDate}T${inputTime}`).toISOString()
 
-        setLoading(true)
-        try {
-            await logPortalVital({
-                vitalType,
-                valueNumeric: parseFloat(value),
-                unit: getUnitForType(vitalType),
-                recordedAt: new Date().toISOString(),
-                notes
-            }, headers)
-            toast.success('Ghi nhận chỉ số thành công!')
-            onClose()
-            // window.location.reload() // Remove reload for smoother UX
-            queryClient.invalidateQueries({ queryKey: ['portal-dashboard'] })
-        } catch (error) {
-            console.error('Failed to log vital:', error)
-            toast.error('Không thể ghi nhận chỉ số. Vui lòng thử lại.')
-        } finally {
-            setLoading(false)
-        }
-    }
+        if (inputType === 'BLOOD_PRESSURE') {
+            if (!inputSysValue || !inputDiaValue) {
+                toast.error('Vui lòng nhập đầy đủ Huyết áp Tâm thu và Tâm trương')
+                return
+            }
 
-    const getUnitForType = (type: string) => {
-        switch (type) {
-            case 'BLOOD_GLUCOSE': return 'mmol/L'
-            case 'BLOOD_PRESSURE_SYS':
-            case 'BLOOD_PRESSURE_DIA': return 'mmHg'
-            case 'WEIGHT': return 'kg'
-            case 'HEART_RATE': return 'bpm'
-            case 'SPO2': return '%'
-            case 'TEMPERATURE': return '°C'
-            default: return ''
+            await logMutation.mutateAsync({
+                vitalType: 'BLOOD_PRESSURE_SYS',
+                valueNumeric: parseFloat(inputSysValue),
+                unit: 'mmHg',
+                notes: inputNotes || undefined,
+                recordedAt
+            })
+
+            await logMutation.mutateAsync({
+                vitalType: 'BLOOD_PRESSURE_DIA',
+                valueNumeric: parseFloat(inputDiaValue),
+                unit: 'mmHg',
+                notes: inputNotes || undefined,
+                recordedAt
+            })
+        } else {
+            if (!inputValue.trim()) {
+                toast.error('Vui lòng nhập giá trị')
+                return
+            }
+
+            const config = VITAL_CONFIG[inputType]
+            await logMutation.mutateAsync({
+                vitalType: inputType as VitalType,
+                valueNumeric: parseFloat(inputValue),
+                unit: config?.unit || '',
+                notes: inputNotes || undefined,
+                recordedAt
+            })
         }
     }
 
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0"
+                        className="absolute inset-0 bg-white/60 dark:bg-slate-900/50 backdrop-blur-sm"
                     />
                     <motion.div
-                        initial={{ scale: 0.9, opacity: 0, y: 50 }}
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.9, opacity: 0, y: 50 }}
-                        className="bg-white rounded-[3rem] p-10 w-full max-w-md relative z-10 shadow-2xl border border-slate-100"
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        className="bg-white dark:bg-slate-900 rounded-xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 relative z-10"
                     >
-                        <button onClick={onClose} className="absolute top-8 right-8 p-3 hover:bg-slate-50 rounded-2xl transition-all">
-                            <X className="w-6 h-6 text-slate-300" />
-                        </button>
-
-                        <div className="mb-10 text-center">
-                            <div className="size-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto mb-4">
-                                <HeartPulse className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">Ghi nhận Chỉ số</h3>
-                            <p className="text-slate-400 font-bold text-sm mt-2">Theo dõi sức khỏe hàng ngày của bạn</p>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 tracking-widest px-4">Loại chỉ số</label>
-                                <select
-                                    value={vitalType}
-                                    onChange={(e) => setVitalType(e.target.value)}
-                                    className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-black focus:ring-4 focus:ring-emerald-500/10 outline-none appearance-none cursor-pointer transition-all"
-                                >
-                                    <option value="BLOOD_GLUCOSE">Đường huyết (Blood Glucose)</option>
-                                    <option value="BLOOD_PRESSURE_SYS">Huyết áp Tâm thu (Systolic BP)</option>
-                                    <option value="BLOOD_PRESSURE_DIA">Huyết áp Tâm trương (Diastolic BP)</option>
-                                    <option value="HEART_RATE">Nhịp tim (Heart Rate)</option>
-                                    <option value="SPO2">Nồng độ Oxy (SpO2)</option>
-                                    <option value="WEIGHT">Cân nặng (Weight)</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 tracking-widest px-4">Giá trị ({getUnitForType(vitalType)})</label>
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    required
-                                    value={value}
-                                    onChange={(e) => setValue(e.target.value)}
-                                    placeholder="Nhập con số thu được..."
-                                    className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-black focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-300"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 tracking-widest px-4">Ghi chú</label>
-                                <textarea
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="Ví dụ: Đo lúc vừa thức dậy..."
-                                    className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-black focus:ring-4 focus:ring-emerald-500/10 outline-none h-32 resize-none transition-all placeholder:text-slate-300"
-                                />
-                            </div>
-
-                            <div className="pt-6">
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between mb-2">
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Nhập chỉ số sức khỏe</h2>
                                 <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full py-5 bg-emerald-400 text-slate-900 rounded-[1.5rem] font-black text-sm tracking-widest hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-400/20 disabled:opacity-50 active:scale-95"
+                                    onClick={onClose}
+                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                                 >
-                                    {loading ? 'Đang lưu...' : 'Lưu chỉ số'}
+                                    <X className="w-6 h-6" />
                                 </button>
                             </div>
-                        </form>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6 overflow-y-auto max-h-[70vh] space-y-5">
+                            {/* Metric Type Selection */}
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Loại chỉ số</label>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 flex items-center justify-between focus:ring-2 focus:ring-[#4ade80] transition-all"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {(() => {
+                                                const config = VITAL_CONFIG[inputType === 'BLOOD_PRESSURE' ? 'BLOOD_PRESSURE' : inputType]
+                                                if (!config) return <Activity className="w-5 h-5 text-slate-400" />
+                                                return (
+                                                    <div className={`p-1.5 ${config.bgColor} ${config.color} rounded-md`}>
+                                                        <config.icon className="w-4 h-4" />
+                                                    </div>
+                                                )
+                                            })()}
+                                            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                                {(inputType === 'BLOOD_PRESSURE' ? 'Huyết áp' : VITAL_CONFIG[inputType]?.label) || 'Chọn chỉ số'}
+                                            </span>
+                                        </div>
+                                        <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${isTypeDropdownOpen ? '-rotate-90' : 'rotate-90'}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {isTypeDropdownOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden py-1"
+                                            >
+                                                {[
+                                                    { key: 'BLOOD_PRESSURE', label: 'Huyết áp (Blood Pressure)', icon: Activity, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+                                                    { key: 'BLOOD_GLUCOSE', label: 'Đường huyết (Blood Glucose)', icon: Droplets, color: 'text-emerald-500', bgColor: 'bg-emerald-50' },
+                                                    { key: 'HEART_RATE', label: 'Nhịp tim (Heart Rate)', icon: Heart, color: 'text-red-500', bgColor: 'bg-red-50' },
+                                                    { key: 'WEIGHT', label: 'Cân nặng (Weight)', icon: Scale, color: 'text-blue-500', bgColor: 'bg-blue-50' },
+                                                    { key: 'SPO2', label: 'Nồng độ Oxy (SpO2)', icon: Wind, color: 'text-cyan-500', bgColor: 'bg-cyan-50' }
+                                                ].map((opt) => (
+                                                    <button
+                                                        key={opt.key}
+                                                        onClick={() => {
+                                                            setInputType(opt.key as any)
+                                                            setIsTypeDropdownOpen(false)
+                                                        }}
+                                                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                                    >
+                                                        <div className={`p-1.5 ${opt.bgColor} ${opt.color} rounded-md`}>
+                                                            <opt.icon className="w-4 h-4" />
+                                                        </div>
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{opt.label}</span>
+                                                        {inputType === opt.key && (
+                                                            <div className="ml-auto w-2 h-2 bg-[#4ade80] rounded-full" />
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+
+                            {/* Values Grid */}
+                            {inputType === 'BLOOD_PRESSURE' ? (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Tâm thu (mmHg)</label>
+                                        <input
+                                            type="number"
+                                            value={inputSysValue}
+                                            onChange={e => setInputSysValue(e.target.value)}
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 focus:ring-2 focus:ring-[#4ade80] focus:border-transparent text-slate-900 dark:text-slate-100 outline-none transition-all"
+                                            placeholder="120"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Tâm trương (mmHg)</label>
+                                        <input
+                                            type="number"
+                                            value={inputDiaValue}
+                                            onChange={e => setInputDiaValue(e.target.value)}
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 focus:ring-2 focus:ring-[#4ade80] focus:border-transparent text-slate-900 dark:text-slate-100 outline-none transition-all"
+                                            placeholder="80"
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                        Giá trị ({VITAL_CONFIG[inputType as string]?.unit || ''})
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={inputValue}
+                                        onChange={e => setInputValue(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 focus:ring-2 focus:ring-[#4ade80] focus:border-transparent text-slate-900 dark:text-slate-100 outline-none transition-all"
+                                        placeholder={`VD: ${VITAL_CONFIG[inputType as string]?.normalRange[0] || '1.0'}`}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Date and Time Grid */}
+                            {inputType !== 'WEIGHT' && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Custom Date Dropdown */}
+                                    <div className="relative">
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Ngày đo</label>
+                                        <button
+                                            onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 flex items-center justify-between focus:ring-2 focus:ring-[#4ade80] transition-all"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 text-slate-400" />
+                                                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                                    {inputDate === new Date().toISOString().split('T')[0]
+                                                        ? `Hôm nay, ${new Date(inputDate).toLocaleDateString('vi-VN')}`
+                                                        : new Date(inputDate).toLocaleDateString('vi-VN')}
+                                                </span>
+                                            </div>
+                                            <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${isDateDropdownOpen ? '-rotate-90' : 'rotate-90'}`} />
+                                        </button>
+
+                                        <AnimatePresence>
+                                            {isDateDropdownOpen && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: -10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -10 }}
+                                                    className="absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-[60] overflow-hidden py-1"
+                                                >
+                                                    {[
+                                                        { label: 'Hôm nay', value: new Date().toISOString().split('T')[0] },
+                                                        { label: 'Hôm qua', value: new Date(Date.now() - 86400000).toISOString().split('T')[0] },
+                                                    ].map((opt) => (
+                                                        <button
+                                                            key={opt.value}
+                                                            onClick={() => {
+                                                                setInputDate(opt.value)
+                                                                setIsDateDropdownOpen(false)
+                                                            }}
+                                                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                                        >
+                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{opt.label}</span>
+                                                            {inputDate === opt.value && (
+                                                                <div className="w-2 h-2 bg-[#4ade80] rounded-full" />
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                                    <button
+                                                        onClick={() => dateInputRef.current?.showPicker()}
+                                                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                                    >
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Chọn ngày khác...</span>
+                                                        <input
+                                                            ref={dateInputRef}
+                                                            type="date"
+                                                            className="sr-only"
+                                                            onChange={(e) => {
+                                                                if (e.target.value) {
+                                                                    setInputDate(e.target.value)
+                                                                    setIsDateDropdownOpen(false)
+                                                                }
+                                                            }}
+                                                        />
+                                                    </button>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+
+                                    {/* Custom Time Dropdown */}
+                                    <div className="relative">
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Giờ đo</label>
+                                        <button
+                                            onClick={() => setIsTimeDropdownOpen(!isTimeDropdownOpen)}
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 flex items-center justify-between focus:ring-2 focus:ring-[#4ade80] transition-all"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Clock className="w-4 h-4 text-slate-400" />
+                                                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                                    {inputTime}
+                                                </span>
+                                            </div>
+                                            <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${isTimeDropdownOpen ? '-rotate-90' : 'rotate-90'}`} />
+                                        </button>
+
+                                        <AnimatePresence>
+                                            {isTimeDropdownOpen && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: -10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -10 }}
+                                                    className="absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-[60] overflow-hidden py-1"
+                                                >
+                                                    {[
+                                                        { label: 'Bây giờ', getValue: () => new Date().toTimeString().slice(0, 5) },
+                                                        { label: '30 phút trước', getValue: () => new Date(Date.now() - 30 * 60000).toTimeString().slice(0, 5) },
+                                                        { label: '1 giờ trước', getValue: () => new Date(Date.now() - 60 * 60000).toTimeString().slice(0, 5) },
+                                                    ].map((opt) => (
+                                                        <button
+                                                            key={opt.label}
+                                                            onClick={() => {
+                                                                setInputTime(opt.getValue())
+                                                                setIsTimeDropdownOpen(false)
+                                                            }}
+                                                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                                        >
+                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{opt.label}</span>
+                                                            {inputTime === opt.getValue() && (
+                                                                <div className="w-2 h-2 bg-[#4ade80] rounded-full" />
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                                    <button
+                                                        onClick={() => timeInputRef.current?.showPicker()}
+                                                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                                    >
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Chọn giờ khác...</span>
+                                                        <input
+                                                            ref={timeInputRef}
+                                                            type="time"
+                                                            className="sr-only"
+                                                            onChange={(e) => {
+                                                                if (e.target.value) {
+                                                                    setInputTime(e.target.value)
+                                                                    setIsTimeDropdownOpen(false)
+                                                                }
+                                                            }}
+                                                        />
+                                                    </button>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Notes */}
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Ghi chú / Triệu chứng</label>
+                                <textarea
+                                    value={inputNotes}
+                                    onChange={e => setInputNotes(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 focus:ring-2 focus:ring-[#4ade80] focus:border-transparent text-slate-900 dark:text-slate-100 outline-none transition-all resize-none"
+                                    placeholder="Nhập tình trạng sức khỏe hiện tại của bạn hoặc cảm giác lúc này..."
+                                    rows={3}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex gap-3">
+                            <button
+                                onClick={onClose}
+                                className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                onClick={handleSubmit}
+                                disabled={logMutation.isPending}
+                                className="flex-[2] px-4 py-3 rounded-lg bg-[#4ade80] text-slate-900 font-bold shadow-lg shadow-[#4ade80]/20 hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                            >
+                                {logMutation.isPending ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <>
+                                        <Save className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                        Lưu chỉ số
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </motion.div>
                 </div>
             )}
