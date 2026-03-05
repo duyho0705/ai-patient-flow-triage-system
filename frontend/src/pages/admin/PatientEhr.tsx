@@ -1,335 +1,351 @@
-import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { getVitalsHistory, getMedicalTimeline } from '@/api/ehr'
-import { useTenant } from '@/context/TenantContext'
-import {
-    Activity, Clock, ChevronLeft,
-    ArrowUpRight, Heart, Thermometer,
-    Wind, Droplets, User,
-    FileText, Pill, CreditCard, Search,
-    Filter, Download, MoreHorizontal
-} from 'lucide-react'
-import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { PrescriptionModal } from '@/components/modals/PrescriptionModal'
 
 export function PatientEhr() {
-    const { patientId } = useParams()
-    const { headers } = useTenant()
-    const [activeTab, setActiveTab] = useState<'TIMELINE' | 'VITALS'>('TIMELINE')
-
-    const { data: vitals, isLoading: isLoadingVitals } = useQuery<any[]>({
-        queryKey: ['ehr-vitals', patientId],
-        queryFn: () => getVitalsHistory(patientId!, headers),
-        enabled: !!patientId && !!headers?.tenantId
-    })
-
-    const { data: timeline, isLoading: isLoadingTimeline } = useQuery({
-        queryKey: ['ehr-timeline', patientId],
-        queryFn: () => getMedicalTimeline(patientId!, headers),
-        enabled: !!patientId && !!headers?.tenantId
-    })
-
-    if (!patientId) return <div>Không tìm thấy bệnh nhân</div>
+    const navigate = useNavigate()
+    const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false)
 
     return (
-        <div className="space-y-10 animate-in fade-in duration-700 pb-20">
-            {/* Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-8 border-b border-slate-100">
-                <div className="space-y-4">
-                    <button onClick={() => window.history.back()} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all">
-                        <ChevronLeft className="w-4 h-4" /> Quay lại danh sách
-                    </button>
-                    <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 bg-slate-900 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-slate-200">
-                            <User className="w-10 h-10" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <h1 className="text-4xl font-black text-slate-900 tracking-tight">Hồ sơ Bệnh nhân</h1>
-                                <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                                    <Activity className="w-3 h-3" /> Đang hoạt động
-                                </span>
+        <div className="font-display bg-background-light dark:bg-background-dark p-8">
+            {/* Breadcrumb & Actions */}
+            <div className="mb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <nav className="flex items-center gap-2 text-sm">
+                        <button
+                            onClick={() => navigate('/patients')}
+                            className="text-slate-500 hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                        >
+                            Danh sách bệnh nhân
+                        </button>
+                        <span className="material-symbols-outlined text-slate-400 text-sm leading-none">chevron_right</span>
+                        <span className="font-semibold text-slate-900 dark:text-white">Nguyễn Văn A</span>
+                    </nav>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-50 text-sm font-semibold transition-all"
+                        >
+                            <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
+                            Xuất báo cáo PDF
+                        </button>
+                        <button
+                            onClick={() => setIsPrescriptionModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:opacity-90 text-sm font-semibold shadow-lg shadow-primary/20 transition-all font-bold"
+                        >
+                            <span className="material-symbols-outlined text-lg">medical_services</span>
+                            Kê đơn thuốc
+                        </button>
+                    </div>
+                </div>
+
+                {/* Patient Summary Card */}
+                <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row gap-6">
+                        <div className="relative shrink-0">
+                            <img
+                                className="size-32 rounded-2xl object-cover"
+                                alt="Nguyễn Văn A"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQIVC5UVVnYFrHotJWRdOzSC_E3FBCQEoE184wQ53tVIU99mCmsnvpRBP8AxOgPqY4ybn9yh-ls0TdYzrW84tXyVp1chICLHuqh24SPAwmF-JJMZOAY5b6sWBcWHx0HE2pfkknQ3kbNOCOHncZou8wv9681_qfeqqF6ei7-c2tYKJiOih9gpWegaVqMzBBcsL__BBf1ERBs4ya9r4R9MusSrAo8G1F6a0xU-jwmEaQav_vPqmUpMzOJYXGCugRCcfNmQ_TNYls7KQ"
+                            />
+                            <div className="absolute -bottom-2 -right-2 size-8 bg-primary rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-white text-xs">verified_user</span>
                             </div>
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs flex items-center gap-4">
-                                <span>Mã BN: #{patientId.slice(0, 8).toUpperCase()}</span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                                <span>Phân loại: Cấp cứu mức 3</span>
-                            </p>
+                        </div>
+                        <div className="flex-1 space-y-4">
+                            <div>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Nguyễn Văn A</h2>
+                                    <span className="px-3 py-1 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold rounded-full uppercase tracking-wider">
+                                        Nguy cơ cao
+                                    </span>
+                                </div>
+                                <p className="text-slate-500 text-sm mt-1">Nam, 65 tuổi • ID: BN0892 • Đã tham gia 2 năm</p>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                <div className="space-y-1">
+                                    <p className="text-xs text-slate-400 uppercase font-extrabold">Bệnh lý nền</p>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Cao huyết áp</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-slate-400 uppercase font-extrabold">Dị ứng</p>
+                                    <p className="text-sm font-bold text-red-500">Penicillin</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-slate-400 uppercase font-extrabold">Nhóm máu</p>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">O+</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-6 border border-primary/20 flex flex-col justify-between">
+                        <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                                <h3 className="font-bold text-slate-900 dark:text-white text-base">Thao tác nhanh</h3>
+                                <p className="text-xs text-slate-500 leading-relaxed font-semibold">Kết nối trực tiếp với bệnh nhân</p>
+                            </div>
+                            <div className="size-10 bg-primary/20 text-primary rounded-lg flex items-center justify-center">
+                                <span className="material-symbols-outlined font-bold">bolt</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-2 mt-4">
+                            <button className="w-full flex items-center justify-between px-4 py-2.5 bg-white dark:bg-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:shadow-md transition-all active:scale-[0.98]">
+                                <span className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary text-xl">event_available</span>
+                                    Đặt lịch khám mới
+                                </span>
+                                <span className="material-symbols-outlined text-slate-300 text-lg">chevron_right</span>
+                            </button>
+                            <button className="w-full flex items-center justify-between px-4 py-2.5 bg-white dark:bg-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:shadow-md transition-all active:scale-[0.98]">
+                                <span className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary text-xl">forum</span>
+                                    Gửi tin nhắn tư vấn
+                                </span>
+                                <span className="material-symbols-outlined text-slate-300 text-lg">chevron_right</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex bg-slate-100 p-1.5 rounded-[1.5rem] gap-1 shadow-inner">
-                    <button
-                        onClick={() => setActiveTab('TIMELINE')}
-                        className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${activeTab === 'TIMELINE' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                        Dòng thời gian
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('VITALS')}
-                        className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${activeTab === 'VITALS' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                        Chỉ số sinh tồn
-                    </button>
+                {/* Vitals Dashboard */}
+                <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <VitalCard icon="blood_pressure" label="Huyết áp" value="165/105" unit="mmHg" status="NGUY HIỂM" statusColor="red" />
+                    <VitalCard icon="bloodtype" label="Đường huyết" value="5.8" unit="mmol/L" status="CẢNH BÁO" statusColor="amber" />
+                    <VitalCard icon="favorite" label="Nhịp tim" value="82" unit="bpm" status="BÌNH THƯỜNG" statusColor="primary" />
+                    <VitalCard icon="air" label="SpO2" value="98" unit="%" status="BÌNH THƯỜNG" statusColor="primary" />
+                    <VitalCard icon="body_fat" label="Chỉ số BMI" value="24.5" unit="kg/m²" status="BÌNH THƯỜNG" statusColor="primary" />
+                </div>
+
+                {/* Main Grid */}
+                <div className="mt-8 grid grid-cols-1 xl:grid-cols-3 gap-8 pb-12">
+                    {/* Left: Charts & History */}
+                    <div className="xl:col-span-2 space-y-8">
+                        {/* Interactive Chart Container */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">Xu hướng chỉ số (30 ngày)</h3>
+                                    <p className="text-sm text-slate-500 font-semibold">Biểu đồ so sánh Huyết áp & Đường huyết</p>
+                                </div>
+                                <select className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-xs font-bold focus:ring-primary/50 py-2 px-3 cursor-pointer">
+                                    <option>30 ngày qua</option>
+                                    <option>90 ngày qua</option>
+                                </select>
+                            </div>
+                            <div className="h-64 relative w-full overflow-hidden">
+                                <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 800 200">
+                                    <path d="M0,150 Q50,140 100,160 T200,130 T300,140 T400,110 T500,120 T600,80 T700,90 T800,60" fill="none" stroke="#4ade80" strokeWidth="3"></path>
+                                    <path className="fill-primary/5" d="M0,150 Q50,140 100,160 T200,130 T300,140 T400,110 T500,120 T600,80 T700,90 T800,60 V200 H0 Z"></path>
+                                    <path d="M0,100 Q50,90 100,110 T200,80 T300,90 T400,60 T500,70 T600,30 T700,40 T800,10" fill="none" stroke="#ef4444" strokeDasharray="5,5" strokeWidth="2"></path>
+                                </svg>
+                                <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-slate-400 font-extrabold uppercase pt-4">
+                                    <span>01/10</span><span>07/10</span><span>14/10</span><span>21/10</span><span>28/10</span>
+                                </div>
+                            </div>
+                            <div className="flex gap-6 mt-8 pt-6 border-t border-slate-50 dark:border-slate-800">
+                                <div className="flex items-center gap-2">
+                                    <span className="size-3 rounded-full bg-red-500"></span>
+                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Huyết áp tâm thu</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="size-3 rounded-full bg-primary"></span>
+                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Đường huyết</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Medical History Timeline */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-6">Lịch sử khám bệnh</h3>
+                            <div className="space-y-8 relative before:absolute before:inset-y-0 before:left-[11px] before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800">
+                                <TimelineItem
+                                    date="20 Tháng 10, 2023"
+                                    tag="Khám định kỳ"
+                                    title="Kiểm tra huyết áp & Tư vấn dinh dưỡng"
+                                    content="Bệnh nhân có dấu hiệu mệt mỏi, huyết áp tăng nhẹ. Khuyến nghị giảm muối trong khẩu phần ăn và tập thể dục nhẹ 15 phút mỗi ngày."
+                                    diagnosis="Tăng huyết áp độ 2"
+                                    isActive={true}
+                                />
+                                <TimelineItem
+                                    date="05 Tháng 09, 2023"
+                                    tag="Xét nghiệm"
+                                    title="Xét nghiệm máu tổng quát"
+                                    content="Chỉ số mỡ máu hơi cao (Cholesterol: 6.2 mmol/L). Các chỉ số khác trong ngưỡng bình thường."
+                                    isActive={false}
+                                />
+                            </div>
+                            <button className="w-full mt-8 py-3 text-sm font-bold text-primary hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/30">
+                                Xem tất cả lịch sử
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Right: Medications & Notes */}
+                    <div className="space-y-8">
+                        {/* Current Medications */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Đơn thuốc hiện tại</h3>
+                                <span className="size-8 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400">
+                                    <span className="material-symbols-outlined text-xl">pill</span>
+                                </span>
+                            </div>
+                            <div className="space-y-4">
+                                <MedicationItem
+                                    name="Amlodipine 5mg"
+                                    instruction="Uống 1 viên vào buổi sáng sau ăn"
+                                    status="ĐANG DÙNG"
+                                    daysLeft={12}
+                                />
+                                <MedicationItem
+                                    name="Metformin 500mg"
+                                    instruction="Uống 2 viên chia 2 lần (Sáng/Chiều)"
+                                    status="ĐANG DÙNG"
+                                    daysLeft={5}
+                                />
+                                <MedicationItem
+                                    name="Lisinopril 10mg"
+                                    instruction="Ngưng theo chỉ định ngày 20/10"
+                                    status="ĐÃ NGƯNG"
+                                    isStopped={true}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Notes/Alerts Section */}
+                        <div className="bg-red-50 dark:bg-red-900/10 rounded-2xl p-6 border border-red-100 dark:border-red-900/30">
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="material-symbols-outlined text-red-500 font-bold">warning</span>
+                                <h3 className="font-bold text-red-900 dark:text-red-400">Ghi chú quan trọng</h3>
+                            </div>
+                            <ul className="space-y-3">
+                                <li className="flex gap-3 text-sm text-red-700 dark:text-red-300 font-semibold">
+                                    <span className="material-symbols-outlined text-sm mt-1 scale-50">circle</span>
+                                    Bệnh nhân có tiền sử sốc phản vệ với kháng sinh nhóm Penicillin.
+                                </li>
+                                <li className="flex gap-3 text-sm text-red-700 dark:text-red-300 font-semibold">
+                                    <span className="material-symbols-outlined text-sm mt-1 scale-50">circle</span>
+                                    Cần theo dõi sát chỉ số huyết áp tại nhà vào buổi sáng.
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Care Team */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Đội ngũ chăm sóc</h3>
+                            <div className="space-y-4">
+                                <CareMember
+                                    name="Điều dưỡng Minh Thư"
+                                    role="Người phụ trách trực tiếp"
+                                    avatar="https://lh3.googleusercontent.com/aida-public/AB6AXuCAMdduUoZ4g5eUhX_ehc5zcKQppo-gzX7sAx_pX0v4a6tyRuFNh4Oy45uhXGDS3b-QX_RTdFzoF9uvu30YeAiRTCk1X9F9lvVcnMxL11XUER1qc7Jc7ve-P2bUzmEsYMMdq70C7pRQ3F_uzAbWVC_W2Gec6Wz58dI0s_GaTIfTEN2DB21dNoeNKbZv-k7ih-fxeBMfB5UN5sBpK6XOSb0KhsPgdqYUxolbX948pSeuliMslvIkD0t-H0yqIVPu3lRQfn8gdCyIl0Q"
+                                />
+                                <CareMember
+                                    name="BS. Thu Hương"
+                                    role="Chuyên gia dinh dưỡng"
+                                    avatar="https://lh3.googleusercontent.com/aida-public/AB6AXuAbaa9Nnp4OBpt2Q-ZsAEF0vD5RKT0pVLioM7Knawwta7yPZ9PS_zhI90RQSra0kWb9DEk1Wz_He3kw8aMjDnqZog3rFzgOehVH907u2Zhw_01A3apU3Ybi2ZxQ2snuxmYhMD8Q63Vj_sVLYtvzSDvnMLZJhMi6eUK3RiqedE5f3LLkYioNd397nGgGM9Nl6FECuTZEm_YZxP0-3j0NsAhQ5wh4yWV6AohVRztaS8n0CqB4QWDl731RFDzjAXsg0_YTXFT6ICS_bGc"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* Left Side: Summary Cards */}
-                <div className="space-y-6">
-                    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ghi chú lâm sàng gần nhất</h3>
-                        <div className="space-y-4">
-                            <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
-                                <p className="text-sm font-bold text-slate-900 leading-relaxed italic">
-                                    "Bệnh nhân có tiền sử cao huyết áp, nhập viện trong tình trạng đau ngực nhẹ. AI Triage đề xuất mức độ 3."
-                                </p>
-                                <div className="mt-4 flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-black">BS</div>
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">BS. Nguyễn Văn A — 2h trước</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <PrescriptionModal
+                isOpen={isPrescriptionModalOpen}
+                onClose={() => setIsPrescriptionModalOpen(false)}
+                patientName="Nguyễn Văn A"
+            />
+        </div>
+    )
+}
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <VitalSummaryCard
-                            icon={Heart}
-                            label="Nhịp tim"
-                            value="82"
-                            unit="bpm"
-                            color="text-rose-600 bg-rose-50"
-                            trend="+2"
-                        />
-                        <VitalSummaryCard
-                            icon={Thermometer}
-                            label="Nhiệt độ"
-                            value="37.2"
-                            unit="°C"
-                            color="text-amber-600 bg-amber-50"
-                            trend="0.1"
-                        />
-                        <VitalSummaryCard
-                            icon={Wind}
-                            label="Nhịp thở"
-                            value="18"
-                            unit="bpm"
-                            color="text-blue-600 bg-blue-50"
-                            trend="-1"
-                        />
-                        <VitalSummaryCard
-                            icon={Droplets}
-                            label="Huyết áp"
-                            value="120/80"
-                            unit="mmHg"
-                            color="text-purple-600 bg-purple-50"
-                            trend="Ổn định"
-                        />
-                    </div>
-                </div>
+function VitalCard({ icon, label, value, unit, status, statusColor }: { icon: string, label: string, value: string, unit: string, status: string, statusColor: string }) {
+    const colorClasses: Record<string, string> = {
+        red: 'text-red-500 bg-red-50 dark:bg-red-900/20',
+        amber: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
+        primary: 'text-primary bg-primary/10'
+    }
 
-                {/* Right Side: Timeline or Detailed Vitals */}
-                <div className="lg:col-span-2">
-                    {activeTab === 'TIMELINE' ? (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between px-2">
-                                <div className="relative w-full max-w-xs group">
-                                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-all" />
-                                    <input
-                                        type="text"
-                                        placeholder="Tìm kiếm sự kiện..."
-                                        className="w-full bg-white border border-slate-100 pl-12 pr-6 py-3 rounded-full text-xs font-bold outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 shadow-sm"
-                                    />
-                                </div>
-                                <div className="flex gap-2">
-                                    <button className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-slate-900 shadow-sm active:scale-95 transition-all">
-                                        <Filter className="w-4 h-4" />
-                                    </button>
-                                    <button className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-slate-900 shadow-sm active:scale-95 transition-all">
-                                        <Download className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
+    const iconColors: Record<string, string> = {
+        red: 'text-red-500',
+        amber: 'text-amber-500',
+        primary: 'text-primary'
+    }
 
-                            <div className="relative pl-8 space-y-8 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                                {isLoadingTimeline ? (
-                                    Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-white rounded-[2.5rem] animate-pulse" />)
-                                ) : timeline?.map((item, idx) => (
-                                    <motion.div
-                                        key={item.id}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: idx * 0.05 }}
-                                        className="relative bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all group"
-                                    >
-                                        <div className="absolute -left-[3.25rem] top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white border-4 border-slate-50 flex items-center justify-center z-10 group-hover:border-blue-500 transition-all">
-                                            <div className="w-2 h-2 rounded-full bg-slate-200 group-hover:bg-blue-500" />
-                                        </div>
-
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                            <div className="flex gap-6">
-                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform ${item.type === 'TRIAGE' ? 'bg-blue-50 text-blue-600 shadow-blue-100/50' :
-                                                    item.type === 'CONSULTATION' ? 'bg-emerald-50 text-emerald-600 shadow-emerald-100/50' :
-                                                        item.type === 'INVOICE' ? 'bg-rose-50 text-rose-600 shadow-rose-100/50' :
-                                                            'bg-amber-50 text-amber-600 shadow-amber-100/50'
-                                                    }`}>
-                                                    {item.type === 'TRIAGE' ? <Activity className="w-6 h-6" /> :
-                                                        item.type === 'CONSULTATION' ? <FileText className="w-6 h-6" /> :
-                                                            item.type === 'INVOICE' ? <CreditCard className="w-6 h-6" /> :
-                                                                <Pill className="w-6 h-6" />}
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-3 mb-1">
-                                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{new Date(item.timestamp).toLocaleString('vi-VN')}</span>
-                                                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter ${item.status === 'COMPLETED' || item.status === 'PAID' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
-                                                            }`}>{item.status}</span>
-                                                    </div>
-                                                    <h4 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-2">{item.title}</h4>
-                                                    <p className="text-xs font-bold text-slate-400 italic">{item.subtitle}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-sm font-bold text-slate-600 max-w-xs">{item.content}</p>
-                                                <button className="mt-4 text-[10px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-1 ml-auto group-hover:gap-2 transition-all">
-                                                    Chi tiết <ArrowUpRight className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="space-y-10 animate-in fade-in slide-in-from-right-10 duration-500">
-                            {/* SVG Chart Placeholder - A beautiful minimalist trend chart */}
-                            <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-10">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Biểu đồ Nhịp tim & Huyết áp</h3>
-                                    <div className="flex gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded-full bg-rose-500" />
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhịp tim</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded-full bg-blue-500" />
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huyết áp</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="h-80 w-full relative group">
-                                    <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 300">
-                                        {/* Grid lines */}
-                                        <line x1="0" y1="0" x2="1000" y2="0" stroke="#f1f5f9" strokeWidth="1" />
-                                        <line x1="0" y1="100" x2="1000" y2="100" stroke="#f1f5f9" strokeWidth="1" />
-                                        <line x1="0" y1="200" x2="1000" y2="200" stroke="#f1f5f9" strokeWidth="1" />
-                                        <line x1="0" y1="300" x2="1000" y2="300" stroke="#f1f5f9" strokeWidth="1" />
-
-                                        {/* Smooth heart rate line */}
-                                        <path
-                                            d="M0,150 C100,140 200,180 300,170 C400,160 500,200 600,140 C700,110 800,150 900,130 L1000,140"
-                                            fill="none"
-                                            stroke="#f43f5e"
-                                            strokeWidth="4"
-                                            strokeLinecap="round"
-                                            className="drop-shadow-xl"
-                                        />
-                                        <path
-                                            d="M0,150 C100,140 200,180 300,170 C400,160 500,200 600,140 C700,110 800,150 900,130 L1000,140 V300 H0 Z"
-                                            fill="url(#gradient-rose)"
-                                            className="opacity-10"
-                                        />
-
-                                        {/* Blood pressure line */}
-                                        <path
-                                            d="M0,220 C150,230 350,210 550,240 C750,260 950,230 1000,250"
-                                            fill="none"
-                                            stroke="#3b82f6"
-                                            strokeWidth="4"
-                                            strokeLinecap="round"
-                                            className="drop-shadow-xl"
-                                        />
-
-                                        <defs>
-                                            <linearGradient id="gradient-rose" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="#f43f5e" />
-                                                <stop offset="100%" stopColor="transparent" />
-                                            </linearGradient>
-                                        </defs>
-
-                                        {/* Data points */}
-                                        {[300, 600, 900].map(x => (
-                                            <circle key={x} cx={x} cy="170" r="6" fill="#f43f5e" className="group-hover:scale-150 transition-all cursor-pointer" />
-                                        ))}
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b border-slate-50">
-                                            <th className="px-10 py-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Thời gian ghi nhận</th>
-                                            <th className="px-10 py-8 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhịp tim</th>
-                                            <th className="px-10 py-8 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhiệt độ</th>
-                                            <th className="px-10 py-8 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">SpO2</th>
-                                            <th className="px-10 py-8 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {isLoadingVitals ? (
-                                            Array.from({ length: 5 }).map((_, i) => (
-                                                <tr key={i} className="animate-pulse"><td colSpan={5} className="px-10 py-10 h-20 bg-slate-50/30" /></tr>
-                                            ))
-                                        ) : vitals?.slice(0, 10).map((v, i) => (
-                                            <tr key={i} className="hover:bg-slate-50/50 transition-all">
-                                                <td className="px-10 py-6">
-                                                    <div className="flex items-center gap-3">
-                                                        <Clock className="w-4 h-4 text-slate-300" />
-                                                        <span className="text-sm font-bold text-slate-900">{new Date(v.recordedAt).toLocaleString('vi-VN')}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-10 py-6 text-center font-black text-rose-500">{v.vitalType === 'HEART_RATE' ? v.valueNumeric : '—'}</td>
-                                                <td className="px-10 py-6 text-center font-black text-amber-500">{v.vitalType === 'TEMPERATURE' ? v.valueNumeric : '—'}</td>
-                                                <td className="px-10 py-6 text-center font-black text-blue-500">{v.vitalType === 'SPO2' ? v.valueNumeric : '—'}</td>
-                                                <td className="px-10 py-6 text-right">
-                                                    <button className="p-2 hover:bg-slate-100 rounded-xl transition-all">
-                                                        <MoreHorizontal className="w-5 h-5 text-slate-300" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-                </div>
+    return (
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+                <span className={`material-symbols-outlined ${iconColors[statusColor]}`}>{icon}</span>
+                <span className={`text-[10px] font-extrabold ${colorClasses[statusColor]} px-1.5 py-0.5 rounded uppercase`}>
+                    {status}
+                </span>
+            </div>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">{label}</p>
+            <div className="flex items-baseline gap-1 mt-1">
+                <h4 className="text-xl font-black text-slate-800 dark:text-slate-100">{value}</h4>
+                <span className="text-[10px] text-slate-400 font-bold">{unit}</span>
             </div>
         </div>
     )
 }
 
-function VitalSummaryCard({ icon: Icon, label, value, unit, color, trend }: {
-    icon: any, label: string, value: string, unit: string, color: string, trend: string
-}) {
+function TimelineItem({ date, tag, title, content, diagnosis, isActive }: { date: string, tag: string, title: string, content: string, diagnosis?: string, isActive: boolean }) {
     return (
-        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
-            <div className="flex justify-between items-start">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
-                    <Icon className="w-5 h-5" />
-                </div>
-                <span className={`text-[8px] font-black uppercase tracking-widest ${trend.includes('+') ? 'text-rose-500' : 'text-emerald-500'}`}>
-                    {trend}
+        <div className="relative pl-10">
+            <div className={`absolute left-0 top-1 size-6 ${isActive ? 'bg-primary/20' : 'bg-slate-200 dark:bg-slate-700'} rounded-full flex items-center justify-center`}>
+                <div className={`size-2.5 ${isActive ? 'bg-primary' : 'bg-slate-400'} rounded-full`}></div>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">{date}</p>
+                <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] rounded uppercase font-extrabold tracking-wider border border-slate-200 dark:border-slate-700">
+                    {tag}
                 </span>
             </div>
-            <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-slate-900">{value}</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">{unit}</span>
+            <h4 className="font-bold text-slate-900 dark:text-white mt-1 text-base">{title}</h4>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed font-semibold">
+                {content}
+            </p>
+            {diagnosis && (
+                <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-xs italic text-slate-500 font-semibold text-primary">Chẩn đoán: {diagnosis}</p>
                 </div>
+            )}
+        </div>
+    )
+}
+
+function MedicationItem({ name, instruction, status, daysLeft, isStopped }: { name: string, instruction: string, status: string, daysLeft?: number, isStopped?: boolean }) {
+    return (
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:border-primary/30 transition-colors">
+            <div className="flex justify-between items-start">
+                <h4 className={`font-bold text-sm ${isStopped ? 'text-slate-400 line-through' : 'text-slate-800 dark:text-slate-200'}`}>{name}</h4>
+                <span className={`text-[10px] font-extrabold uppercase ${isStopped ? 'text-slate-400' : 'text-primary'}`}>{status}</span>
             </div>
+            <p className={`text-xs mt-1 font-semibold ${isStopped ? 'text-slate-400' : 'text-slate-500'}`}>{instruction}</p>
+            {!isStopped && daysLeft && (
+                <div className="mt-3 flex items-center gap-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                    <span className="material-symbols-outlined text-sm">schedule</span>
+                    Còn {daysLeft} ngày thuốc
+                </div>
+            )}
+        </div>
+    )
+}
+
+function CareMember({ name, role, avatar }: { name: string, role: string, avatar: string }) {
+    return (
+        <div className="flex items-center gap-3 group">
+            <img
+                className="size-8 rounded-full object-cover border-2 border-transparent group-hover:border-primary transition-all"
+                alt={name}
+                src={avatar}
+            />
+            <div>
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{name}</p>
+                <p className="text-[10px] text-slate-500 font-semibold">{role}</p>
+            </div>
+            <button className="ml-auto p-1.5 text-slate-400 hover:text-primary transition-colors bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800">
+                <span className="material-symbols-outlined text-lg">chat</span>
+            </button>
         </div>
     )
 }

@@ -2,7 +2,6 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useTenant } from '@/context/TenantContext'
 
-import { LogOut, Menu, X, Search, Bell, Settings, BriefcaseMedical } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { STAFF_NAV } from '@/routes/staffNav'
 import { requestForToken, onForegroundMessage, db } from '@/firebase'
@@ -64,40 +63,56 @@ export function Layout() {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-display flex">
-      {/* ═══════════ Sidebar - Desktop (matching FontText.html) ═══════════ */}
-      <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-72 bg-white dark:bg-slate-900 border-r border-primary/10 z-40">
-        {/* Brand */}
-        <Link to="/" className="p-6 flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <BriefcaseMedical className="h-9 w-9 text-emerald-500" strokeWidth={2.5} />
-          <h1 className="font-semibold text-2xl text-slate-800 dark:text-slate-100 leading-none tracking-tight">Sống Khỏe</h1>
-        </Link>
+    <div className="min-h-screen bg-background-light dark:bg-background-dark font-display flex antialiased">
+      {/* ═══════════ Sidebar - Desktop (100% FontText.html) ═══════════ */}
+      <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hidden lg:flex flex-col sticky top-0 h-screen z-50">
+        <div className="p-6 flex items-center gap-3">
+          <div className="size-10 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
+            <span className="material-symbols-outlined font-bold">health_and_safety</span>
+          </div>
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">Sống Khỏe</h1>
+        </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 px-4 space-y-1.5 mt-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
           {visibleNav.map((item, idx) => {
             if (item.type === 'header') {
               return (
-                <div key={idx} className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mt-4 first:mt-0">
+                <div key={idx} className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-6 first:mt-2">
                   {item.label}
                 </div>
               )
             }
-            const { to, label, icon: Icon } = item
+            const { to, label } = item
             const isActive = location.pathname === to || (to !== '/dashboard' && to && location.pathname.startsWith(to))
+
+            // Icon mapping for material symbols
+            let iconName = 'dashboard'
+            if (label.toLowerCase().includes('bệnh nhân')) iconName = 'group'
+            if (label.toLowerCase().includes('lịch hẹn')) iconName = 'calendar_today'
+            if (label.toLowerCase().includes('tin nhắn') || label.toLowerCase().includes('chat')) iconName = 'chat_bubble'
+            if (label.toLowerCase().includes('đơn thuốc')) iconName = 'pill'
+            if (label.toLowerCase().includes('phân tích')) iconName = 'monitoring'
+            if (label.toLowerCase().includes('báo cáo')) iconName = 'description'
+            if (label.toLowerCase().includes('quản lý')) iconName = 'admin_panel_settings'
+
             return (
               <Link
                 key={idx}
                 to={to || '#'}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${isActive
-                  ? 'bg-primary text-white'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary'
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'
                   }`}
               >
-                {Icon && <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />}
-                <span className="flex-1 truncate text-sm">{label}</span>
+                <span
+                  className={`material-symbols-outlined text-[22px] transition-transform duration-200 group-hover:scale-110 ${isActive ? 'fill-[1]' : ''}`}
+                  style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
+                >
+                  {iconName}
+                </span>
+                <span className={`font-bold text-sm tracking-tight ${isActive ? '' : 'font-semibold'}`}>{label}</span>
                 {item.badge && (
-                  <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
+                  <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-black ${isActive ? 'bg-primary text-white' : 'bg-red-500 text-white'}`}>
                     {item.badge}
                   </span>
                 )}
@@ -106,128 +121,114 @@ export function Layout() {
           })}
         </nav>
 
-        {/* Doctor Profile Card (bottom) */}
-        <div className="p-4 mt-auto">
-          <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center font-black text-sm">
-                {user?.fullNameVi?.split(' ').pop()?.substring(0, 2).toUpperCase() || 'BS'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.fullNameVi || 'Bác sĩ'}</p>
-                <p className="text-xs text-slate-500 truncate">{user?.roles?.[0] === 'DOCTOR' ? 'Chuyên khoa Nội' : (user?.roles?.[0] || 'Bác sĩ')}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 py-2 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Đăng xuất
-            </button>
-          </div>
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-1">
+          <Link
+            to="/settings"
+            className="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors group"
+          >
+            <span className="material-symbols-outlined text-[20px] group-hover:rotate-45 transition-transform duration-500">settings</span>
+            <span className="font-bold text-sm tracking-tight">Cài đặt</span>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors group"
+          >
+            <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">logout</span>
+            <span className="font-bold text-sm tracking-tight">Đăng xuất</span>
+          </button>
         </div>
       </aside>
 
       {/* ═══════════ Mobile Sidebar Overlay ═══════════ */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/20 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm lg:hidden transition-opacity" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* ═══════════ Mobile Sidebar ═══════════ */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-white dark:bg-slate-900 transition-transform duration-300 ease-out md:hidden shadow-2xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-[70] w-64 transform bg-white dark:bg-slate-900 transition-transform duration-500 ease-in-out lg:hidden shadow-2xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
-        <div className="flex h-20 items-center justify-between px-6 border-b border-primary/10">
+        <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <BriefcaseMedical className="h-9 w-9 text-emerald-500" strokeWidth={2.5} />
-            <span className="font-semibold text-2xl text-slate-800 dark:text-slate-100 leading-none tracking-tight">Sống Khỏe</span>
+            <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+              <span className="material-symbols-outlined text-sm">health_and_safety</span>
+            </div>
+            <h1 className="text-lg font-black tracking-tight">Sống Khỏe</h1>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-slate-900 transition-colors">
-            <X className="w-6 h-6" />
+          <button onClick={() => setSidebarOpen(false)} className="size-8 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full transition-all">
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-        <div className="flex flex-col gap-1 px-4 py-4 overflow-y-auto">
-          {visibleNav.map((item, idx) => {
-            if (item.type === 'header') {
-              return (
-                <div key={idx} className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mt-2">
-                  {item.label}
-                </div>
-              )
-            }
-            const isActive = location.pathname === item.to
-            return (
-              <Link
-                key={idx}
-                to={item.to || '#'}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 font-medium transition-all ${isActive
-                  ? 'bg-primary text-white'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary'
-                  }`}
-              >
-                {item.icon && <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />}
-                <span className="flex-1 truncate text-sm">{item.label}</span>
-                {item.badge && (
-                  <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            )
-          })}
+        <div className="px-4 py-4 space-y-1">
+          {visibleNav.map((item, idx) => (
+            <Link
+              key={idx}
+              to={item.to || '#'}
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold transition-all ${location.pathname === item.to ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400'}`}
+            >
+              <span className="material-symbols-outlined text-xl">{item.label.toLowerCase().includes('bệnh nhân') ? 'group' : 'dashboard'}</span>
+              {item.label}
+            </Link>
+          ))}
         </div>
       </aside>
 
       {/* ═══════════ Main Content Area ═══════════ */}
-      <main className="flex-1 md:ml-72 flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950">
-        {/* ─── Top Bar (sticky, matching FontText.html) ─── */}
-        <header className="h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-primary/5 px-8 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-4">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {/* ─── Top Navbar (100% FontText.html) ─── */}
+        <header
+          className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-8 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-4 flex-1">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-slate-500 hover:text-slate-700 md:hidden"
+              className="p-2 text-slate-500 lg:hidden hover:bg-slate-100 rounded-xl transition-all"
             >
-              <Menu className="h-6 w-6" />
+              <span className="material-symbols-outlined">menu</span>
             </button>
-
-            {/* Search Bar */}
-            <div className="hidden md:block w-96 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <div className="relative max-w-md w-full">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
               <input
-                type="text"
+                className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-primary/40 text-sm font-semibold placeholder:text-slate-400 transition-all"
                 placeholder="Tìm kiếm bệnh nhân, hồ sơ..."
-                className="w-full pl-10 pr-4 py-2.5 bg-background-light dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-primary/50 placeholder-slate-400 text-sm"
+                type="text"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-background-light dark:bg-slate-800 text-slate-600 hover:text-primary relative transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
-            </button>
-            <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-background-light dark:bg-slate-800 text-slate-600 hover:text-primary transition-colors">
-              <Settings className="w-5 h-5" />
+            <button className="p-2.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors relative">
+              <span className="material-symbols-outlined">notifications</span>
+              <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
             </button>
 
-            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
+            <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
 
-            <Link
-              to="/patients"
-              className="bg-primary hover:bg-primary/90 text-slate-900 font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all"
-            >
-              <BriefcaseMedical className="w-4 h-4" />
-              Thêm bệnh nhân
-            </Link>
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-black leading-none text-slate-900 dark:text-white uppercase tracking-tight">{user?.fullNameVi || 'BS. Lê Mạnh Hùng'}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                  {user?.roles?.[0] === 'doctor' ? 'Khoa Nội Tổng Quát' : 'Quản lý phòng khám'}
+                </p>
+              </div>
+              <div className="size-10 rounded-xl overflow-hidden shadow-md ring-2 ring-primary/10">
+                <img
+                  className="w-full h-full object-cover"
+                  alt="Doctor Profile"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuRBpLgHBDUQc-pBZeoNg7p5zyQhhWF0e0vOl1QrSZGoM8jsEmo5V8T5IKpxCoETrcB9m0yonrlwc5cTgeLd4GJ-EtIlbH2mbgZz3XY900jbDCLoPrnmU23ZVNw-4xXGTgftV-HaIe3mF_keVr1O92VDXOUR6xRD6cKx2JGXmoq61v566EK4ZPxvKxj-d2A1iybYsz5QwMjNknVLGSZVPG7x2CSpC81mIJtvMsvWKk8zp9Uzq22yOXgW0Gp9cxjT9AYlACWxGJcNY"
+                />
+              </div>
+            </div>
           </div>
         </header>
 
         {/* ─── Page Content ─── */}
-        <div className={`flex-1 flex flex-col min-h-0 w-full overflow-x-hidden ${location.pathname.includes('/chat') ? '' : 'p-8'}`}>
+        <div className={`flex-1 overflow-y-auto scrollbar-hide flex flex-col ${location.pathname.includes('/chat') ? '' : 'p-0'}`}>
           <Outlet />
+          {/* Footer spacing */}
+          <div className="h-12 w-full shrink-0"></div>
         </div>
       </main>
     </div>
