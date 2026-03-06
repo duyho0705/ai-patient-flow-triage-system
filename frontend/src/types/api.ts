@@ -807,6 +807,9 @@ export interface HealthThresholdDto {
   metricType: string
   minValue?: number
   maxValue?: number
+  isCritical?: boolean
+  active?: boolean
+  updatedAt?: string
 }
 
 /** Request cập nhật ngưỡng cảnh báo */
@@ -849,4 +852,4 @@ export interface DoctorCreateAppointmentRequest {
 export interface UpdatePrescriptionRequest {
   diagnosis?: string
   notes?: string
-}
+}
