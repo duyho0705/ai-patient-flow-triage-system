@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { PrescriptionModal } from '@/components/modals/PrescriptionModal'
 import { AppointmentModal } from '@/components/modals/AppointmentModal'
 import { AdviceModal } from '@/components/modals/AdviceModal'
@@ -30,7 +30,8 @@ import {
     Tooltip
 } from 'recharts'
 
-import { getDoctorDashboard, getDoctorPatients } from '@/api/doctor'
+import { getDoctorDashboard } from '@/api/doctor'
+import { getDoctorTodayAppointments } from '@/api/doctorAppointments'
 
 export function DoctorDashboard() {
     const { headers, tenantId } = useTenant()
@@ -40,7 +41,7 @@ export function DoctorDashboard() {
     const [isAdviceModalOpen, setIsAdviceModalOpen] = useState(false)
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false)
 
-    // ─── Dummy Data for Chart ───
+    // ─── Dummy Data for Chart (will be replaced by real data in Phase 3) ───
     const communityHealthData = [
         { name: 'Th2', 'Chỉ số': 45 },
         { name: 'Th3', 'Chỉ số': 52 },
@@ -51,13 +52,35 @@ export function DoctorDashboard() {
         { name: 'CN', 'Chỉ số': 75 },
     ]
 
-
     // ─── Fetch Real Data ───
     const { data: dashboard, isLoading: loadingDash } = useQuery({
         queryKey: ['doctor-dashboard', tenantId],
         queryFn: () => getDoctorDashboard(headers),
         enabled: !!tenantId
     })
+
+    const { data: todayAppointments } = useQuery({
+        queryKey: ['doctor-today-appointments', tenantId],
+        queryFn: () => getDoctorTodayAppointments(headers),
+        enabled: !!tenantId
+    })
+
+    // ─── Helper: Format date display ───
+    const formatAppointmentDate = useMemo(() => {
+        const today = new Date().toISOString().slice(0, 10)
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+        return (dateStr?: string) => {
+            if (!dateStr) return 'Hôm nay'
+            if (dateStr === today) return 'Hôm nay'
+            if (dateStr === tomorrow) return 'Ngày mai'
+            return new Date(dateStr).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+        }
+    }, [])
+
+    // Merge: ưu tiên todayAppointments nếu có, fallback lên dashboard.upcomingAppointments
+    const displayAppointments = todayAppointments?.length
+        ? todayAppointments
+        : dashboard?.upcomingAppointments || []
 
 
 
@@ -98,7 +121,7 @@ export function DoctorDashboard() {
         },
         {
             label: 'Tin nhắn mới',
-            value: '05',
+            value: (dashboard?.unreadMessages?.length ?? 0).toString().padStart(2, '0'),
             icon: Mail,
             color: 'text-amber-500',
             bg: 'bg-amber-100 dark:bg-amber-900/30'
@@ -310,18 +333,23 @@ export function DoctorDashboard() {
                                 <h2 className="text-xl font-extrabold">Lịch hẹn khám sắp tới</h2>
                             </div>
                             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-primary/5 shadow-sm divide-y divide-primary/5 overflow-hidden">
-                                {dashboard?.upcomingAppointments && dashboard.upcomingAppointments.length > 0 ? (
-                                    dashboard.upcomingAppointments.slice(0, 3).map((apt: any, i: number) => (
-                                        <div key={i} className="p-5 flex items-center gap-5 hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => navigate('/scheduling')}>
-                                            <div className="flex-shrink-0 text-center">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Hôm nay</p>
+                                {displayAppointments.length > 0 ? (
+                                    displayAppointments.slice(0, 4).map((apt: any, i: number) => (
+                                        <div key={apt.id || i} className="p-5 flex items-center gap-5 hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => navigate('/scheduling')}>
+                                            <div className="flex-shrink-0 text-center min-w-[52px]">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{formatAppointmentDate(apt.date || apt.appointmentDate)}</p>
                                                 <p className="text-lg font-extrabold text-primary leading-none">{apt.startTime?.slice(0, 5)}</p>
                                             </div>
                                             <div className="flex-1 overflow-hidden">
                                                 <p className="font-bold truncate text-sm text-slate-900 dark:text-white uppercase">{apt.patientName}</p>
-                                                <p className="text-xs text-slate-500 truncate">{apt.appointmentType || 'Khám định kỳ'}</p>
+                                                <p className="text-xs text-slate-500 truncate">{apt.appointmentType === 'FOLLOW_UP' ? 'Tái khám' : apt.appointmentType || 'Khám định kỳ'}</p>
                                             </div>
-                                            <MoreVertical className="w-4 h-4 text-slate-300" />
+                                            <div className="flex items-center gap-2">
+                                                {apt.status === 'SCHEDULED' && <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />}
+                                                {apt.status === 'ARRIVED' && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
+                                                {apt.status === 'COMPLETED' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                                                <MoreVertical className="w-4 h-4 text-slate-300" />
+                                            </div>
                                         </div>
                                     ))
                                 ) : (

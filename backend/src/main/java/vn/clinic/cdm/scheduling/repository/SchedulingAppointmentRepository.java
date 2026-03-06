@@ -27,5 +27,12 @@ public interface SchedulingAppointmentRepository extends JpaRepository<Schedulin
         List<SchedulingAppointment> findByDoctorUserIdAndAppointmentDate(UUID doctorUserId, LocalDate date);
 
         long countByTenantIdAndAppointmentDate(UUID tenantId, LocalDate date);
-}
 
+        /** Lịch hẹn của bác sĩ trong khoảng ngày (phân trang) */
+        Page<SchedulingAppointment> findByDoctorUserIdAndAppointmentDateBetweenOrderByAppointmentDateAscSlotStartTimeAsc(
+                        UUID doctorUserId, LocalDate from, LocalDate to, Pageable pageable);
+
+        /** Tất cả lịch hẹn của bác sĩ trong khoảng ngày */
+        List<SchedulingAppointment> findByDoctorUserIdAndAppointmentDateBetweenOrderByAppointmentDateAscSlotStartTimeAsc(
+                        UUID doctorUserId, LocalDate from, LocalDate to);
+}

@@ -1,58 +1,78 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTenant } from '@/context/TenantContext'
+import { useQuery } from '@tanstack/react-query'
+import { getDoctorPrescriptions } from '@/api/doctor'
+import { Loader2, FileX, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { PrescriptionDto } from '@/types/api'
 
 export function PrescriptionList() {
+    const { headers, tenantId } = useTenant()
     const [searchTerm, setSearchTerm] = useState('')
+    const [currentPage, setCurrentPage] = useState(0)
+    const pageSize = 10
 
-    const prescriptions = [
-        {
-            id: '#RX-2024-001',
-            patientName: 'Trần Anh Tú',
-            initials: 'TT',
-            date: '12/10/2024',
-            diagnosis: 'Viêm họng cấp, sốt nhẹ',
-            status: 'active',
-            statusLabel: 'Đang dùng'
-        },
-        {
-            id: '#RX-2024-002',
-            patientName: 'Nguyễn Thị Hoa',
-            initials: 'NH',
-            date: '11/10/2024',
-            diagnosis: 'Viêm xoang mãn tính',
-            status: 'stopped',
-            statusLabel: 'Đã ngưng'
-        },
-        {
-            id: '#RX-2024-003',
-            patientName: 'Lê Văn Vũ',
-            initials: 'LV',
-            date: '10/10/2024',
-            diagnosis: 'Rối loạn tiêu hóa',
-            status: 'active',
-            statusLabel: 'Đang dùng'
-        },
-        {
-            id: '#RX-2024-004',
-            patientName: 'Phạm Văn Bình',
-            initials: 'PV',
-            date: '09/10/2024',
-            diagnosis: 'Đau nhức cơ xương khớp',
-            status: 'active',
-            statusLabel: 'Đang dùng'
-        }
-    ]
+    // ─── Fetch Real Data ───
+    const { data: prescriptionPage, isLoading } = useQuery({
+        queryKey: ['doctor-prescriptions', tenantId, currentPage, pageSize],
+        queryFn: () => getDoctorPrescriptions(headers, currentPage, pageSize),
+        enabled: !!tenantId
+    })
+
+    const prescriptions: PrescriptionDto[] = prescriptionPage?.content || []
+    const totalElements = prescriptionPage?.totalElements || 0
+    const totalPages = prescriptionPage?.totalPages || 1
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'active':
+            case 'ISSUED':
                 return 'bg-primary/20 text-primary'
-            case 'stopped':
+            case 'DISPENSED':
+                return 'bg-blue-100 text-blue-600'
+            case 'DRAFT':
+                return 'bg-amber-100 text-amber-600'
+            case 'CANCELLED':
                 return 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300'
             default:
                 return 'bg-slate-100 dark:bg-slate-800 text-slate-500'
         }
     }
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'ISSUED': return 'Đã kê'
+            case 'DISPENSED': return 'Đã phát'
+            case 'DRAFT': return 'Nháp'
+            case 'CANCELLED': return 'Đã hủy'
+            default: return status
+        }
+    }
+
+    // ─── Pagination helpers ───
+    const getPageNumbers = () => {
+        const pages: (number | '...')[] = []
+        if (totalPages <= 5) {
+            for (let i = 0; i < totalPages; i++) pages.push(i)
+        } else {
+            pages.push(0)
+            if (currentPage > 2) pages.push('...')
+            for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages - 2, currentPage + 1); i++) {
+                pages.push(i)
+            }
+            if (currentPage < totalPages - 3) pages.push('...')
+            pages.push(totalPages - 1)
+        }
+        return pages
+    }
+
+    // ─── Filter client-side by search ───
+    const filtered = searchTerm
+        ? prescriptions.filter(p =>
+            p.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        : prescriptions
 
     return (
         <div className="flex-1 p-8 space-y-6 animate-in fade-in duration-700 font-display transition-all">
@@ -94,9 +114,10 @@ export function PrescriptionList() {
                             <div className="relative">
                                 <select className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer font-semibold">
                                     <option>Tất cả</option>
-                                    <option>Đang dùng</option>
-                                    <option>Đã ngưng</option>
-                                    <option>Hoàn thành</option>
+                                    <option>Đã kê</option>
+                                    <option>Đã phát</option>
+                                    <option>Nháp</option>
+                                    <option>Đã hủy</option>
                                 </select>
                                 <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[20px]">expand_more</span>
                             </div>
@@ -115,68 +136,115 @@ export function PrescriptionList() {
                         </div>
                     </div>
 
-                    {/* Table Card */}
-                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Mã đơn</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Bệnh nhân</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Chẩn đoán</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày kê</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Trạng thái</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {prescriptions.map((px) => (
-                                        <tr key={px.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                                            <td className="px-6 py-4 text-sm font-bold text-primary">{px.id}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-[10px] text-slate-600 dark:text-slate-400">
-                                                        {px.initials}
-                                                    </div>
-                                                    <span className="text-sm font-bold text-slate-900 dark:text-white">{px.patientName}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400 font-medium">{px.diagnosis}</td>
-                                            <td className="px-6 py-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{px.date}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${getStatusStyle(px.status)}`}>
-                                                    {px.statusLabel}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="Xem chi tiết">
-                                                        <span className="material-symbols-outlined text-xl">visibility</span>
-                                                    </button>
-                                                    <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="In PDF">
-                                                        <span className="material-symbols-outlined text-xl">picture_as_pdf</span>
-                                                    </button>
-                                                    <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="Tái bản đơn">
-                                                        <span className="material-symbols-outlined text-xl">history_edu</span>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    {/* Loading State */}
+                    {isLoading ? (
+                        <div className="h-[30vh] flex flex-col items-center justify-center gap-4 text-slate-400">
+                            <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
+                            <p className="font-bold text-sm uppercase tracking-widest">Đang tải đơn thuốc...</p>
                         </div>
-                        {/* Pagination */}
-                        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/10">
-                            <p className="text-xs text-slate-500 font-medium italic">Hiển thị 4 trên 156 đơn thuốc</p>
-                            <div className="flex gap-2">
-                                <button className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold hover:bg-white dark:hover:bg-slate-800 transition-all text-slate-500">Trước</button>
-                                <button className="px-3 py-1.5 bg-primary text-slate-900 rounded-lg text-xs font-bold shadow-md shadow-primary/20 hover:scale-105 transition-all">1</button>
-                                <button className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold hover:bg-white dark:hover:bg-slate-800 transition-all text-slate-500">2</button>
-                                <button className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold hover:bg-white dark:hover:bg-slate-800 transition-all text-slate-500">Sau</button>
+                    ) : filtered.length === 0 ? (
+                        <div className="h-[30vh] flex flex-col items-center justify-center gap-4 text-slate-400 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <FileX className="w-12 h-12 opacity-20" />
+                            <p className="font-bold text-sm">{searchTerm ? 'Không tìm thấy đơn thuốc phù hợp' : 'Chưa có đơn thuốc nào'}</p>
+                        </div>
+                    ) : (
+                        /* Table Card */
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Mã đơn</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Bệnh nhân</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ghi chú</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Số thuốc</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Trạng thái</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {filtered.map((px) => (
+                                            <tr key={px.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                                <td className="px-6 py-4 text-sm font-bold text-primary">
+                                                    #{px.id?.slice(0, 8).toUpperCase()}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-[10px] text-slate-600 dark:text-slate-400">
+                                                            {px.patientName?.charAt(0)?.toUpperCase()}
+                                                        </div>
+                                                        <span className="text-sm font-bold text-slate-900 dark:text-white">{px.patientName}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400 font-medium truncate max-w-[200px]">
+                                                    {px.notes || '–'}
+                                                </td>
+                                                <td className="px-6 py-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                                    {px.items?.length || 0} thuốc
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${getStatusStyle(px.status)}`}>
+                                                        {getStatusLabel(px.status)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="Xem chi tiết">
+                                                            <span className="material-symbols-outlined text-xl">visibility</span>
+                                                        </button>
+                                                        <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="In PDF">
+                                                            <span className="material-symbols-outlined text-xl">picture_as_pdf</span>
+                                                        </button>
+                                                        <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="Tái bản đơn">
+                                                            <span className="material-symbols-outlined text-xl">history_edu</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {/* Pagination */}
+                            <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/10">
+                                <p className="text-xs text-slate-500 font-medium italic">
+                                    Hiển thị {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, totalElements)} trên {totalElements} đơn thuốc
+                                </p>
+                                <div className="flex gap-1 items-center">
+                                    <button
+                                        className="size-8 rounded-lg flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-50 transition-colors"
+                                        disabled={currentPage === 0}
+                                        onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    {getPageNumbers().map((page, idx) =>
+                                        page === '...' ? (
+                                            <span key={`dots-${idx}`} className="px-1 text-slate-400 font-bold">...</span>
+                                        ) : (
+                                            <button
+                                                key={page}
+                                                onClick={() => setCurrentPage(page as number)}
+                                                className={`size-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${currentPage === page
+                                                    ? 'bg-primary text-slate-900 shadow-md shadow-primary/20'
+                                                    : 'border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-500'
+                                                    }`}
+                                            >
+                                                {(page as number) + 1}
+                                            </button>
+                                        )
+                                    )}
+                                    <button
+                                        className="size-8 rounded-lg flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-50 transition-colors"
+                                        disabled={currentPage >= totalPages - 1}
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Right Sidebar */}
@@ -209,7 +277,7 @@ export function PrescriptionList() {
                         </div>
                     </div>
 
-                    {/* Recent History Card */}
+                    {/* Recent History Card — from real data */}
                     <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                         <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-slate-900 dark:text-white uppercase tracking-tight">
                             <span className="p-1.5 bg-primary/20 rounded-lg text-primary flex items-center justify-center">
@@ -218,20 +286,22 @@ export function PrescriptionList() {
                             Kê đơn gần đây
                         </h3>
                         <div className="space-y-4">
-                            {[
-                                { name: 'Trần Anh Tú', time: '2 giờ trước' },
-                                { name: 'Nguyễn Thị Hoa', time: '4 giờ trước' },
-                                { name: 'Lê Văn Vũ', time: 'Hôm qua' }
-                            ].map((item, idx) => (
-                                <div key={idx} className="flex items-start gap-4 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group">
-                                    <div className="size-2 mt-2 rounded-full bg-primary shrink-0 group-hover:scale-125 transition-transform shadow-sm shadow-primary/40"></div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">{item.name}</p>
-                                        <p className="text-[10px] text-slate-400 italic mt-0.5 font-medium">{item.time}</p>
+                            {prescriptions.length > 0 ? (
+                                prescriptions.slice(0, 3).map((px, idx) => (
+                                    <div key={idx} className="flex items-start gap-4 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group">
+                                        <div className="size-2 mt-2 rounded-full bg-primary shrink-0 group-hover:scale-125 transition-transform shadow-sm shadow-primary/40"></div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">{px.patientName}</p>
+                                            <p className="text-[10px] text-slate-400 italic mt-0.5 font-medium">
+                                                {px.items?.length || 0} thuốc • {getStatusLabel(px.status)}
+                                            </p>
+                                        </div>
+                                        <span className="material-symbols-outlined text-slate-300 self-center group-hover:translate-x-1 transition-transform text-sm">chevron_right</span>
                                     </div>
-                                    <span className="material-symbols-outlined text-slate-300 self-center group-hover:translate-x-1 transition-transform text-sm">chevron_right</span>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="text-xs text-slate-400 italic text-center py-4">Chưa có đơn thuốc nào</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -239,5 +309,3 @@ export function PrescriptionList() {
         </div>
     )
 }
-
-

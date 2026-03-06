@@ -782,3 +782,71 @@ export interface MedicationDosageLogDto {
   dosageInstruction?: string
   takenAt?: string
 }
+
+// ═══════════════════════════════════════════════════
+//  Doctor Portal — New DTOs
+// ═══════════════════════════════════════════════════
+
+/** Chỉ số sức khỏe bệnh nhân */
+export interface HealthMetricDto {
+  id: string
+  patientId: string
+  metricType: string
+  value: number
+  unit?: string
+  status?: string
+  notes?: string
+  imageUrl?: string
+  recordedAt: string
+}
+
+/** Ngưỡng cảnh báo cá nhân hóa */
+export interface HealthThresholdDto {
+  id: string
+  patientId: string
+  metricType: string
+  minValue?: number
+  maxValue?: number
+}
+
+/** Request cập nhật ngưỡng cảnh báo */
+export interface UpdateHealthThresholdRequest {
+  metricType: string
+  minValue?: number
+  maxValue?: number
+}
+
+/** Xu hướng chỉ số sức khỏe (dùng cho biểu đồ) */
+export interface VitalTrendDto {
+  type?: string
+  value: number
+  recordedAt: string
+  timestamp?: string
+  unit?: string
+  status?: string
+}
+
+/** Request gửi lời khuyên / cảnh báo cho bệnh nhân */
+export interface SendAdviceRequest {
+  title: string
+  content: string
+  type?: 'ADVICE' | 'ALERT' | 'RECOMMENDATION'
+  severity?: 'INFO' | 'WARNING' | 'CRITICAL'
+}
+
+/** Request đặt lịch tái khám (từ Doctor Portal) */
+export interface DoctorCreateAppointmentRequest {
+  branchId: string
+  patientId: string
+  appointmentDate: string
+  slotStartTime: string
+  slotEndTime?: string
+  appointmentType?: string
+  notes?: string
+}
+
+/** Request cập nhật đơn thuốc */
+export interface UpdatePrescriptionRequest {
+  diagnosis?: string
+  notes?: string
+}

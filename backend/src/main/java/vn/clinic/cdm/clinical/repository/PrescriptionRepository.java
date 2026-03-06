@@ -22,4 +22,15 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
                         "consultation.patient" })
         List<Prescription> findByStatusAndConsultationBranchIdOrderByCreatedAtDesc(
                         Prescription.PrescriptionStatus status, UUID branchId);
+
+        /** Lấy danh sách đơn thuốc do bác sĩ kê (phân trang) */
+        @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "medications", "consultation",
+                        "consultation.patient", "patient" })
+        org.springframework.data.domain.Page<Prescription> findByDoctorIdOrderByCreatedAtDesc(
+                        UUID doctorId, org.springframework.data.domain.Pageable pageable);
+
+        /** Lấy tất cả đơn thuốc do bác sĩ kê */
+        @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "medications", "consultation",
+                        "consultation.patient", "patient" })
+        List<Prescription> findByDoctorIdOrderByCreatedAtDesc(UUID doctorId);
 }

@@ -130,5 +130,72 @@ public class SchedulingService {
     public List<SchedulingAppointment> getDoctorTodayAppointments(UUID doctorUserId) {
         return appointmentRepository.findByDoctorUserIdAndAppointmentDate(doctorUserId, LocalDate.now());
     }
-}
 
+    // ═══════════════════════════════════════════════
+    // Doctor Portal — Appointment Management
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Lấy lịch hẹn của bác sĩ trong khoảng ngày (phân trang).
+     */
+    @Transactional(readOnly = true)
+    public Page<SchedulingAppointment> getDoctorAppointments(UUID doctorUserId,
+            LocalDate from, LocalDate to,
+            Pageable pageable) {
+        return appointmentRepository
+                .findByDoctorUserIdAndAppointmentDateBetweenOrderByAppointmentDateAscSlotStartTimeAsc(
+                        doctorUserId, from, to, pageable);
+    }
+
+    /**
+     * Lấy tất cả lịch hẹn của bác sĩ trong khoảng ngày (không phân trang).
+     */
+    @Transactional(readOnly = true)
+    public List<SchedulingAppointment> getDoctorAppointmentsList(UUID doctorUserId,
+            LocalDate from, LocalDate to) {
+        return appointmentRepository
+                .findByDoctorUserIdAndAppointmentDateBetweenOrderByAppointmentDateAscSlotStartTimeAsc(
+                        doctorUserId, from, to);
+    }
+
+    /**
+     * Bác sĩ tạo lịch tái khám cho bệnh nhân.
+     */
+    @Transactional
+    public SchedulingAppointment doctorCreateAppointment(SchedulingAppointment appointment,
+            UUID doctorUserId) {
+        UUID tenantId = TenantContext.getTenantIdOrThrow();
+        Tenant tenant = tenantService.getById(tenantId);
+        TenantBranch branch = tenantService.getBranchById(appointment.getBranch().getId());
+
+        if (!branch.getTenant().getId().equals(tenantId)) {
+            throw new IllegalArgumentException("Chi nhánh không thuộc tenant hiện tại");
+        }
+
+        appointment.setTenant(tenant);
+        appointment.setBranch(branch);
+        appointment.setStatus("SCHEDULED");
+        // doctorUser is set by controller
+
+        return appointmentRepository.save(appointment);
+    }
+
+    /**
+     * Bác sĩ cập nhật trạng thái lịch hẹn (COMPLETED, CANCELLED, NO_SHOW).
+     */
+    @Transactional
+    public SchedulingAppointment doctorUpdateAppointmentStatus(UUID appointmentId,
+            UUID doctorUserId,
+            String newStatus) {
+        SchedulingAppointment existing = getAppointmentById(appointmentId);
+
+        // Kiểm tra quyền: chỉ cập nhật được lịch hẹn do mình quản lý
+        if (existing.getDoctorUser() != null
+                && !existing.getDoctorUser().getId().equals(doctorUserId)) {
+            throw new IllegalStateException("Bạn không có quyền cập nhật lịch hẹn này");
+        }
+
+        existing.setStatus(newStatus);
+        return appointmentRepository.save(existing);
+    }
+}

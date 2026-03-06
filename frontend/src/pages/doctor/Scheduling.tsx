@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getPortalAppointments, getPortalBranches } from '@/api/portal'
+import { getPortalBranches } from '@/api/portal'
+import { getDoctorTodayAppointments } from '@/api/doctorAppointments'
 import { useTenant } from '@/context/TenantContext'
 import {
     MapPin,
@@ -9,26 +10,24 @@ import {
     ChevronLeft,
     ChevronRight,
     Video,
-    Clock,
     Edit3,
     XCircle,
     PlusCircle as AddIcon,
 } from 'lucide-react'
 
-
 export default function Scheduling() {
-    const { headers } = useTenant()
+    const { headers, tenantId } = useTenant()
 
-    const { isLoading } = useQuery({
-        queryKey: ['staff-appointments'],
-        queryFn: () => getPortalAppointments(headers),
-        enabled: !!headers?.tenantId,
+    const { data: appointments, isLoading } = useQuery({
+        queryKey: ['doctor-today-appointments', tenantId],
+        queryFn: () => getDoctorTodayAppointments(headers),
+        enabled: !!headers && !!tenantId,
     })
 
     const { data: branches } = useQuery({
-        queryKey: ['portal-branches'],
+        queryKey: ['portal-branches', tenantId],
         queryFn: () => getPortalBranches(headers),
-        enabled: !!headers?.tenantId,
+        enabled: !!headers && !!tenantId,
     })
 
     const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false)
@@ -153,7 +152,7 @@ export default function Scheduling() {
                     <section className="bg-white dark:bg-slate-900 rounded-2xl border border-primary/5 shadow-sm overflow-hidden flex flex-col h-full">
                         <div className="p-8 border-b border-primary/5 flex flex-wrap items-center justify-between gap-4">
                             <div className="flex items-center gap-6">
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Tháng 10, 2023</h3>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Tháng này</h3>
                                 <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl overflow-hidden border border-primary/5 shadow-inner">
                                     <button className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all hover:shadow-sm">
                                         <ChevronLeft className="w-4 h-4" />
@@ -187,7 +186,7 @@ export default function Scheduling() {
                                 {/* Real Days */}
                                 {[...Array(31)].map((_, i) => {
                                     const day = i + 1;
-                                    const isToday = day === 5;
+                                    const isToday = day === new Date().getDate();
                                     return (
                                         <div
                                             key={day}
@@ -196,14 +195,17 @@ export default function Scheduling() {
                                             <span className={`text-xs font-black ${isToday ? 'text-primary' : 'text-slate-400'}`}>
                                                 {day < 10 ? `0${day}` : day}
                                             </span>
-                                            {day === 5 && (
+                                            {isToday && appointments && appointments.length > 0 && (
                                                 <div className="mt-3 space-y-2">
-                                                    <div className="text-[9px] font-bold p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-100 dark:border-blue-900/30 truncate shadow-sm">
-                                                        8:00 - Nguyễn Vy
-                                                    </div>
-                                                    <div className="text-[9px] font-bold p-2 bg-primary/10 dark:bg-primary/20 text-slate-900 dark:text-primary rounded-xl border border-primary/20 truncate shadow-sm">
-                                                        9:30 - Trần Đạt
-                                                    </div>
+                                                    {appointments.slice(0, 2).map((apt, idx) => (
+                                                        <div key={idx} className={`text-[9px] font-bold p-2 rounded-xl truncate shadow-sm border ${idx % 2 === 0 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : 'bg-primary/10 dark:bg-primary/20 text-slate-900 dark:text-primary border-primary/20'
+                                                            }`}>
+                                                            {apt.startTime?.slice(0, 5)} - {apt.patientName?.split(' ').pop()}
+                                                        </div>
+                                                    ))}
+                                                    {appointments.length > 2 && (
+                                                        <div className="text-[9px] font-bold text-slate-400 text-center">+ {appointments.length - 2} hẹn</div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -220,65 +222,72 @@ export default function Scheduling() {
                         <div className="p-8 border-b border-primary/5 bg-slate-50/50 dark:bg-slate-800/30">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Lịch trình hôm nay</h3>
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">05/10/2023</span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                             </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-8 space-y-6 max-h-[600px] custom-scrollbar">
-                            {/* Appointment 1 */}
-                            <div className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-l-4 border-blue-500 transition-all hover:shadow-lg hover:-translate-y-1">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className="size-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-primary/5 flex items-center justify-center font-bold text-slate-500 overflow-hidden">
-                                            <img className="size-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCb0o6sygn-tTBsZBoC65Kab2XSzD5kyvM0cQCp7q3D7d-DPRbS2WPN-J9qW4defKHVTm4Ne5MybPvbpX15y3nuJcGH_ZMAV8Ing63zo37JBptWi-L8G3hT8XrQ_Y473osbARM671qPBYZj2fWD5e3VlCBHz0VkMgjBoMngTblCw01LasrKK3QeulfZg6OlsV6ZaIikF3_Vh00RGRscipZqgzhWRIHE_P_3CLik_L6Z8JdHIrdntfvNFNm9etpeHf4onJOFuVdE42s" alt="Vy" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-sm font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors">Nguyễn T. Bảo Vy</h4>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-1">Khám sức khỏe tổng quát</p>
-                                        </div>
-                                    </div>
-                                    <span className="text-[10px] font-black text-blue-600 bg-blue-100 dark:bg-blue-900/40 px-3 py-1 rounded-xl shadow-sm">8:00</span>
-                                </div>
-                                <div className="flex items-center justify-between mt-6">
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="w-4 h-4 text-blue-500" />
-                                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Tại phòng khám</span>
-                                    </div>
-                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-2 text-slate-400 hover:text-primary bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary/5 transition-all">
-                                            <Edit3 className="w-4 h-4" />
-                                        </button>
-                                        <button className="p-2 text-slate-400 hover:text-red-500 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary/5 transition-all">
-                                            <XCircle className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            {appointments && appointments.length > 0 ? (
+                                appointments.map((apt, idx) => {
+                                    // Alternating colors for visual variety
+                                    const isBlue = idx % 2 === 0;
+                                    const borderClass = isBlue ? "border-blue-500" : "border-primary";
+                                    const timeClass = isBlue ? "text-blue-600 bg-blue-100 dark:bg-blue-900/40" : "text-primary-dark bg-primary/20";
+                                    const iconColor = isBlue ? "text-blue-500" : "text-primary";
+                                    const isOnline = apt.appointmentType?.includes('ONLINE') || false;
 
-                            {/* Appointment 2 */}
-                            <div className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-l-4 border-primary transition-all hover:shadow-lg hover:-translate-y-1">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className="size-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-primary/5 flex items-center justify-center font-bold text-slate-500 overflow-hidden">
-                                            <img className="size-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuGrkxIzbuHaZxef3rzbpLYbiAtdG822jvnMg2FKb_FlHFGO3kjrxrd6ruHNX0QMyzUDOcM9-m2KiMjMnlZ4cc6Y8qZwSSQfjr8jlyE6qFhZlWewFHYSjcFEaAKDbtZMDQBIFjuscvq6ZD-3KgWQS4xgGzxC_UYtU5a6JMxdbAJNaQEHi89I5qWDZZbDBHCDEKZOw0DMTYDiOvm-wwKau6eh0tmbI-YZdP5k3ceDFtlqN2FUICg8b-fN4bGfyj839rsFb-kIUZYZbU" alt="Dat" />
+                                    return (
+                                        <div key={apt.id || idx} className={`group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-l-4 ${borderClass} transition-all hover:shadow-lg hover:-translate-y-1`}>
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="size-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-primary/5 flex items-center justify-center font-bold text-slate-500 overflow-hidden">
+                                                        <span className="text-lg font-black">{apt.patientName?.charAt(0).toUpperCase()}</span>
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors">{apt.patientName}</h4>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-1">{apt.appointmentType === 'FOLLOW_UP' ? 'Tái khám' : 'Khám định kỳ'}</p>
+                                                    </div>
+                                                </div>
+                                                <span className={`text-[10px] font-black px-3 py-1 rounded-xl shadow-sm ${timeClass}`}>
+                                                    {apt.startTime?.slice(0, 5)}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between mt-6">
+                                                <div className="flex items-center gap-2">
+                                                    {isOnline ? (
+                                                        <>
+                                                            <Video className={`w-4 h-4 ${iconColor}`} />
+                                                            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Trực tuyến</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <MapPin className={`w-4 h-4 ${iconColor}`} />
+                                                            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Tại phòng khám</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    {isOnline && apt.status === 'SCHEDULED' && (
+                                                        <button className="px-5 py-2 bg-primary text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all active:scale-95">
+                                                            Vào phòng
+                                                        </button>
+                                                    )}
+                                                    <button className="p-2 text-slate-400 hover:text-primary bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary/5 transition-all" title="Chỉnh sửa">
+                                                        <Edit3 className="w-4 h-4" />
+                                                    </button>
+                                                    <button className="p-2 text-slate-400 hover:text-red-500 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary/5 transition-all" title="Hủy lịch">
+                                                        <XCircle className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 className="text-sm font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors">Trần Văn Đạt</h4>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-1">Tư vấn triệu chứng ho</p>
-                                        </div>
-                                    </div>
-                                    <span className="text-[10px] font-black text-primary-dark bg-primary/20 px-3 py-1 rounded-xl shadow-sm">9:30</span>
+                                    )
+                                })
+                            ) : (
+                                <div className="text-center py-12">
+                                    <p className="text-slate-400 font-medium italic text-sm">Hôm nay không có lịch hẹn nào</p>
                                 </div>
-                                <div className="flex items-center justify-between mt-6">
-                                    <div className="flex items-center gap-2">
-                                        <Video className="w-4 h-4 text-primary" />
-                                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Trực tuyến</span>
-                                    </div>
-                                    <button className="px-5 py-2 bg-primary text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all active:scale-95">
-                                        Bắt đầu cuộc gọi
-                                    </button>
-                                </div>
-                            </div>
+                            )}
 
                             {/* Add slot button */}
                             <button className="w-full p-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center gap-3 text-slate-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all group">
