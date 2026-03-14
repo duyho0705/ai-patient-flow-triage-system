@@ -83,7 +83,7 @@ public class PatientController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
     @Operation(summary = "Tạo bệnh nhân")
     public ResponseEntity<ApiResponse<PatientDto>> create(@Valid @RequestBody CreatePatientRequest request) {
         Patient patient = Patient.builder()
@@ -100,6 +100,9 @@ public class PatientController {
                 .ward(request.getWard())
                 .nationality(request.getNationality() != null ? request.getNationality() : "VN")
                 .ethnicity(request.getEthnicity())
+                .riskLevel(request.getRiskLevel() != null ? request.getRiskLevel() : "LOW")
+                .chronicConditions(request.getChronicConditions())
+                .isActive(true)
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(PatientDto.fromEntity(patientService.create(patient))));

@@ -1,17 +1,21 @@
 package vn.clinic.cdm.identity.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.clinic.cdm.common.exception.ResourceNotFoundException;
+import vn.clinic.cdm.common.exception.ApiException;
+import vn.clinic.cdm.common.exception.ErrorCode;
+import vn.clinic.cdm.identity.domain.IdentityRole;
 import vn.clinic.cdm.identity.domain.IdentityUser;
 import vn.clinic.cdm.identity.domain.IdentityUserRole;
+import vn.clinic.cdm.identity.repository.IdentityRolePermissionRepository;
+import vn.clinic.cdm.identity.repository.IdentityRoleRepository;
 import vn.clinic.cdm.identity.repository.IdentityUserRepository;
 import vn.clinic.cdm.identity.repository.IdentityUserRoleRepository;
-import vn.clinic.cdm.identity.repository.IdentityRoleRepository;
 import vn.clinic.cdm.tenant.repository.TenantBranchRepository;
 import vn.clinic.cdm.tenant.repository.TenantRepository;
-import vn.clinic.cdm.identity.domain.IdentityRole;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,6 +27,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class IdentityService {
 
     private final IdentityUserRepository identityUserRepository;
@@ -30,12 +35,15 @@ public class IdentityService {
     private final IdentityRoleRepository identityRoleRepository;
     private final TenantRepository tenantRepository;
     private final TenantBranchRepository tenantBranchRepository;
-    private final vn.clinic.cdm.identity.repository.IdentityRolePermissionRepository identityRolePermissionRepository;
+    private final IdentityRolePermissionRepository identityRolePermissionRepository;
 
     @Transactional(readOnly = true)
     public IdentityUser getUserById(UUID id) {
         return identityUserRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("IdentityUser", id));
+                .orElseThrow(() -> {
+                    log.warn("User not found with ID: {}", id);
+                    return new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy người dùng");
+                });
     }
 
     @Transactional(readOnly = true)
@@ -97,21 +105,23 @@ public class IdentityService {
 
     @Transactional
     public void assignRole(UUID userId, UUID tenantId, UUID branchId, String roleCode) {
+        log.info("Assigning role {} to user {} in tenant {} (branch: {})", roleCode, userId, tenantId, branchId);
         IdentityUser user = getUserById(userId);
         IdentityRole role = identityRoleRepository.findByCode(roleCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Role", roleCode));
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Vai trò không hợp lệ: " + roleCode));
 
         IdentityUserRole userRole = new IdentityUserRole();
         userRole.setUser(user);
         userRole.setRole(role);
         userRole.setTenant(tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tenant", tenantId)));
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy Tenant")));
 
         if (branchId != null) {
             userRole.setBranch(tenantBranchRepository.findById(branchId)
-                    .orElseThrow(() -> new ResourceNotFoundException("TenantBranch", branchId)));
+                    .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy Chi nhánh")));
         }
 
         identityUserRoleRepository.saveAndFlush(userRole);
+        log.info("Role assigned successfully");
     }
 }

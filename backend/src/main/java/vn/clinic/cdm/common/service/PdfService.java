@@ -6,6 +6,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.clinic.cdm.api.dto.medication.PrescriptionDto;
+import vn.clinic.cdm.api.dto.report.GenericReportDto;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -238,6 +239,66 @@ public class PdfService {
 
             document.add(Chunk.NEWLINE);
             Paragraph footer = new Paragraph("BÃ¡o cÃ¡o Ä‘Æ°á»£c há»— trá»£ bá»Ÿi há»‡ thá»‘ng Enterprise AI Healthcare", italicFont);
+            footer.setAlignment(Element.ALIGN_RIGHT);
+            document.add(footer);
+
+            document.close();
+        } catch (DocumentException | IOException ex) {
+            ex.printStackTrace();
+        }
+
+        return new ByteArrayInputStream(out.toByteArray());
+    }
+
+    public ByteArrayInputStream generateGenericPdf(GenericReportDto data) {
+        Document document = new Document(PageSize.A4);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            BaseFont bf = getBaseFont();
+            Font headerFont = new Font(bf, 18, Font.BOLD);
+            Font sectionFont = new Font(bf, 14, Font.BOLD);
+            Font normalFont = new Font(bf, 11, Font.NORMAL);
+            Font italicFont = new Font(bf, 10, Font.ITALIC);
+
+            // Header
+            Paragraph header = new Paragraph(data.getTitle(), headerFont);
+            header.setAlignment(Element.ALIGN_CENTER);
+            document.add(header);
+            if (data.getSubtitle() != null) {
+                Paragraph subtitle = new Paragraph(data.getSubtitle(), normalFont);
+                subtitle.setAlignment(Element.ALIGN_CENTER);
+                document.add(subtitle);
+            }
+            document.add(Chunk.NEWLINE);
+
+            // Metadata
+            if (data.getPatientName() != null) {
+                document.add(new Paragraph("Bệnh nhân: " + data.getPatientName(), normalFont));
+            }
+            document.add(new Paragraph("Bác sĩ phụ trách: " + data.getDoctorName(), normalFont));
+            document.add(new Paragraph("Ngày lập báo cáo: " + data.getDate(), normalFont));
+            document.add(Chunk.NEWLINE);
+
+            if (data.getSummary() != null && !data.getSummary().isEmpty()) {
+                document.add(new Paragraph("TÓM TẮT CHUNG", sectionFont));
+                document.add(new Paragraph(data.getSummary(), normalFont));
+                document.add(Chunk.NEWLINE);
+            }
+
+            // Sections
+            if (data.getSections() != null) {
+                for (var section : data.getSections()) {
+                    document.add(new Paragraph(section.getTitle().toUpperCase(), sectionFont));
+                    document.add(new Paragraph(section.getContent(), normalFont));
+                    document.add(Chunk.NEWLINE);
+                }
+            }
+
+            Paragraph footer = new Paragraph("Báo cáo được hỗ trợ bởi hệ thống Enterprise AI Healthcare", italicFont);
             footer.setAlignment(Element.ALIGN_RIGHT);
             document.add(footer);
 

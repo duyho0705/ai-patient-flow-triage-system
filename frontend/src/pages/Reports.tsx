@@ -194,7 +194,7 @@ export function Reports() {
                                                 <div key={i} className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:shadow-md transition-all">
                                                     <p className="text-[9px] font-black text-slate-400 uppercase mb-3">{f.date.split('-').slice(1).join('/')}</p>
                                                     <p className="text-xl font-black text-slate-900 mb-1">{f.predictedVolume}</p>
-                                                    <p className="text-[9px] font-black text-emerald-500">+{Math.floor(Math.random() * 15)}%</p>
+                                                    <p className="text-[9px] font-black text-emerald-500">Ổn định</p>
                                                 </div>
                                             ))}
                                         </div>
@@ -240,7 +240,7 @@ export function Reports() {
                                 </div>
                                 <div className="flex items-center gap-1 text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
                                     <TrendingUp className="w-3 h-3" />
-                                    +12%
+                                    Theo kỳ
                                 </div>
                             </div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-3">Tổng doanh thu</p>
@@ -260,7 +260,7 @@ export function Reports() {
                                 </div>
                                 <div className="flex items-center gap-1 text-rose-500 bg-rose-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
                                     <Clock className="w-3 h-3" />
-                                    -2.1m
+                                    TB mục tiêu
                                 </div>
                             </div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-3">Thời gian chờ TB</p>

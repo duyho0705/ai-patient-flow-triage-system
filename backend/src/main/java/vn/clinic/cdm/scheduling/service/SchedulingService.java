@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import vn.clinic.cdm.common.exception.ResourceNotFoundException;
+import vn.clinic.cdm.api.dto.scheduling.SlotAvailabilityDto;
+import vn.clinic.cdm.common.exception.ApiException;
+import vn.clinic.cdm.common.exception.ErrorCode;
 import vn.clinic.cdm.common.tenant.TenantContext;
 import vn.clinic.cdm.scheduling.domain.SchedulingAppointment;
 import vn.clinic.cdm.scheduling.domain.SchedulingCalendarDay;
@@ -22,11 +24,13 @@ import vn.clinic.cdm.scheduling.repository.SchedulingSlotTemplateRepository;
 import vn.clinic.cdm.tenant.domain.Tenant;
 import vn.clinic.cdm.tenant.domain.TenantBranch;
 import vn.clinic.cdm.tenant.service.TenantService;
-import vn.clinic.cdm.api.dto.scheduling.SlotAvailabilityDto;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SchedulingService {
 
     private final SchedulingSlotTemplateRepository slotTemplateRepository;
@@ -36,11 +40,13 @@ public class SchedulingService {
 
     @Transactional(readOnly = true)
     public List<SchedulingSlotTemplate> getSlotTemplatesByTenant(UUID tenantId) {
+        log.debug("Fetching slot templates for tenant: {}", tenantId);
         return slotTemplateRepository.findByTenantIdAndIsActiveTrueOrderByStartTime(tenantId);
     }
 
     @Transactional(readOnly = true)
     public Optional<SchedulingCalendarDay> getCalendarDay(UUID branchId, LocalDate date) {
+        log.debug("Fetching calendar day for branch: {} on date: {}", branchId, date);
         return calendarDayRepository.findByBranchIdAndDate(branchId, date);
     }
 
@@ -49,7 +55,11 @@ public class SchedulingService {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
         return appointmentRepository.findById(id)
                 .filter(a -> a.getTenant().getId().equals(tenantId))
-                .orElseThrow(() -> new ResourceNotFoundException("SchedulingAppointment", id));
+                .orElseThrow(() -> {
+                    log.warn("Appointment not found or tenant mismatch: id={}, tenant={}", id, tenantId);
+                    return new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, 
+                        "Không tìm thấy lịch hẹn hoặc bạn không có quyền truy cập");
+                });
     }
 
     @Transactional(readOnly = true)
@@ -62,14 +72,22 @@ public class SchedulingService {
     @Transactional
     public SchedulingAppointment createAppointment(SchedulingAppointment appointment) {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
+        log.info("Creating new appointment for tenant: {}, patient: {}", tenantId, appointment.getPatient().getId());
+        
         Tenant tenant = tenantService.getById(tenantId);
         TenantBranch branch = tenantService.getBranchById(appointment.getBranch().getId());
+        
         if (!branch.getTenant().getId().equals(tenantId)) {
-            throw new IllegalArgumentException("Branch does not belong to current tenant");
+            log.error("Branch/Tenant mismatch: branchId={}, tenantId={}", branch.getId(), tenantId);
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, HttpStatus.BAD_REQUEST, 
+                "Chi nhánh không thuộc phòng khám hiện tại");
         }
+        
         appointment.setTenant(tenant);
         appointment.setBranch(branch);
-        return appointmentRepository.save(appointment);
+        SchedulingAppointment saved = appointmentRepository.save(appointment);
+        log.info("Appointment created successfully with ID: {}", saved.getId());
+        return saved;
     }
 
     @Transactional
@@ -82,10 +100,13 @@ public class SchedulingService {
     @Transactional
     public SchedulingAppointment checkIn(UUID id) {
         SchedulingAppointment existing = getAppointmentById(id);
-        if ("CHECKED_IN".equals(existing.getStatus()) || "ARRIVED".equals(existing.getStatus())) {
-            throw new IllegalStateException("Appointment is already checked in");
+        if ("ARRIVED".equals(existing.getStatus())) {
+            log.warn("Appointment {} already checked in", id);
+            throw new ApiException(ErrorCode.INVALID_OPERATION, HttpStatus.BAD_REQUEST, 
+                "Bệnh nhân đã được check-in trước đó");
         }
 
+        log.info("Checking in appointment: {}", id);
         existing.setStatus("ARRIVED");
         return appointmentRepository.save(existing);
     }

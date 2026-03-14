@@ -22,6 +22,7 @@ import PatientHistoryDetail from '@/pages/patient/HistoryDetail'
 import PatientAppointments from '@/pages/patient/Appointments'
 import PatientProfile from '@/pages/patient/Profile'
 import PatientVitals from '@/pages/patient/Vitals'
+import PatientMedications from '@/pages/patient/Medications'
 import PatientChatDoctor from '@/pages/patient/ChatDoctor'
 import AiAssistant from '@/pages/patient/AiAssistant'
 import PatientFamily from '@/pages/patient/Family'
@@ -120,6 +121,7 @@ function App() {
               <Route index element={<PatientDashboard />} />
               <Route path="history" element={<PatientHistory />} />
               <Route path="history/:id" element={<PatientHistoryDetail />} />
+              <Route path="medications" element={<PatientMedications />} />
               <Route path="vitals" element={<PatientVitals />} />
               <Route path="appointments" element={<PatientAppointments />} />
               <Route path="chat" element={<PatientChatDoctor />} />

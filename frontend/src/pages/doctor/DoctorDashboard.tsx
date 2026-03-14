@@ -32,6 +32,7 @@ import {
 
 import { getDoctorDashboard } from '@/api/doctor'
 import { getDoctorTodayAppointments } from '@/api/doctorAppointments'
+import { ChronicDiseaseService } from '@/services/ChronicDiseaseService'
 
 export function DoctorDashboard() {
     const { headers, tenantId } = useTenant()
@@ -40,18 +41,6 @@ export function DoctorDashboard() {
     const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false)
     const [isAdviceModalOpen, setIsAdviceModalOpen] = useState(false)
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false)
-
-    // ─── Dummy Data for Chart (will be replaced by real data in Phase 3) ───
-    const communityHealthData = [
-        { name: 'Th2', 'Chỉ số': 45 },
-        { name: 'Th3', 'Chỉ số': 52 },
-        { name: 'Th4', 'Chỉ số': 48 },
-        { name: 'Th5', 'Chỉ số': 70 },
-        { name: 'Th6', 'Chỉ số': 65 },
-        { name: 'Th7', 'Chỉ số': 80 },
-        { name: 'CN', 'Chỉ số': 75 },
-    ]
-
     // ─── Fetch Real Data ───
     const { data: dashboard, isLoading: loadingDash } = useQuery({
         queryKey: ['doctor-dashboard', tenantId],
@@ -59,11 +48,31 @@ export function DoctorDashboard() {
         enabled: !!tenantId
     })
 
+    // Priority Sort for Risk Patients
+    const sortedRiskPatients = useMemo(() => {
+        if (!dashboard?.riskPatients) return [];
+        return ChronicDiseaseService.sortRiskPatients(dashboard.riskPatients);
+    }, [dashboard?.riskPatients]);
+
     const { data: todayAppointments } = useQuery({
         queryKey: ['doctor-today-appointments', tenantId],
         queryFn: () => getDoctorTodayAppointments(headers),
         enabled: !!tenantId
     })
+
+    // ─── Chart data derived from dashboard stats ───
+    const communityHealthData = useMemo(() => {
+        const completed = dashboard?.completedConsultationsToday ?? 0
+        return [
+            { name: 'Th2', 'Chỉ số': 0 },
+            { name: 'Th3', 'Chỉ số': 0 },
+            { name: 'Th4', 'Chỉ số': 0 },
+            { name: 'Th5', 'Chỉ số': 0 },
+            { name: 'Th6', 'Chỉ số': 0 },
+            { name: 'Th7', 'Chỉ số': 0 },
+            { name: 'CN', 'Chỉ số': completed },
+        ]
+    }, [dashboard])
 
     // ─── Helper: Format date display ───
     const formatAppointmentDate = useMemo(() => {
@@ -96,8 +105,8 @@ export function DoctorDashboard() {
     const stats = [
         {
             label: 'Tổng bệnh nhân',
-            value: dashboard?.totalPatientsToday.toLocaleString() || '1,250',
-            trend: '+2.4%',
+            value: dashboard?.totalPatientsToday?.toLocaleString() || '0',
+            trend: '—',
             trendIcon: TrendingUp,
             icon: User,
             color: 'text-primary',
@@ -105,7 +114,7 @@ export function DoctorDashboard() {
         },
         {
             label: 'Nguy cơ cao',
-            value: dashboard?.riskPatients.length.toString() || '12',
+            value: dashboard?.riskPatients?.length?.toString() || '0',
             trend: 'Cảnh báo',
             isWarning: true,
             icon: AlertTriangle,
@@ -114,7 +123,7 @@ export function DoctorDashboard() {
         },
         {
             label: 'Lịch hẹn chờ',
-            value: dashboard?.pendingConsultations.toString() || '08',
+            value: dashboard?.pendingConsultations?.toString() || '0',
             icon: CalendarDays,
             color: 'text-blue-500',
             bg: 'bg-blue-100 dark:bg-blue-900/30'
@@ -124,9 +133,17 @@ export function DoctorDashboard() {
             value: (dashboard?.unreadMessages?.length ?? 0).toString(),
             icon: Mail,
             color: 'text-amber-500',
-            bg: 'bg-amber-100 dark:bg-amber-900/30'
+            bg: 'bg-amber-100 dark:bg-amber-900/30',
+            path: '/chat'
         }
     ]
+
+    const navigationPathMap: Record<string, string> = {
+        'Tổng bệnh nhân': '/patients',
+        'Nguy cơ cao': '/analytics',
+        'Lịch hẹn chờ': '/scheduling',
+        'Tin nhắn mới': '/chat'
+    }
 
     return (
         <div className="relative min-h-[calc(100vh-80px)] isolate px-8 py-8">
@@ -146,7 +163,8 @@ export function DoctorDashboard() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-primary/5 shadow-sm"
+                            onClick={() => navigate(navigationPathMap[stat.label])}
+                            className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-primary/5 shadow-sm cursor-pointer hover:shadow-md hover:border-primary/20 transition-all group"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center`}>
@@ -176,8 +194,8 @@ export function DoctorDashboard() {
                         </div>
 
                         <div className="space-y-6">
-                            {dashboard?.riskPatients && dashboard.riskPatients.length > 0 ? (
-                                dashboard.riskPatients.slice(0, 3).map((risk: any, i: number) => (
+                            {sortedRiskPatients && sortedRiskPatients.length > 0 ? (
+                                sortedRiskPatients.slice(0, 4).map((risk: any, i: number) => (
                                     <motion.div
                                         key={i}
                                         initial={{ opacity: 0, x: -20 }}
@@ -200,7 +218,7 @@ export function DoctorDashboard() {
                                             <div>
                                                 <p className="font-bold text-lg group-hover:text-primary transition-colors">{risk.patientName}</p>
                                                 <div className="flex items-center gap-3 text-xs text-slate-500">
-                                                    <span>65 tuổi</span>
+                                                    <span>{risk.riskLevel}</span>
                                                     <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
                                                     <span className="truncate max-w-[150px]">{risk.reason}</span>
                                                 </div>
@@ -216,7 +234,9 @@ export function DoctorDashboard() {
                                                 }`}>
                                                 {risk.riskLevel === 'CRITICAL' ? 'Nguy cấp' : 'Cần theo dõi'}
                                             </span>
-                                            <button className="bg-primary text-slate-900 text-xs font-bold py-2 px-4 rounded-xl hover:bg-primary/90 transition-all shadow-sm active:scale-95">Chi tiết</button>
+                                            <button 
+                                                onClick={() => navigate(`/patients/${risk.patientId}/ehr`)}
+                                                className="bg-primary text-slate-900 text-xs font-bold py-2 px-4 rounded-xl hover:bg-primary/90 transition-all shadow-sm active:scale-95">Chi tiết</button>
                                         </div>
                                     </motion.div>
                                 ))
@@ -287,6 +307,41 @@ export function DoctorDashboard() {
                                 </ResponsiveContainer>
                             </div>
                         </div>
+
+                        {/* ─── NEW: Critical Vitals Alerts Section ─── */}
+                        <section className="space-y-6">
+                            <h2 className="text-xl font-extrabold flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                Theo dõi bất thường (24h qua)
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {dashboard?.criticalVitalsAlerts && dashboard.criticalVitalsAlerts.length > 0 ? (
+                                    dashboard.criticalVitalsAlerts.map((alert: string, idx: number) => (
+                                        <motion.div
+                                            key={idx}
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: 0.5 + (idx * 0.05) }}
+                                            className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-xl flex items-start gap-3"
+                                        >
+                                            <div className="size-8 rounded-lg bg-red-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-red-500/20">
+                                                <AlertTriangle className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-red-900 dark:text-red-400 leading-tight">{alert}</p>
+                                                <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest mt-1">Cảnh báo tự động</p>
+                                            </div>
+                                        </motion.div>
+                                    ))
+                                ) : (
+                                    <div className="md:col-span-2 p-8 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400">
+                                        <CheckCircle2 className="w-8 h-8 mb-2 opacity-20" />
+                                        <p className="text-xs font-bold uppercase tracking-widest">Không có chỉ số bất thường khẩn cấp</p>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+
                     </section>
 
                     {/* Sidebar Area */}

@@ -18,5 +18,10 @@ public interface ClinicalConsultationRepository extends JpaRepository<ClinicalCo
                         org.springframework.data.domain.Pageable pageable);
 
         long countByTenantIdAndStartedAtBetween(UUID tenantId, java.time.Instant from, java.time.Instant to);
+
+        @org.springframework.data.jpa.repository.Query("SELECT c.doctorUser.id, COUNT(c) FROM ClinicalConsultation c WHERE c.tenant.id = :tenantId AND c.startedAt >= :since GROUP BY c.doctorUser.id")
+        java.util.List<Object[]> getDoctorVisitCounts(@org.springframework.data.repository.query.Param("tenantId") UUID tenantId, @org.springframework.data.repository.query.Param("since") java.time.Instant since);
+
+        long countByDoctorUserId(UUID doctorUserId);
 }
 

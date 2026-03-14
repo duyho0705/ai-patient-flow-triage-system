@@ -8,7 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.clinic.cdm.common.exception.ResourceNotFoundException;
+import vn.clinic.cdm.common.exception.ApiException;
+import vn.clinic.cdm.common.exception.ErrorCode;
+import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
 import vn.clinic.cdm.identity.domain.IdentityRole;
 import vn.clinic.cdm.identity.domain.IdentityUser;
 import vn.clinic.cdm.identity.domain.IdentityUserRole;
@@ -23,12 +26,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import vn.clinic.cdm.common.service.AuditLogService;
+import vn.clinic.cdm.common.repository.AuditLogRepository;
+import vn.clinic.cdm.common.repository.SystemSettingRepository;
+import vn.clinic.cdm.identity.repository.IdentityPermissionRepository;
+import vn.clinic.cdm.identity.repository.IdentityRolePermissionRepository;
+import vn.clinic.cdm.common.domain.AuditLog;
+import vn.clinic.cdm.common.domain.SystemSetting;
+import vn.clinic.cdm.identity.domain.IdentityRolePermission;
+import vn.clinic.cdm.api.dto.admin.SystemSettingDto;
+import vn.clinic.cdm.common.tenant.TenantContext;
 
 /**
- * Admin â€“ quáº£n lÃ½ user, gÃ¡n role theo tenant/branch. Chá»‰ role ADMIN.
+ * Admin – quản lý user, gán role theo tenant/branch. Chỉ role ADMIN.
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AdminService {
 
         private final IdentityUserRepository identityUserRepository;
@@ -36,9 +50,11 @@ public class AdminService {
         private final IdentityRoleRepository identityRoleRepository;
         private final TenantService tenantService;
         private final PasswordEncoder passwordEncoder;
-        private final vn.clinic.cdm.common.service.AuditLogService auditLogService;
-
-        private final vn.clinic.cdm.common.repository.AuditLogRepository auditLogRepository;
+        private final AuditLogService auditLogService;
+        private final AuditLogRepository auditLogRepository;
+        private final SystemSettingRepository systemSettingRepository;
+        private final IdentityPermissionRepository identityPermissionRepository;
+        private final IdentityRolePermissionRepository identityRolePermissionRepository;
 
         @Transactional(readOnly = true)
         public PagedResponse<AdminUserDto> listUsers(UUID tenantId, Pageable pageable) {
@@ -53,15 +69,17 @@ public class AdminService {
 
         @Transactional(readOnly = true)
         public AdminUserDto getUser(UUID userId) {
+                log.debug("Fetching user details for ID: {}", userId);
                 IdentityUser user = identityUserRepository.findById(userId)
-                                .orElseThrow(() -> new ResourceNotFoundException("IdentityUser", userId));
+                                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
                 return toAdminUserDto(user);
         }
 
         @Transactional
         public AdminUserDto createUser(CreateUserRequest request) {
+                log.info("Creating user: {}", request.getEmail());
                 if (identityUserRepository.existsByEmail(request.getEmail().trim().toLowerCase())) {
-                        throw new IllegalArgumentException("Email Ä‘Ã£ tá»“n táº¡i");
+                        throw new ApiException(ErrorCode.USER_ALREADY_EXISTS, HttpStatus.BAD_REQUEST, "Email đã tồn tại trên hệ thống");
                 }
                 IdentityUser user = IdentityUser.builder()
                                 .email(request.getEmail().trim().toLowerCase())
@@ -72,31 +90,19 @@ public class AdminService {
                                 .build();
                 user = identityUserRepository.save(user);
 
-                IdentityRole role = identityRoleRepository.findByCode(request.getRoleCode())
-                                .orElseThrow(() -> new ResourceNotFoundException("IdentityRole",
-                                                request.getRoleCode()));
-                Tenant tenant = tenantService.getById(request.getTenantId());
-                TenantBranch branch = request.getBranchId() != null
-                                ? tenantService.getBranchById(request.getBranchId())
-                                : null;
-                IdentityUserRole userRole = IdentityUserRole.builder()
-                                .user(user)
-                                .role(role)
-                                .tenant(tenant)
-                                .branch(branch)
-                                .build();
-                identityUserRoleRepository.save(userRole);
+                saveRoleAssignment(user, request.getRoleCode(), request.getTenantId(), request.getBranchId());
 
                 auditLogService.log("CREATE", "USER", user.getId().toString(),
-                                "Táº¡o má»›i ngÆ°á»i dÃ¹ng: " + user.getEmail());
+                                "Tạo mới người dùng: " + user.getEmail());
 
                 return toAdminUserDto(identityUserRepository.findById(user.getId()).orElse(user));
         }
 
         @Transactional
         public AdminUserDto updateUser(UUID userId, UpdateUserRequest request) {
+                log.info("Updating user ID: {}", userId);
                 IdentityUser user = identityUserRepository.findById(userId)
-                                .orElseThrow(() -> new ResourceNotFoundException("IdentityUser", userId));
+                                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
                 if (request.getFullNameVi() != null && !request.getFullNameVi().isBlank()) {
                         user.setFullNameVi(request.getFullNameVi().trim());
                 }
@@ -109,30 +115,17 @@ public class AdminService {
                 identityUserRepository.save(user);
 
                 if (request.getRoleAssignments() != null) {
-                        List<IdentityUserRole> existing = identityUserRoleRepository.findByUserId(userId);
-                        identityUserRoleRepository.deleteAll(existing);
-                        for (UpdateUserRequest.UserRoleAssignmentInput ra : request.getRoleAssignments()) {
-                                if (ra.getTenantId() == null || ra.getRoleCode() == null)
-                                        continue;
-                                IdentityRole role = identityRoleRepository.findByCode(ra.getRoleCode())
-                                                .orElseThrow(() -> new ResourceNotFoundException("IdentityRole",
-                                                                ra.getRoleCode()));
-                                Tenant tenant = tenantService.getById(ra.getTenantId());
-                                TenantBranch branch = ra.getBranchId() != null
-                                                ? tenantService.getBranchById(ra.getBranchId())
-                                                : null;
-                                IdentityUserRole newRole = IdentityUserRole.builder()
-                                                .user(user)
-                                                .role(role)
-                                                .tenant(tenant)
-                                                .branch(branch)
-                                                .build();
-                                identityUserRoleRepository.save(newRole);
-                        }
-                }
+			List<IdentityUserRole> existing = identityUserRoleRepository.findByUserId(userId);
+			identityUserRoleRepository.deleteAll(existing);
+			for (UpdateUserRequest.UserRoleAssignmentInput ra : request.getRoleAssignments()) {
+				if (ra.getTenantId() == null || ra.getRoleCode() == null)
+					continue;
+				saveRoleAssignment(user, ra.getRoleCode(), ra.getTenantId(), ra.getBranchId());
+			}
+		}
 
                 auditLogService.log("UPDATE", "USER", userId.toString(),
-                                "Cáº­p nháº­t thÃ´ng tin ngÆ°á»i dÃ¹ng: " + user.getEmail());
+                                "Cập nhật thông tin người dùng: " + user.getEmail());
 
                 return toAdminUserDto(identityUserRepository.findById(userId).orElse(user));
         }
@@ -140,46 +133,149 @@ public class AdminService {
         @Transactional
         public void setPassword(UUID userId, SetPasswordRequest request) {
                 IdentityUser user = identityUserRepository.findById(userId)
-                                .orElseThrow(() -> new ResourceNotFoundException("IdentityUser", userId));
+                                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
                 user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
                 identityUserRepository.save(user);
                 auditLogService.log("SET_PASSWORD", "USER", userId.toString(),
-                                "Äáº·t láº¡i máº­t kháº©u cho ngÆ°á»i dÃ¹ng: " + user.getEmail());
+                                "Đặt lại mật khẩu cho người dùng: " + user.getEmail());
         }
 
         @Transactional(readOnly = true)
         public List<RoleDto> getRoles() {
                 return identityRoleRepository.findAll().stream()
-                                .map(RoleDto::fromEntity)
+                                .map(r -> {
+                                        List<PermissionDto> perms = identityRolePermissionRepository.findByRoleId(r.getId())
+                                                        .stream()
+                                                        .map(rp -> PermissionDto.fromEntity(rp.getPermission()))
+                                                        .collect(Collectors.toList());
+                                        return RoleDto.fromEntity(r, perms);
+                                })
                                 .collect(Collectors.toList());
+        }
+
+        @Transactional(readOnly = true)
+        public List<PermissionDto> getPermissions() {
+                return identityPermissionRepository.findAll().stream()
+                                .map(PermissionDto::fromEntity)
+                                .collect(Collectors.toList());
+        }
+
+        @Transactional
+        public RoleDto createRole(RoleDto request) {
+                IdentityRole roleToSave = IdentityRole.builder()
+                                .code(request.getCode().toUpperCase())
+                                .nameVi(request.getNameVi())
+                                .description(request.getDescription())
+                                .build();
+                final IdentityRole role = identityRoleRepository.save(roleToSave);
+
+                if (request.getPermissions() != null) {
+                        for (PermissionDto p : request.getPermissions()) {
+                                identityPermissionRepository.findByCode(p.getCode()).ifPresent(perm -> {
+                                        identityRolePermissionRepository.save(IdentityRolePermission.builder()
+                                                        .role(role)
+                                                        .permission(perm)
+                                                        .build());
+                                });
+                        }
+                }
+                return getRole(role.getId());
+        }
+
+        @Transactional(readOnly = true)
+        public RoleDto getRole(UUID id) {
+                IdentityRole r = identityRoleRepository.findById(id)
+                                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy vai trò"));
+                List<PermissionDto> perms = identityRolePermissionRepository.findByRoleId(r.getId())
+                                .stream()
+                                .map(rp -> PermissionDto.fromEntity(rp.getPermission()))
+                                .collect(Collectors.toList());
+                return RoleDto.fromEntity(r, perms);
+        }
+
+        @Transactional
+        public RoleDto updateRole(UUID id, RoleDto request) {
+                final IdentityRole role = identityRoleRepository.findById(id)
+                                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy vai trò"));
+                role.setNameVi(request.getNameVi());
+                role.setDescription(request.getDescription());
+                identityRoleRepository.save(role);
+
+                if (request.getPermissions() != null) {
+                        List<IdentityRolePermission> existing = identityRolePermissionRepository.findByRoleId(id);
+                        identityRolePermissionRepository.deleteAll(existing);
+                        for (PermissionDto p : request.getPermissions()) {
+                                identityPermissionRepository.findByCode(p.getCode()).ifPresent(perm -> {
+                                        identityRolePermissionRepository.save(IdentityRolePermission.builder()
+                                                        .role(role)
+                                                        .permission(perm)
+                                                        .build());
+                                });
+                        }
+                }
+                return getRole(id);
+        }
+
+        @Transactional
+        public void deleteRole(UUID id) {
+                identityRoleRepository.deleteById(id);
         }
 
         @Transactional(readOnly = true)
         public PagedResponse<AuditLogDto> listAuditLogs(UUID tenantId, Pageable pageable) {
                 if (tenantId == null)
-                        tenantId = vn.clinic.cdm.common.tenant.TenantContext.getTenantId().orElse(null);
+                        tenantId = TenantContext.getTenantId().orElse(null);
 
-                org.springframework.data.domain.Page<vn.clinic.cdm.common.domain.AuditLog> page = auditLogRepository
+                org.springframework.data.domain.Page<AuditLog> page = auditLogRepository
                                 .findByTenantIdOrderByCreatedAtDesc(tenantId, pageable);
 
-                List<AuditLogDto> content = page.getContent().stream()
-                                .map((vn.clinic.cdm.common.domain.AuditLog l) -> AuditLogDto.builder()
-                                                .id(l.getId())
-                                                .userId(l.getUserId())
-                                                .userEmail(l.getEmail())
-                                                .action(l.getAction())
-                                                .details(l.getDetails())
-                                                .ipAddress(l.getIpAddress())
-                                                .userAgent(l.getUserAgent())
-                                                .timestamp(l.getCreatedAt())
-                                                .status(l.getStatus())
-                                                .build())
-                                .collect(Collectors.toList());
+		List<AuditLogDto> content = page.getContent().stream()
+				.map(AuditLogDto::fromEntity)
+				.collect(Collectors.toList());
 
                 return PagedResponse.of(page, content);
         }
 
-        private AdminUserDto toAdminUserDto(IdentityUser user) {
+        @Transactional(readOnly = true)
+        public List<SystemSettingDto> listSystemSettings() {
+                return systemSettingRepository.findAll().stream()
+                                .map(SystemSettingDto::fromEntity)
+                                .collect(Collectors.toList());
+        }
+
+        @Transactional
+        public SystemSettingDto updateSystemSetting(String key, String value) {
+                SystemSetting setting = systemSettingRepository.findBySettingKey(key)
+                                .orElse(SystemSetting.builder()
+                                                .settingKey(key)
+                                                .category("GENERAL")
+                                                .build());
+                setting.setSettingValue(value);
+                setting = systemSettingRepository.save(setting);
+
+                auditLogService.log("UPDATE_SETTING", "SYSTEM", setting.getId().toString(),
+                                "Cập nhật cấu hình: " + key + " = " + value);
+
+                return SystemSettingDto.fromEntity(setting);
+        }
+
+	private void saveRoleAssignment(IdentityUser user, String roleCode, UUID tenantId, UUID branchId) {
+		IdentityRole role = identityRoleRepository.findByCode(roleCode)
+				.orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy vai trò: " + roleCode));
+		Tenant tenant = tenantService.getById(tenantId);
+		TenantBranch branch = branchId != null
+				? tenantService.getBranchById(branchId)
+				: null;
+		IdentityUserRole userRole = IdentityUserRole.builder()
+				.user(user)
+				.role(role)
+				.tenant(tenant)
+				.branch(branch)
+				.build();
+		identityUserRoleRepository.save(userRole);
+	}
+
+	private AdminUserDto toAdminUserDto(IdentityUser user) {
                 List<IdentityUserRole> roles = identityUserRoleRepository.findByUserId(user.getId());
                 List<UserRoleAssignmentDto> assignments = new ArrayList<>();
                 for (IdentityUserRole ur : roles) {

@@ -1,0 +1,128 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e7]: medical_services
+        - heading "Sống Khỏe" [level=1] [ref=e8]
+      - navigation [ref=e9]:
+        - link "dashboard Tổng quan" [ref=e10] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e11]: dashboard
+          - generic [ref=e12]: Tổng quan
+        - link "group Danh sách bệnh nhân" [ref=e13] [cursor=pointer]:
+          - /url: /patients
+          - generic [ref=e14]: group
+          - generic [ref=e15]: Danh sách bệnh nhân
+        - link "monitoring Phân tích nguy cơ" [ref=e16] [cursor=pointer]:
+          - /url: /analytics
+          - generic [ref=e17]: monitoring
+          - generic [ref=e18]: Phân tích nguy cơ
+        - link "description Đơn thuốc điện tử" [ref=e19] [cursor=pointer]:
+          - /url: /prescriptions
+          - generic [ref=e20]: description
+          - generic [ref=e21]: Đơn thuốc điện tử
+        - link "calendar_today Lịch hẹn khám" [ref=e22] [cursor=pointer]:
+          - /url: /scheduling
+          - generic [ref=e23]: calendar_today
+          - generic [ref=e24]: Lịch hẹn khám
+        - link "chat_bubble Tin nhắn" [ref=e25] [cursor=pointer]:
+          - /url: /chat
+          - generic [ref=e26]: chat_bubble
+          - generic [ref=e27]: Tin nhắn
+      - generic [ref=e28]:
+        - button "settings Cài đặt" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]: settings
+          - generic [ref=e31]: Cài đặt
+        - button "logout Đăng xuất" [ref=e32] [cursor=pointer]:
+          - generic [ref=e33]: logout
+          - generic [ref=e34]: Đăng xuất
+    - main [ref=e35]:
+      - generic [ref=e36]:
+        - generic [ref=e38]:
+          - generic [ref=e39]: search
+          - textbox "Tìm kiếm bệnh nhân, hồ sơ..." [ref=e40]
+        - generic [ref=e41]:
+          - button "notifications" [ref=e42] [cursor=pointer]:
+            - generic [ref=e43]: notifications
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - paragraph [ref=e48]: Bác sĩ Tú
+              - paragraph [ref=e49]: Khoa Nội Tổng Quát
+            - img "Doctor Profile" [ref=e51]
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56] [cursor=pointer]:
+            - generic [ref=e57]:
+              - img [ref=e59]
+              - generic [ref=e62]:
+                - text: —
+                - img [ref=e63]
+            - heading "Tổng bệnh nhân" [level=3] [ref=e66]
+            - paragraph [ref=e67]: "0"
+          - generic [ref=e68] [cursor=pointer]:
+            - generic [ref=e69]:
+              - img [ref=e71]
+              - generic [ref=e73]: Cảnh báo
+            - heading "Nguy cơ cao" [level=3] [ref=e74]
+            - paragraph [ref=e75]: "0"
+          - generic [ref=e76] [cursor=pointer]:
+            - img [ref=e79]
+            - heading "Lịch hẹn chờ" [level=3] [ref=e81]
+            - paragraph [ref=e82]: "0"
+          - generic [ref=e83] [cursor=pointer]:
+            - img [ref=e86]
+            - heading "Tin nhắn mới" [level=3] [ref=e89]
+            - paragraph [ref=e90]: "0"
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - heading "Phân tích nguy cơ cao" [level=2] [ref=e94]:
+                - img [ref=e95]
+                - text: Phân tích nguy cơ cao
+              - button "Xem tất cả" [ref=e97] [cursor=pointer]
+            - generic [ref=e99]:
+              - img [ref=e100]
+              - paragraph [ref=e103]: Không có cảnh báo nguy cơ
+            - generic [ref=e104]:
+              - generic [ref=e105]:
+                - generic [ref=e106]:
+                  - heading "Xu hướng sức khỏe cộng đồng" [level=3] [ref=e107]
+                  - paragraph [ref=e108]: Thống kê dữ liệu lâm sàng theo tuần
+                - generic [ref=e109]: 7 ngày qua
+              - application [ref=e113]:
+                - generic [ref=e127]:
+                  - generic [ref=e129]: Th3
+                  - generic [ref=e131]: Th4
+                  - generic [ref=e133]: Th5
+                  - generic [ref=e135]: Th6
+                  - generic [ref=e137]: Th7
+                  - generic [ref=e139]: CN
+            - generic [ref=e140]:
+              - heading "Theo dõi bất thường (24h qua)" [level=2] [ref=e141]:
+                - img [ref=e142]
+                - text: Theo dõi bất thường (24h qua)
+              - generic [ref=e145]:
+                - img [ref=e146]
+                - paragraph [ref=e149]: Không có chỉ số bất thường khẩn cấp
+          - complementary [ref=e150]:
+            - generic [ref=e151]:
+              - heading "Thao tác nhanh" [level=2] [ref=e152]
+              - generic [ref=e153]:
+                - button "Kê đơn thuốc điện tử" [ref=e154] [cursor=pointer]:
+                  - img [ref=e156]
+                  - generic [ref=e159]: Kê đơn thuốc điện tử
+                - button "Gửi lời khuyên" [ref=e160] [cursor=pointer]:
+                  - img [ref=e162]
+                  - generic [ref=e165]: Gửi lời khuyên
+                - button "Đặt lịch tái khám" [ref=e166] [cursor=pointer]:
+                  - img [ref=e168]
+                  - generic [ref=e170]: Đặt lịch tái khám
+            - generic [ref=e171]:
+              - heading "Lịch hẹn khám sắp tới" [level=2] [ref=e173]
+              - generic [ref=e175]: Không có lịch hẹn hôm nay
+              - button "Xem toàn bộ lịch trình" [ref=e176] [cursor=pointer]
+  - generic [ref=e178]: Th3
+```

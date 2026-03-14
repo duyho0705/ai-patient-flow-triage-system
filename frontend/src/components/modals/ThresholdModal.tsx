@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import { getPatientHealthThresholds, upsertPatientHealthThreshold, METRIC_TYPE_LABELS, METRIC_TYPE_UNITS } from '@/api/doctorHealth'
 import { X, Save, AlertTriangle, Settings2, Activity, HeartPulse } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toastService } from '@/services/toast'
 
 interface ThresholdModalProps {
     isOpen: boolean
@@ -27,10 +27,10 @@ export function ThresholdModal({ isOpen, onClose, patientId }: ThresholdModalPro
         mutationFn: (data: any) => upsertPatientHealthThreshold(patientId!, data, headers),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['patient-thresholds', tenantId, patientId] })
-            toast.success("Đã lưu ngưỡng cảnh báo thành công!")
+            toastService.success("Đã lưu ngưỡng cảnh báo thành công!")
         },
         onError: () => {
-            toast.error("Lỗi khi lưu ngưỡng. Vui lòng thử lại.")
+            toastService.error("Lỗi khi lưu ngưỡng. Vui lòng thử lại.")
         }
     })
 

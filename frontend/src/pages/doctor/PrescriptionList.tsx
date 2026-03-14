@@ -2,15 +2,53 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTenant } from '@/context/TenantContext'
 import { useQuery } from '@tanstack/react-query'
-import { getDoctorPrescriptions } from '@/api/doctor'
+import { getDoctorPrescriptions, exportPrescriptionPdf } from '@/api/doctor'
 import { Loader2, FileX, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { PrescriptionDto } from '@/api-client'
+import { PrescriptionModal } from '@/components/modals/PrescriptionModal'
+import { toastService } from '@/services/toast'
 
 export function PrescriptionList() {
     const { headers, tenantId } = useTenant()
     const [searchTerm, setSearchTerm] = useState('')
     const [currentPage, setCurrentPage] = useState(0)
     const pageSize = 10
+
+    // Clone/Modal State
+    const [isCloneModalOpen, setIsCloneModalOpen] = useState(false)
+    const [isEditMode, setIsEditMode] = useState(false)
+    const [selectedPrescription, setSelectedPrescription] = useState<PrescriptionDto | null>(null)
+
+    const handlePrint = async (px: PrescriptionDto) => {
+        if (!px.id) return
+        toastService.info(`Đang tải đơn thuốc #${px.id.slice(0, 8).toUpperCase()}...`)
+        try {
+            const blob = await exportPrescriptionPdf(px.id, headers)
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `Prescription_${px.id.slice(0, 8)}.pdf`
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            toastService.success('Tải đơn thuốc thành công')
+        } catch (error) {
+            console.error(error)
+            toastService.error('Không thể tải file PDF đơn thuốc.')
+        }
+    }
+
+    const handleClone = (px: PrescriptionDto) => {
+        setSelectedPrescription(px)
+        setIsEditMode(false)
+        setIsCloneModalOpen(true)
+    }
+
+    const handleEdit = (px: PrescriptionDto) => {
+        setSelectedPrescription(px)
+        setIsEditMode(true)
+        setIsCloneModalOpen(true)
+    }
 
     // ─── Fetch Real Data ───
     const { data: prescriptionPage, isLoading } = useQuery({
@@ -192,12 +230,23 @@ export function PrescriptionList() {
                                                         <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="Xem chi tiết">
                                                             <span className="material-symbols-outlined text-xl">visibility</span>
                                                         </button>
-                                                        <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="In PDF">
+                                                        <button 
+                                                            onClick={() => handlePrint(px)}
+                                                            className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="In PDF">
                                                             <span className="material-symbols-outlined text-xl">picture_as_pdf</span>
                                                         </button>
-                                                        <button className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="Tái bản đơn">
+                                                        <button 
+                                                            onClick={() => handleClone(px)}
+                                                            className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-slate-400 transition-all active:scale-90" title="Tái bản đơn">
                                                             <span className="material-symbols-outlined text-xl">history_edu</span>
                                                         </button>
+                                                        {px.status === 'DRAFT' && (
+                                                            <button 
+                                                                onClick={() => handleEdit(px)}
+                                                                className="p-2 hover:bg-amber-100 hover:text-amber-600 rounded-lg text-slate-400 transition-all active:scale-90" title="Chỉnh sửa đơn nháp">
+                                                                <span className="material-symbols-outlined text-xl">edit</span>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -306,6 +355,20 @@ export function PrescriptionList() {
                     </div>
                 </div>
             </div>
+
+            <PrescriptionModal
+                isOpen={isCloneModalOpen}
+                onClose={() => {
+                    setIsCloneModalOpen(false)
+                    setSelectedPrescription(null)
+                    setIsEditMode(false)
+                }}
+                patientId={selectedPrescription?.patientId}
+                patientName={selectedPrescription?.patientName}
+                initialItems={selectedPrescription?.items}
+                initialNotes={selectedPrescription?.notes}
+                prescriptionId={isEditMode ? selectedPrescription?.id : undefined}
+            />
         </div>
     )
 }

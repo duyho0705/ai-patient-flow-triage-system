@@ -12,4 +12,6 @@ public interface IdentityRolePermissionRepository extends JpaRepository<Identity
 
     @Query("SELECT rp.permission.code FROM IdentityRolePermission rp WHERE rp.role.id IN :roleIds")
     List<String> findPermissionCodesByRoleIds(List<UUID> roleIds);
+
+    List<IdentityRolePermission> findByRoleId(UUID roleId);
 }

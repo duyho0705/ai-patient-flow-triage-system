@@ -32,6 +32,10 @@ public class PatientDto {
     private String ethnicity;
     private Boolean isActive;
     private String avatarUrl;
+    private String riskLevel;
+    private String bloodType;
+    private String allergies;
+    private String chronicConditions;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -56,6 +60,10 @@ public class PatientDto {
                 .ethnicity(e.getEthnicity())
                 .isActive(e.getIsActive())
                 .avatarUrl(e.getAvatarUrl())
+                .riskLevel(e.getRiskLevel())
+                .bloodType(e.getBloodType())
+                .allergies(e.getAllergies())
+                .chronicConditions(e.getChronicConditions())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();

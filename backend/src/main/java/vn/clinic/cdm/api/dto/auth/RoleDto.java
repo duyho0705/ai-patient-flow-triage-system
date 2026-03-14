@@ -17,13 +17,17 @@ public class RoleDto {
     private UUID id;
     private String code;
     private String nameVi;
+    private String description;
+    private java.util.List<PermissionDto> permissions;
 
-    public static RoleDto fromEntity(IdentityRole r) {
+    public static RoleDto fromEntity(IdentityRole r, java.util.List<PermissionDto> permissions) {
         if (r == null) return null;
         return RoleDto.builder()
                 .id(r.getId())
                 .code(r.getCode())
                 .nameVi(r.getNameVi())
+                .description(r.getDescription())
+                .permissions(permissions)
                 .build();
     }
 }

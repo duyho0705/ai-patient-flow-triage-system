@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 import vn.clinic.cdm.api.dto.common.ApiResponse;
 import vn.clinic.cdm.api.dto.messaging.PatientChatConversationDto;
 import vn.clinic.cdm.api.dto.messaging.PatientChatMessageDto;
@@ -49,5 +51,16 @@ public class DoctorMessagingController {
         UUID doctorUserId = AuthPrincipal.getCurrentUserId();
         return ResponseEntity
                 .ok(ApiResponse.success(patientChatService.doctorSendMessage(doctorUserId, patientId, content)));
+    }
+
+    @PostMapping(value = "/send-file/{patientId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Gửi tin nhắn kèm file cho bệnh nhân")
+    public ResponseEntity<ApiResponse<PatientChatMessageDto>> sendChatFile(
+            @PathVariable UUID patientId,
+            @RequestParam(required = false) String content,
+            @RequestParam("file") MultipartFile file) {
+        UUID doctorUserId = AuthPrincipal.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse
+                .success(patientChatService.doctorSendMessageWithFile(doctorUserId, patientId, content, file)));
     }
 }

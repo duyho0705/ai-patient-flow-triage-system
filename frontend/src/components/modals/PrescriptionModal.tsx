@@ -1,32 +1,56 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { searchPharmacyProducts, createDoctorPrescription } from '@/api/doctor'
+import { searchPharmacyProducts, createDoctorPrescription, updateDoctorPrescription, getDoctorPatientList } from '@/api/doctor'
 import { useTenant } from '@/context/TenantContext'
-import toast from 'react-hot-toast'
+import { toastService } from '@/services/toast'
 
 interface PrescriptionModalProps {
     isOpen: boolean
     onClose: () => void
     patientName?: string
     patientId?: string
+    initialDiagnosis?: string
+    initialNotes?: string
+    initialItems?: any[]
+    prescriptionId?: string
 }
 
-export function PrescriptionModal({ isOpen, onClose, patientName = 'Nguyễn Văn A', patientId }: PrescriptionModalProps) {
+export function PrescriptionModal({ 
+    isOpen, 
+    onClose, 
+    patientName = 'Bệnh nhân', 
+    patientId,
+    initialDiagnosis = '',
+    initialNotes = '',
+    initialItems = [],
+    prescriptionId
+}: PrescriptionModalProps) {
     const { headers, tenantId } = useTenant()
     const queryClient = useQueryClient()
 
     const [isAddMedicationOpen, setIsAddMedicationOpen] = useState(false)
-    const [diagnosis, setDiagnosis] = useState('')
-    const [notes, setNotes] = useState('')
+    const [diagnosis, setDiagnosis] = useState(initialDiagnosis)
+    const [notes, setNotes] = useState(initialNotes)
     
     // Prescription items list
-    const [items, setItems] = useState<any[]>([])
+    const [items, setItems] = useState<any[]>(initialItems)
 
-    // Search query
+    // Sync state when initial props change (e.g. for cloning) or when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setDiagnosis(initialDiagnosis || '')
+            setNotes(initialNotes || '')
+            setItems(initialItems && initialItems.length > 0 ? [...initialItems] : [])
+        }
+    }, [isOpen, prescriptionId, patientId])
+
+    const [patientSearch, setPatientSearch] = useState('')
+    const [debouncedPatientSearch, setDebouncedPatientSearch] = useState('')
+
+    // Medication search state
     const [searchQuery, setSearchQuery] = useState('')
-    // Debounced search query (in real app, use a hook)
     const [debouncedSearch, setDebouncedSearch] = useState('')
 
     // Form inputs for new medication
@@ -38,26 +62,61 @@ export function PrescriptionModal({ isOpen, onClose, patientName = 'Nguyễn Vă
         unitPrice: 0
     })
 
+    // ─── Fetch Real Data ───
     const { data: searchResults } = useQuery({
         queryKey: ['pharmacy-search', tenantId, debouncedSearch],
         queryFn: () => searchPharmacyProducts(headers, debouncedSearch, 0, 10),
         enabled: !!debouncedSearch && isAddMedicationOpen
     })
 
+    const { data: patientSearchResults } = useQuery({
+        queryKey: ['doctor-patient-search', tenantId, debouncedPatientSearch],
+        queryFn: () => getDoctorPatientList(headers, 0, 10, debouncedPatientSearch),
+        enabled: !!debouncedPatientSearch && !patientId
+    })
+
+    const [selectedPatient, setSelectedPatient] = useState<{id: string, name: string} | null>(
+        patientId ? { id: patientId, name: patientName } : null
+    )
+
+    useEffect(() => {
+        if (patientId && selectedPatient?.id !== patientId) {
+            setSelectedPatient({ id: patientId, name: patientName })
+        }
+    }, [patientId, patientName, isOpen])
+
+    const handlePatientSearchChange = (e: any) => {
+        setPatientSearch(e.target.value)
+        setTimeout(() => setDebouncedPatientSearch(e.target.value), 300)
+    }
+
+    const selectPatient = (p: any) => {
+        setSelectedPatient({ id: p.id, name: p.fullNameVi })
+        setPatientSearch(p.fullNameVi)
+        setDebouncedPatientSearch('')
+    }
+
     const createMutation = useMutation({
         mutationFn: (data: any) => createDoctorPrescription(data, headers),
         onSuccess: () => {
-            toast.success("Đã kê đơn thuốc thành công!")
+            toastService.success("Đã kê đơn thuốc thành công!")
             queryClient.invalidateQueries({ queryKey: ['doctor-prescriptions'] })
-            // Reset state
-            setItems([])
-            setDiagnosis('')
-            setNotes('')
             onClose()
-            setIsAddMedicationOpen(false)
         },
         onError: () => {
-            toast.error("Lỗi khi thêm đơn thuốc")
+            toastService.error("Lỗi khi thêm đơn thuốc")
+        }
+    })
+
+    const updateMutation = useMutation({
+        mutationFn: (data: any) => updateDoctorPrescription(prescriptionId!, data, headers),
+        onSuccess: () => {
+            toastService.success("Đã cập nhật đơn thuốc thành công!")
+            queryClient.invalidateQueries({ queryKey: ['doctor-prescriptions'] })
+            onClose()
+        },
+        onError: () => {
+            toastService.error("Lỗi khi cập nhật đơn thuốc")
         }
     })
 
@@ -80,7 +139,7 @@ export function PrescriptionModal({ isOpen, onClose, patientName = 'Nguyễn Vă
 
     const handleAddMedication = () => {
         if (!newMedData.productNameCustom || !newMedData.dosageInstruction || newMedData.quantity <= 0) {
-            toast.error("Vui lòng điền đủ thông tin thuốc")
+            toastService.error("Vui lòng điền đủ thông tin thuốc")
             return
         }
         setItems([...items, { ...newMedData }])
@@ -94,16 +153,17 @@ export function PrescriptionModal({ isOpen, onClose, patientName = 'Nguyễn Vă
     }
 
     const handleSubmit = () => {
-        if (!patientId) {
-            toast.error("Không xác định được bệnh nhân")
+        const targetPatientId = selectedPatient?.id
+        if (!targetPatientId) {
+            toastService.error("Vui lòng chọn bệnh nhân")
             return
         }
         if (items.length === 0) {
-            toast.error("Vui lòng thêm ít nhất một thuốc vào đơn")
+            toastService.error("Vui lòng thêm ít nhất một thuốc vào đơn")
             return
         }
-        createMutation.mutate({
-            patientId,
+        const payload = {
+            patientId: targetPatientId,
             notes: notes ? `Chẩn đoán: ${diagnosis}\n${notes}` : `Chẩn đoán: ${diagnosis}`,
             items: items.map(i => ({
                 productId: i.productId || undefined,
@@ -112,7 +172,20 @@ export function PrescriptionModal({ isOpen, onClose, patientName = 'Nguyễn Vă
                 dosageInstruction: i.dosageInstruction,
                 unitPrice: i.unitPrice
             }))
-        })
+        }
+
+        if (prescriptionId) {
+            updateMutation.mutate(payload)
+        } else {
+            createMutation.mutate(payload, {
+                onSuccess: () => {
+                    setItems([])
+                    setDiagnosis('')
+                    setNotes('')
+                    setIsAddMedicationOpen(false)
+                }
+            })
+        }
     }
 
     if (!isOpen) return null
@@ -168,19 +241,31 @@ export function PrescriptionModal({ isOpen, onClose, patientName = 'Nguyễn Vă
                                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Bệnh nhân</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
-                                        <span className="material-symbols-outlined text-xl">search</span>
+                                        <span className="material-symbols-outlined text-xl">person</span>
                                     </div>
-                                    <select
-                                        className="w-full pl-10 pr-10 py-3 rounded-lg border-2 border-primary/5 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-0 focus:border-primary outline-none transition-all appearance-none text-slate-900 dark:text-white font-medium"
-                                        defaultValue={patientName}
-                                    >
-                                        <option>{patientName}</option>
-                                        <option>Trần Thị B</option>
-                                        <option>Lê Văn C</option>
-                                    </select>
-                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
-                                        <span className="material-symbols-outlined">expand_more</span>
-                                    </div>
+                                    <input
+                                        type="text"
+                                        value={patientId ? patientName : patientSearch}
+                                        onChange={handlePatientSearchChange}
+                                        disabled={!!patientId}
+                                        placeholder="Tìm kiếm bệnh nhân..."
+                                        className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-primary/5 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 focus:ring-0 focus:border-primary outline-none transition-all text-slate-900 dark:text-white font-medium disabled:opacity-70"
+                                    />
+                                    {/* Patient search results */}
+                                    {debouncedPatientSearch && patientSearchResults?.content && patientSearchResults.content.length > 0 && (
+                                        <div className="absolute top-[52px] left-0 w-full bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 max-h-48 overflow-y-auto z-[60]">
+                                            {patientSearchResults.content.map((p: any) => (
+                                                <div
+                                                    key={p.id}
+                                                    onClick={() => selectPatient(p)}
+                                                    className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+                                                >
+                                                    <p className="font-bold text-sm text-slate-900 dark:text-white">{p.fullNameVi}</p>
+                                                    <p className="text-xs text-slate-500">{p.phone || 'Không có số điện thoại'}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -287,7 +372,7 @@ export function PrescriptionModal({ isOpen, onClose, patientName = 'Nguyễn Vă
                                         </div>
                                         <input
                                             type="date"
-                                            defaultValue="2023-12-25"
+                                            defaultValue={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                                             className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-primary/5 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-0 focus:border-primary outline-none transition-all text-slate-900 dark:text-white cursor-pointer font-bold"
                                         />
                                     </div>

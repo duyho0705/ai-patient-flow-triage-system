@@ -20,6 +20,10 @@ export type PatientDto = {
     ethnicity?: string;
     isActive?: boolean;
     avatarUrl?: string;
+    riskLevel?: string;
+    bloodType?: string;
+    allergies?: string;
+    chronicConditions?: string;
     createdAt?: string;
     updatedAt?: string;
 };

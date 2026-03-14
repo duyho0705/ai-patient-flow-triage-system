@@ -9,53 +9,91 @@ import {
     Activity,
     Stethoscope,
     ChevronRight,
+    Loader2,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useMemo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getManagerDoctors, createManagerDoctor, deleteManagerDoctor } from '@/api/management'
+import { useTenant } from '@/context/TenantContext'
+import { CustomInput } from '@/components/CustomInput'
+import { toastService } from '@/services/toast'
 
 export function ManageDoctor() {
+    const { headers } = useTenant()
+    const queryClient = useQueryClient()
     const [searchTerm, setSearchTerm] = useState('')
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+    const [formData, setFormData] = useState({
+        fullName: '',
+        email: '',
+        password: '',
+        phone: '',
+        specialty: '',
+        licenseNumber: '',
+        bio: ''
+    })
 
-    const doctors = [
-        {
-            id: 'DOC-001',
-            name: 'BS. Nguyễn Văn An',
-            specialty: 'Nội khoa',
-            patients: 12,
-            workload: 40,
-            status: 'Đang rảnh',
-            statusColor: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-            barColor: 'bg-green-500',
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCKEf1OliiZZNEcbE25T-PXglU7vQJPlBOlOSS5xvJgNqFVhgRdCq6PRfZjmeptUH43WMXmKFGo_GkZQx1H-OvB6WEcMGuN8WZtAg4O0Z9yg1QFHKtPsi_UpDQtLbjMmV7OPRaoNv6ntiTOgSUYLLAa9T9TN75PG8MjXbp95UW6shMkHQxx4yhbGUQL7DgLkeYG1w28WMGmLlWHHHf4T_t4dl_gUiRut5q3cSEu0cNrwBAV1QYtQ_GYyJjBmVHaEOXRjZ8t2A4B0Qg'
+    const { data: realDoctors, isLoading } = useQuery({
+        queryKey: ['manager-doctors', headers?.tenantId],
+        queryFn: () => getManagerDoctors(headers),
+        enabled: !!headers?.tenantId
+    })
+
+    const createMutation = useMutation({
+        mutationFn: (data: any) => createManagerDoctor(data, headers),
+        onSuccess: () => {
+            toastService.success('Đã thêm bác sĩ mới thành công')
+            setIsAddModalOpen(false)
+            setFormData({ fullName: '', email: '', password: '', phone: '', specialty: '', licenseNumber: '', bio: '' })
+            queryClient.invalidateQueries({ queryKey: ['manager-doctors'] })
+            queryClient.invalidateQueries({ queryKey: ['manager-summary'] })
         },
-        {
-            id: 'DOC-002',
-            name: 'BS. Lê Thị Mai',
-            specialty: 'Nhi khoa',
-            patients: 28,
-            workload: 85,
-            status: 'Vừa phải',
-            statusColor: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-            barColor: 'bg-orange-500',
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAjAGTgwF9w1LQmHeLvT6lok0uqXH_ebHl3AeuxS411fSlQ5a-ieOPzcr5CJqa6U5R5Rt9hi8br_KxKOvoq6iPcn8s0g_gTqgV1B9YlMWify2ImJfLXflggS0W6ZGaUxN5DvH3I4iWI3mfiuO931v9PIoxp5a4WDM1TKZKg0jHHC9rOhhYECsvq1FJdhjPzo5taAN0fORrqP5_r9u5eYgYMi1o9S1NMnqXvwjlpmeuViZ9Xf-k-SOtlw5zU_9JI1jVRBC1FHHG2B-Q'
-        },
-        {
-            id: 'DOC-003',
-            name: 'BS. Trần Hoàng Nam',
-            specialty: 'Ngoại khoa',
-            patients: 42,
-            workload: 100,
-            status: 'Quá tải',
-            statusColor: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-            barColor: 'bg-red-500',
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAYXm10Tu11T0eP72h1Q3KEcxxha4NdcJIlIkz4E_1Xr9kFgnGSHhksEccoFnh5g20pDmTOAjJJJRjMUPM9O8q9UjuuuoLP7yr6-5PVQuLaNCkBhwE9xMQpjW7oVH5-dhlidDGjf_PKOd8WOvgRWOr4fLf9BsJyPo59TiyzaojKgStYa4DM9Rpfk24PXVDsBjjJUC2cXhrvA8HKy1SXs2g_nN-JMkDM-qqyhGt2SrARrK86Qjx6N15VZYRa4biLvhfiGdBWqAEB5to'
+        onError: (err: any) => {
+            toastService.error(err.response?.data?.message || 'Lỗi khi thêm bác sĩ')
         }
-    ]
+    })
 
-    const pendingAssignments = [
-        { name: 'Phạm Minh Tuấn', symptoms: 'Đau bụng, khó tiêu' },
-        { name: 'Hoàng Thu Thủy', symptoms: 'Kiểm tra định kỳ Nhi' }
-    ]
+    const handleCreate = (e: React.FormEvent) => {
+        e.preventDefault()
+        createMutation.mutate(formData)
+    }
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => deleteManagerDoctor(id, headers),
+        onSuccess: () => {
+            toastService.success('Đã xóa hồ sơ bác sĩ thành công')
+            queryClient.invalidateQueries({ queryKey: ['manager-doctors'] })
+            queryClient.invalidateQueries({ queryKey: ['manager-summary'] })
+        },
+        onError: () => {
+            toastService.error('Lỗi khi xóa bác sĩ')
+        }
+    })
+
+    const filteredDoctors = useMemo(() => {
+        if (!realDoctors) return []
+        return realDoctors.filter(doc => 
+            doc.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            doc.specialty?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            doc.licenseNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    }, [realDoctors, searchTerm])
+
+    const handleDelete = async (id: string, name: string) => {
+        if (window.confirm(`Bạn có chắc muốn xóa bác sĩ ${name}? Hành động này không thể hoàn tác.`)) {
+            deleteMutation.mutate(id)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-12 h-12 animate-spin text-emerald-500" />
+                <p className="font-black text-slate-400 uppercase tracking-widest text-sm">Đang tải danh sách bác sĩ đội ngũ...</p>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-10">
@@ -67,24 +105,131 @@ export function ManageDoctor() {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-                            Quản lý Bác sĩ
+                            Quản lý Bác sĩ Enterprise
                         </h1>
                         <p className="text-slate-500 font-bold mt-1 text-sm">
-                            Quản lý danh sách, chuyên khoa và lịch làm việc của bác sĩ.
+                            Hệ thống quản lý định danh và chuyên môn đội ngũ bác sĩ phòng khám.
                         </p>
                     </div>
                 </div>
                 <div className="flex gap-3">
                     <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm">
                         <Download className="w-4 h-4 text-emerald-600" />
-                        Xuất dữ liệu
+                        Xuất danh bạ
                     </button>
-                    <button className="bg-emerald-600 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20">
+                    <button 
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="bg-emerald-600 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                    >
                         <UserPlus className="w-4 h-4" />
-                        Thêm bác sĩ mới
+                        Thêm bác sĩ CDM
                     </button>
                 </div>
             </div>
+
+            {/* Add Modal */}
+            <AnimatePresence>
+                {isAddModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800"
+                        >
+                            <form onSubmit={handleCreate} className="flex flex-col h-full max-h-[90vh]">
+                                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2.5 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-600/20">
+                                            <UserPlus className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Thêm bác sĩ mới</h2>
+                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Thiết lập tài khoản & chuyên môn</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setIsAddModalOpen(false)}
+                                        className="text-slate-400 hover:text-slate-600 transition-colors"
+                                    >
+                                        <Users className="w-6 h-6 rotate-45" />
+                                    </button>
+                                </div>
+
+                                <div className="p-8 overflow-y-auto flex-1 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <CustomInput
+                                            label="Họ và tên"
+                                            required
+                                            value={formData.fullName}
+                                            onChange={val => setFormData({ ...formData, fullName: val })}
+                                        />
+                                        <CustomInput
+                                            label="Email (Username)"
+                                            required
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={val => setFormData({ ...formData, email: val })}
+                                        />
+                                        <CustomInput
+                                            label="Mật khẩu ban đầu"
+                                            required
+                                            type="password"
+                                            value={formData.password}
+                                            onChange={val => setFormData({ ...formData, password: val })}
+                                        />
+                                        <CustomInput
+                                            label="Số điện thoại"
+                                            value={formData.phone}
+                                            onChange={val => setFormData({ ...formData, phone: val })}
+                                        />
+                                        <CustomInput
+                                            label="Chuyên khoa"
+                                            required
+                                            placeholder="VD: Tim mạch, Nội tiết..."
+                                            value={formData.specialty}
+                                            onChange={val => setFormData({ ...formData, specialty: val })}
+                                        />
+                                        <CustomInput
+                                            label="Mã CCHN"
+                                            value={formData.licenseNumber}
+                                            onChange={val => setFormData({ ...formData, licenseNumber: val })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Giới thiệu ngắn</label>
+                                        <textarea
+                                            rows={3}
+                                            className="w-full p-4 rounded-xl bg-slate-100/50 dark:bg-slate-800 border-none text-sm font-bold resize-none"
+                                            value={formData.bio}
+                                            onChange={e => setFormData({ ...formData, bio: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="p-8 border-t border-slate-50 dark:border-slate-800 flex justify-end gap-4 bg-slate-50/30">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setIsAddModalOpen(false)}
+                                        className="px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all"
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button 
+                                        type="submit"
+                                        disabled={createMutation.isPending}
+                                        className="px-10 py-3 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all active:scale-95 flex items-center gap-3"
+                                    >
+                                        {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        Lưu hồ sơ
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Search and Filters */}
             <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 items-center">
@@ -92,26 +237,11 @@ export function ManageDoctor() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-emerald-600 transition-colors" />
                     <input
                         type="text"
-                        placeholder="Tìm kiếm theo tên hoặc ID bác sĩ..."
+                        placeholder="Tìm kiếm bác sĩ theo tên, chuyên khoa hoặc mã chứng chỉ hành nghề..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-emerald-600/20 transition-all"
+                        className="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-emerald-600/20 transition-all"
                     />
-                </div>
-                <div className="flex gap-3 w-full md:w-auto">
-                    <select className="text-xs font-black uppercase tracking-widest bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-600/20 px-6 py-3 min-w-[180px]">
-                        <option value="">Chuyên khoa: Tất cả</option>
-                        <option>Nội khoa</option>
-                        <option>Ngoại khoa</option>
-                        <option>Nhi khoa</option>
-                        <option>Tim mạch</option>
-                    </select>
-                    <select className="text-xs font-black uppercase tracking-widest bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-600/20 px-6 py-3 min-w-[180px]">
-                        <option value="">Khối lượng: Tất cả</option>
-                        <option>Đang rảnh</option>
-                        <option>Vừa phải</option>
-                        <option>Quá tải</option>
-                    </select>
                 </div>
             </div>
 
@@ -121,57 +251,54 @@ export function ManageDoctor() {
                     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-slate-50/50 dark:bg-slate-800/50">
-                                    <tr className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
-                                        <th className="px-8 py-6">Bác sĩ & ID</th>
+                                <thead className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                                    <tr>
+                                        <th className="px-8 py-6">Bác sĩ & Thông tin</th>
                                         <th className="px-8 py-6">Chuyên khoa</th>
-                                        <th className="px-8 py-6">Bệnh nhân</th>
-                                        <th className="px-8 py-6">Trạng thái</th>
+                                        <th className="px-8 py-6">Số CCHN</th>
                                         <th className="px-8 py-6 text-right">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                                    {doctors.map((doc, i) => (
-                                        <tr key={i} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all">
+                                    {(filteredDoctors || []).length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="px-8 py-10 text-center text-slate-400 italic">
+                                                Không tìm thấy bác sĩ nào khớp với tìm kiếm của bạn.
+                                            </td>
+                                        </tr>
+                                    ) : (filteredDoctors || []).map((doc: any) => (
+                                        <tr key={doc.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all">
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="size-10 rounded-2xl overflow-hidden ring-2 ring-white dark:ring-slate-800 shadow-sm group-hover:scale-110 transition-transform">
-                                                        <img src={doc.avatar} className="w-full h-full object-cover" alt={doc.name} />
+                                                    <div className="size-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center font-black text-emerald-600 text-lg shadow-sm">
+                                                        {doc.fullName?.charAt(0) || 'D'}
                                                     </div>
                                                     <div>
-                                                        <p className="font-black text-slate-800 dark:text-white text-sm tracking-tight">{doc.name}</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">ID: {doc.id}</p>
+                                                        <p className="font-black text-slate-800 dark:text-white text-base tracking-tight">{doc.fullName}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">{doc.email}</p>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">{doc.specialty}</span>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex flex-col gap-1.5 min-w-[120px]">
-                                                    <span className="text-xs font-black text-slate-700 dark:text-slate-200">{doc.patients} Bệnh nhân</span>
-                                                    <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                        <motion.div
-                                                            initial={{ width: 0 }}
-                                                            animate={{ width: `${doc.workload}%` }}
-                                                            transition={{ duration: 1, delay: 0.5 + i * 0.1 }}
-                                                            className={`h-full rounded-full ${doc.barColor}`}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${doc.statusColor}`}>
-                                                    {doc.status}
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-800">
+                                                    {doc.specialty || 'Đang cập nhật'}
                                                 </span>
+                                            </td>
+                                            <td className="px-8 py-6 text-sm font-bold text-slate-600 dark:text-slate-400">
+                                                {doc.licenseNumber || '—'}
                                             </td>
                                             <td className="px-8 py-6">
                                                 <div className="flex justify-end gap-2">
-                                                    <button className="p-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl text-emerald-600 transition-all">
+                                                    <button className="p-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl text-emerald-600 transition-all active:scale-90" title="Chỉnh sửa">
                                                         <Edit2 className="w-4 h-4" />
                                                     </button>
-                                                    <button className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-red-500 transition-all">
-                                                        <Trash2 className="w-4 h-4" />
+                                                    <button 
+                                                        onClick={() => handleDelete(doc.id, doc.fullName)}
+                                                        disabled={deleteMutation.isPending}
+                                                        className="p-3 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-red-500 transition-all active:scale-90" 
+                                                        title="Xóa"
+                                                    >
+                                                        {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                                     </button>
                                                 </div>
                                             </td>
@@ -182,111 +309,68 @@ export function ManageDoctor() {
                         </div>
                     </div>
 
-                    {/* Patient Assignment Section */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-                        <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
-                            <h3 className="font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase text-xs tracking-widest">
-                                <UserCheck className="w-5 h-5 text-emerald-600" />
-                                Phân công bệnh nhân mới
-                            </h3>
-                            <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest">
-                                4 Đang chờ
-                            </span>
+                    {/* Pending Assignments - Enterprise AI View */}
+                    <div className="bg-slate-900 rounded-[2.5rem] border border-slate-800 shadow-2xl p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 -mr-32 -mt-32 bg-emerald-600/10 rounded-full blur-3xl" />
+                        <div className="flex items-center justify-between mb-8 relative z-10">
+                            <div>
+                                <h3 className="font-black text-white flex items-center gap-3 uppercase text-sm tracking-widest">
+                                    <UserCheck className="w-5 h-5 text-emerald-500" />
+                                    Điều phối AI bận rộn
+                                </h3>
+                                <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest leading-relaxed">
+                                    Tự động cân bằng khối lượng công việc cho đội ngũ nội trú.
+                                </p>
+                            </div>
+                            <button className="bg-emerald-600 text-white text-[10px] px-6 py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 active:scale-95">
+                                Cấu hình điều phối
+                            </button>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                                    {pendingAssignments.map((patient, i) => (
-                                        <tr key={i} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all">
-                                            <td className="px-8 py-6">
-                                                <div className="flex flex-col">
-                                                    <span className="font-black text-slate-800 dark:text-white text-sm tracking-tight">{patient.name}</span>
-                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{patient.symptoms}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <select className="w-full text-[10px] font-black uppercase tracking-widest bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl focus:ring-1 focus:ring-emerald-600 px-4 py-2.5 min-w-[200px]">
-                                                    <option>Chọn bác sĩ...</option>
-                                                    <option>BS. Nguyễn Văn An (Rảnh)</option>
-                                                    <option>BS. Lê Thị Mai (Bận)</option>
-                                                </select>
-                                            </td>
-                                            <td className="px-8 py-6 text-right">
-                                                <button className="bg-emerald-600 text-white text-[10px] px-6 py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/10 active:scale-95">
-                                                    Xác nhận
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="space-y-4 relative z-10">
+                            <div className="flex flex-col items-center justify-center py-10 text-slate-500 opacity-60 bg-white/5 rounded-3xl border border-white/10">
+                                <Activity className="w-8 h-8 mb-2 text-emerald-500" />
+                                <p className="text-[10px] font-black uppercase tracking-widest text-center">Hệ thống đang hoạt động ổn định</p>
+                                <p className="text-[9px] font-bold text-center mt-1">Hiện không có yêu cầu điều phối bác sĩ khẩn cấp nào từ hệ thống AI.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Workload Analytics Sidebar */}
                 <div className="flex flex-col gap-8">
-                    {/* Summary Card */}
                     <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
                         <h3 className="font-black text-slate-900 dark:text-white mb-8 uppercase text-xs tracking-widest flex items-center gap-3">
                             <Stethoscope className="w-5 h-5 text-emerald-600" />
-                            Hiệu suất đội ngũ
+                            Phân tích năng lực
                         </h3>
                         <div className="flex flex-col gap-8">
                             <div>
                                 <div className="flex justify-between items-center mb-3">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tỷ lệ sử dụng phòng khám</span>
-                                    <span className="text-sm font-black text-slate-900 dark:text-white">78%</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hiệu suất vận hành</span>
+                                    <span className="text-sm font-black text-emerald-600">82%</span>
                                 </div>
-                                <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <motion.div
                                         initial={{ width: 0 }}
-                                        animate={{ width: '78%' }}
-                                        transition={{ duration: 1 }}
-                                        className="h-full bg-emerald-600 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                                        animate={{ width: '82%' }}
+                                        transition={{ duration: 1.5 }}
+                                        className="h-full bg-emerald-600 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"
                                     />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="p-5 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-[2rem] border border-emerald-100 dark:border-emerald-900/20 group hover:bg-emerald-600 transition-all cursor-default">
-                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1 group-hover:text-emerald-100">Ca đã hoàn tất</p>
-                                    <p className="text-2xl font-black text-emerald-600 group-hover:text-white">142</p>
+                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1 group-hover:text-emerald-100">Đội ngũ hiện tại</p>
+                                    <p className="text-2xl font-black text-emerald-600 group-hover:text-white">{(realDoctors || []).length}</p>
                                 </div>
-                                <div className="p-5 bg-slate-50 dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 group hover:bg-slate-900 transition-all cursor-default">
-                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1 group-hover:text-slate-500">Thời gian chờ TB</p>
-                                    <p className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-white">15m</p>
-                                </div>
-                            </div>
-                            <div className="border-t border-slate-50 dark:border-slate-800 pt-8">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Trạng thái đội ngũ</h4>
-                                <div className="flex flex-col gap-4">
-                                    <div className="flex items-center justify-between group cursor-default">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)] group-hover:scale-125 transition-transform"></div>
-                                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">Đang rảnh</span>
-                                        </div>
-                                        <span className="text-sm font-black text-slate-900 dark:text-white">8 BS</span>
-                                    </div>
-                                    <div className="flex items-center justify-between group cursor-default">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.4)] group-hover:scale-125 transition-transform"></div>
-                                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">Vừa phải</span>
-                                        </div>
-                                        <span className="text-sm font-black text-slate-900 dark:text-white">12 BS</span>
-                                    </div>
-                                    <div className="flex items-center justify-between group cursor-default">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] group-hover:scale-125 transition-transform"></div>
-                                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">Quá tải</span>
-                                        </div>
-                                        <span className="text-sm font-black text-slate-900 dark:text-white">3 BS</span>
-                                    </div>
+                                <div className="p-5 bg-blue-50/50 dark:bg-blue-900/10 rounded-[2rem] border border-blue-100 dark:border-blue-900/20 group hover:bg-blue-600 transition-all cursor-default text-right">
+                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1 group-hover:text-blue-100">Kế hoạch tuyển</p>
+                                    <p className="text-2xl font-black text-blue-600 group-hover:text-white">03</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* AI Suggestions Card */}
                     <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-8 rounded-[2.5rem] text-white shadow-xl shadow-emerald-600/20 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000" />
                         <div className="flex items-center gap-3 mb-6">
@@ -294,10 +378,10 @@ export function ManageDoctor() {
                             <h3 className="font-black uppercase text-xs tracking-widest">Hệ thống gợi ý AI</h3>
                         </div>
                         <p className="text-sm font-bold text-emerald-50/90 leading-relaxed mb-8">
-                            Dựa trên khối lượng công việc hiện tại, bạn nên ưu tiên điều phối bệnh nhân mới cho khoa <span className="text-white underline decoration-white/30 underline-offset-4">Nội tiết</span> và <span className="text-white underline decoration-white/30 underline-offset-4">Nhi khoa</span> để cân bằng hiệu suất.
+                            Dựa trên báo cáo tháng trước, phòng khám đang thiếu hụt bác sĩ khoa <span className="text-white underline decoration-white/30 underline-offset-4">Tim mạch</span> vào các khung giờ cao điểm từ 09:00 - 11:00 hàng ngày.
                         </p>
                         <button className="w-full py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
-                            Xem chi tiết báo cáo
+                            Mô phỏng điều phối
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>

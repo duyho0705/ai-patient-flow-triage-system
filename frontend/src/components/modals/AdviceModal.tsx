@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
+import { useMutation } from '@tanstack/react-query'
+import { sendPatientAdvice, sendPatientAlert } from '@/api/doctor'
+import { useTenant } from '@/context/TenantContext'
+import { toastService } from '@/services/toast'
+import { Loader2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { getDoctorPatientList } from '@/api/doctor'
 
 interface AdviceModalProps {
     isOpen: boolean
@@ -20,13 +27,78 @@ const QUICK_TEMPLATES = [
 export function AdviceModal({
     isOpen,
     onClose,
-    patientName = 'Nguyễn Văn A',
-    patientId = 'BN-12345678',
-    patientAvatar = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCtVB7n9xlpmFXtOeY2kcwdFN0gPDzR-gYmz5kWin2lhImtB0Tfio_jluSsj10ww7lGuOoqKh9q8Elj09QkqMq7BJ40oUt3AYbY2txqsbRG874WAzDg2fD4pjzRP_mQ4ZzbB3uctFEmMcwwBn20OFvez08W4G1jrcOYstzwvRgy-aApJpbfNxeL-OzDeSqhJITy47-4-kB-ut44l940ExYvVGw4B6_fCW-p7lN9apEsYLs33totb5yNMu8o30on4aA0tgsTsaRcj7E',
+    patientName,
+    patientId,
+    patientAvatar,
 }: AdviceModalProps) {
+    const { headers, tenantId } = useTenant()
     const [content, setContent] = useState('')
+    const [patientSearch, setPatientSearch] = useState('')
+    const [debouncedPatientSearch, setDebouncedPatientSearch] = useState('')
+
+    const { data: patientSearchResults } = useQuery({
+        queryKey: ['doctor-patient-search-advice', tenantId, debouncedPatientSearch],
+        queryFn: () => getDoctorPatientList(headers, 0, 10, debouncedPatientSearch),
+        enabled: !!debouncedPatientSearch && !patientId
+    })
+
+    const [selectedPatient, setSelectedPatient] = useState<{ id: string, name: string, avatar?: string } | null>(
+        patientId ? { id: patientId, name: patientName!, avatar: patientAvatar } : null
+    )
+
+    const handlePatientSearchChange = (e: any) => {
+        setPatientSearch(e.target.value)
+        setTimeout(() => setDebouncedPatientSearch(e.target.value), 300)
+    }
+
+    const selectPatient = (p: any) => {
+        setSelectedPatient({ id: p.id, name: p.fullNameVi, avatar: p.avatarUrl })
+        setPatientSearch(p.fullNameVi)
+        setDebouncedPatientSearch('')
+    }
+    const [type, setType] = useState<'ADVICE' | 'ALERT'>('ADVICE')
+    const [title, setTitle] = useState('Lời khuyên chuyên môn')
+    const [severity, setSeverity] = useState<'INFO' | 'WARNING' | 'CRITICAL'>('INFO')
     const [sendAsMessage, setSendAsMessage] = useState(true)
     const [sendPush, setSendPush] = useState(true)
+
+    const mutation = useMutation({
+        mutationFn: (data: { patientId: string, payload: any, isAlert: boolean }) => 
+            data.isAlert 
+                ? sendPatientAlert(data.patientId, data.payload, headers)
+                : sendPatientAdvice(data.patientId, data.payload, headers),
+        onSuccess: () => {
+            toastService.success("Đã gửi khuyến nghị thành công!")
+            setContent('')
+            onClose()
+        },
+        onError: (err: any) => {
+            toastService.error(err?.message || "Lỗi khi gửi khuyến nghị")
+        }
+    })
+
+    const handleSubmit = () => {
+        const targetPatientId = selectedPatient?.id
+        if (!targetPatientId) {
+            toastService.error("Vui lòng chọn bệnh nhân")
+            return
+        }
+        if (!content.trim()) {
+            toastService.error("Vui lòng nhập nội dung")
+            return
+        }
+
+        mutation.mutate({
+            patientId: targetPatientId,
+            isAlert: type === 'ALERT',
+            payload: {
+                title,
+                content,
+                type: type,
+                severity
+            }
+        })
+    }
 
     if (!isOpen) return null
 
@@ -69,24 +141,51 @@ export function AdviceModal({
                 {/* Content */}
                 <div className="overflow-y-auto p-6 space-y-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4ade8040 transparent' }}>
                     {/* Patient Info Section */}
-                    <div className="bg-primary/5 rounded-lg p-4 flex items-center justify-between border border-primary/10">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
-                                <img
-                                    alt="Patient Avatar"
-                                    className="w-full h-full object-cover"
-                                    src={patientAvatar}
+                    {/* Patient Search Section */}
+                    <div className="bg-primary/5 rounded-lg p-4 space-y-3 border border-primary/10">
+                        <div className="flex flex-col gap-1.5 relative">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Bệnh nhân nhận</label>
+                            <div className="relative group">
+                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] group-focus-within:text-primary transition-colors">person</span>
+                                <input
+                                    type="text"
+                                    value={patientId ? patientName : patientSearch}
+                                    onChange={handlePatientSearchChange}
+                                    disabled={!!patientId}
+                                    placeholder="Tìm kiếm bệnh nhân..."
+                                    className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border-2 border-primary/5 rounded-lg text-sm focus:border-primary outline-none transition-all font-bold disabled:opacity-70"
                                 />
-                            </div>
-                            <div>
-                                <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Bệnh nhân nhận</p>
-                                <p className="text-slate-900 dark:text-slate-100 font-bold">{patientName}</p>
+                                {debouncedPatientSearch && patientSearchResults?.content && patientSearchResults.content.length > 0 && (
+                                    <div className="absolute top-[48px] left-0 w-full bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 max-h-48 overflow-y-auto z-50">
+                                        {patientSearchResults.content.map((p: any) => (
+                                            <div
+                                                key={p.id}
+                                                onClick={() => selectPatient(p)}
+                                                className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+                                            >
+                                                <p className="font-bold text-sm text-slate-900 dark:text-white">{p.fullNameVi}</p>
+                                                <p className="text-xs text-slate-500">{p.phone || '–'}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Mã bệnh nhân</p>
-                            <p className="text-primary font-mono font-bold">{patientId}</p>
-                        </div>
+                        {selectedPatient && (
+                            <div className="flex items-center justify-between pt-2 mt-2 border-t border-primary/10">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
+                                        {selectedPatient.avatar ? (
+                                            <img src={selectedPatient.avatar} alt={selectedPatient.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-xs font-bold text-slate-400">{selectedPatient.name.charAt(0)}</span>
+                                        )}
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-900 dark:text-white">{selectedPatient.name}</span>
+                                </div>
+                                <span className="text-xs font-mono font-bold text-primary">{selectedPatient.id}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Selection Category */}
@@ -95,13 +194,44 @@ export function AdviceModal({
                             <span className="material-symbols-outlined text-primary text-lg">category</span>
                             Danh mục lời khuyên
                         </label>
-                        <select className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-primary focus:border-primary">
-                            <option value="">Chọn danh mục phù hợp...</option>
-                            <option value="diet">Chế độ ăn uống</option>
-                            <option value="exercise">Tập luyện thể chất</option>
-                            <option value="habit">Thói quen sinh hoạt</option>
-                            <option value="medication">Nhắc nhở dùng thuốc</option>
+                        <select 
+                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-primary focus:border-primary"
+                            value={type}
+                            onChange={(e) => setType(e.target.value as any)}
+                        >
+                            <option value="ADVICE">Chế độ ăn uống / Tập luyện (Lời khuyên)</option>
+                            <option value="ALERT">Cảnh báo sức khỏe (Khẩn cấp)</option>
                         </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-slate-700 dark:text-slate-200 text-sm font-semibold flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary text-lg">priority_high</span>
+                            Mức độ nghiêm trọng
+                        </label>
+                        <select 
+                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-primary focus:border-primary"
+                            value={severity}
+                            onChange={(e) => setSeverity(e.target.value as any)}
+                        >
+                            <option value="INFO">Thông tin (Info)</option>
+                            <option value="WARNING">Cảnh báo (Warning)</option>
+                            <option value="CRITICAL">Nghiêm trọng (Critical)</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-slate-700 dark:text-slate-200 text-sm font-semibold flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary text-lg">title</span>
+                            Tiêu đề
+                        </label>
+                        <input
+                            type="text"
+                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-primary focus:border-primary"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Tiêu đề thông báo..."
+                        />
                     </div>
 
                     {/* Content Area */}
@@ -181,11 +311,16 @@ export function AdviceModal({
                         Hủy bỏ
                     </button>
                     <button
-                        onClick={onClose}
-                        className="px-8 py-2.5 rounded-lg bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2"
+                        onClick={handleSubmit}
+                        disabled={mutation.isPending}
+                        className="px-8 py-2.5 rounded-lg bg-primary text-slate-900 font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2 disabled:opacity-50"
                     >
-                        <span className="material-symbols-outlined text-lg">send</span>
-                        Gửi ngay
+                        {mutation.isPending ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <span className="material-symbols-outlined text-lg">send</span>
+                        )}
+                        {mutation.isPending ? 'Đang gửi...' : 'Gửi ngay'}
                     </button>
                 </div>
             </motion.div>

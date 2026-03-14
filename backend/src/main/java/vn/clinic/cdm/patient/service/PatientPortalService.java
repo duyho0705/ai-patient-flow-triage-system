@@ -30,8 +30,11 @@ import vn.clinic.cdm.billing.service.BillingService;
 import vn.clinic.cdm.clinical.repository.DiagnosticImageRepository;
 import vn.clinic.cdm.clinical.repository.LabResultRepository;
 import vn.clinic.cdm.clinical.service.ClinicalService;
-import vn.clinic.cdm.common.exception.ResourceNotFoundException;
+import vn.clinic.cdm.common.exception.ApiException;
+import vn.clinic.cdm.common.exception.ErrorCode;
 import vn.clinic.cdm.api.dto.common.PagedResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import vn.clinic.cdm.common.service.FileStorageService;
 import vn.clinic.cdm.identity.domain.IdentityUser;
 import vn.clinic.cdm.identity.service.IdentityService;
@@ -46,6 +49,7 @@ import vn.clinic.cdm.tenant.domain.TenantBranch;
 import vn.clinic.cdm.clinical.repository.HealthMetricRepository;
 import vn.clinic.cdm.clinical.service.MedicationService;
 import vn.clinic.cdm.clinical.domain.HealthMetric;
+import vn.clinic.cdm.clinical.domain.VitalSignsThresholds;
 import vn.clinic.cdm.clinical.service.MedicationMapper;
 
 import java.time.Instant;
@@ -59,6 +63,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class PatientPortalService {
         private final MedicationMapper medicationMapper;
@@ -155,54 +160,18 @@ public class PatientPortalService {
                         if (sorted.isEmpty())
                                 continue;
 
-                        if (isAbnormal(sorted.get(0))) {
-                                if (sorted.size() >= 3 && isAbnormal(sorted.get(1)) && isAbnormal(sorted.get(2))) {
-                                        alerts.add("Cảnh báo: Chỉ số " + getVitalLabel(type)
-                                                        + " bất thường liên tiếp trong 3 lượt đo gần nhất.");
+                        TriageVitalDto latest = sorted.get(0);
+                        if (VitalSignsThresholds.isAbnormal(type, latest.valueNumeric())) {
+                                if (sorted.size() >= 3 && 
+                                    VitalSignsThresholds.isAbnormal(type, sorted.get(1).valueNumeric()) && 
+                                    VitalSignsThresholds.isAbnormal(type, sorted.get(2).valueNumeric())) {
+                                        alerts.add(String.format("Cảnh báo: Chỉ số %s bất thường liên tiếp trong 3 lượt đo gần nhất.", VitalSignsThresholds.getLabel(type)));
                                 } else {
-                                        alerts.add("Lưu ý: Chỉ số " + getVitalLabel(type)
-                                                        + " hiện tại đang ở mức bất thường.");
+                                        alerts.add(String.format("Lưu ý: Chỉ số %s hiện tại đang ở mức bất thường.", VitalSignsThresholds.getLabel(type)));
                                 }
                         }
                 }
                 return alerts;
-        }
-
-        private boolean isAbnormal(TriageVitalDto v) {
-                if (v.valueNumeric() == null)
-                        return false;
-                double val = v.valueNumeric().doubleValue();
-                switch (v.vitalType().toUpperCase()) {
-                        case "BLOOD_GLUCOSE":
-                                return val > 180 || val < 70;
-                        case "BLOOD_PRESSURE_SYS":
-                                return val > 140;
-                        case "BLOOD_PRESSURE_DIA":
-                                return val > 90;
-                        case "HEART_RATE":
-                                return val > 100 || val < 50;
-                        case "SPO2":
-                                return val < 94;
-                        default:
-                                return false;
-                }
-        }
-
-        private String getVitalLabel(String type) {
-                switch (type.toUpperCase()) {
-                        case "BLOOD_GLUCOSE":
-                                return "Đường huyết";
-                        case "BLOOD_PRESSURE_SYS":
-                                return "Huyết áp tâm thu";
-                        case "BLOOD_PRESSURE_DIA":
-                                return "Huyết áp tâm trương";
-                        case "HEART_RATE":
-                                return "Nhịp tim";
-                        case "SPO2":
-                                return "SpO2";
-                        default:
-                                return type;
-                }
         }
 
         private List<TriageVitalDto> getCombinedVitalHistory(UUID patientId) {
@@ -305,29 +274,41 @@ public class PatientPortalService {
         }
 
         @Transactional
-        public PatientRelativeDto updateRelative(Patient p, UUID relativeId, AddPatientRelativeRequest request) {
-                PatientRelative rel = patientRelativeRepository.findById(relativeId)
-                                .orElseThrow(() -> new ResourceNotFoundException("PatientRelative", relativeId));
-                if (!rel.getPatient().getId().equals(p.getId()))
-                        throw new ResourceNotFoundException("PatientRelative", relativeId);
+        public PatientRelativeDto updateRelative(Patient patient, UUID relativeId, AddPatientRelativeRequest request) {
+                log.info("Updating relative: {} for patient: {}", relativeId, patient.getId());
+                PatientRelative relative = patientRelativeRepository.findById(relativeId)
+                                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy thông tin người thân"));
+                
+                if (!relative.getPatient().getId().equals(patient.getId())) {
+                        log.warn("Access denied for relative: {} for patient: {}", relativeId, patient.getId());
+                        throw new ApiException(ErrorCode.VALIDATION_FAILED, HttpStatus.FORBIDDEN, "Bạn không có quyền chỉnh sửa thông tin này");
+                }
 
                 if (request.getFullName() != null)
-                        rel.setFullName(request.getFullName());
+                        relative.setFullName(request.getFullName());
                 if (request.getRelationship() != null)
-                        rel.setRelationship(request.getRelationship());
+                        relative.setRelationship(request.getRelationship());
                 if (request.getPhoneNumber() != null)
-                        rel.setPhoneNumber(request.getPhoneNumber());
+                        relative.setPhoneNumber(request.getPhoneNumber());
                 if (request.getGender() != null)
-                        rel.setGender(request.getGender());
+                        relative.setGender(request.getGender());
                 if (request.getAge() != null)
-                        rel.setAge(request.getAge());
-                return PatientRelativeDto.fromEntity(patientRelativeRepository.save(rel));
+                        relative.setAge(request.getAge());
+                
+                return PatientRelativeDto.fromEntity(patientRelativeRepository.save(relative));
         }
 
         @Transactional
-        public void deleteRelative(Patient p, UUID relativeId) {
-                PatientRelative rel = patientRelativeRepository.findById(relativeId).orElseThrow();
-                patientRelativeRepository.delete(rel);
+        public void deleteRelative(Patient patient, UUID relativeId) {
+                log.info("Deleting relative: {} for patient: {}", relativeId, patient.getId());
+                PatientRelative relative = patientRelativeRepository.findById(relativeId)
+                                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy thông tin người thân"));
+                
+                if (!relative.getPatient().getId().equals(patient.getId())) {
+                        throw new ApiException(ErrorCode.VALIDATION_FAILED, HttpStatus.FORBIDDEN, "Bạn không có quyền xóa thông tin này");
+                }
+                
+                patientRelativeRepository.delete(relative);
         }
 
         public List<PatientInsuranceDto> getInsurances(UUID patientId) {
@@ -350,9 +331,16 @@ public class PatientPortalService {
         }
 
         @Transactional
-        public void deleteInsurance(Patient p, UUID insuranceId) {
-                PatientInsurance ins = patientInsuranceRepository.findById(insuranceId).orElseThrow();
-                patientInsuranceRepository.delete(ins);
+        public void deleteInsurance(Patient patient, UUID insuranceId) {
+                log.info("Deleting insurance: {} for patient: {}", insuranceId, patient.getId());
+                PatientInsurance insurance = patientInsuranceRepository.findById(insuranceId)
+                                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy thông tin bảo hiểm"));
+                
+                if (!insurance.getPatient().getId().equals(patient.getId())) {
+                        throw new ApiException(ErrorCode.VALIDATION_FAILED, HttpStatus.FORBIDDEN, "Bạn không có quyền xóa thông tin này");
+                }
+                
+                patientInsuranceRepository.delete(insurance);
         }
 
         @Transactional

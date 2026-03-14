@@ -1,35 +1,26 @@
-import { useState } from 'react'
+import React, { useState, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    MessageSquare,
-    Send,
-    Search,
-    Video,
-    MoreVertical,
     Loader2,
     Paperclip,
-    Image as ImageIcon,
-    FileText,
-    History as HistoryIcon,
-    TrendingUp,
-    Activity,
-    Pill,
-    ArrowLeft,
-    AlertTriangle,
-    ChevronRight,
-    Sparkles
+    Image as ImageIcon
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { getDoctorChatConversations } from '@/api/doctorChat'
+import { getDoctorChatConversations, sendDoctorChatFile } from '@/api/doctorChat'
+import { getPatientFullProfile } from '@/api/doctor'
+import { getPatientHealthMetrics } from '@/api/doctorHealth'
 import { useTenant } from '@/context/TenantContext'
 import { useAuth } from '@/context/AuthContext'
+import { formatDistanceToNow } from 'date-fns'
+import { vi } from 'date-fns/locale'
 import { useFirebaseChat } from '@/hooks/useFirebaseChat'
-import toast from 'react-hot-toast'
-import type { PatientChatConversationDto, PatientChatMessageDto } from '@/api-client'
+import { toastService } from '@/services/toast'
+import type { PatientChatConversationDto } from '@/api-client'
 import VideoCall from '@/components/VideoCall'
 import { Link } from 'react-router-dom'
 import { PrescriptionModal } from '@/components/modals/PrescriptionModal'
 import { HistoryModal } from '@/components/modals/HistoryModal'
+import { AdviceModal } from '@/components/modals/AdviceModal'
 
 interface ExtendedConversation extends PatientChatConversationDto {
     risk?: 'HIGH' | 'WARNING' | 'NORMAL';
@@ -37,64 +28,6 @@ interface ExtendedConversation extends PatientChatConversationDto {
     isOnline?: boolean;
     unreadCount?: number;
 }
-
-const mockConversations: ExtendedConversation[] = [
-    {
-        id: 'conv-001',
-        patientId: 'pat-001',
-        patientName: 'Nguyễn Văn A',
-        lastMessage: 'Bác sĩ ơi, chỉ số huyết áp...',
-        lastMessageAt: new Date().toISOString(),
-        status: 'ACTIVE',
-        risk: 'HIGH',
-        unreadCount: 2,
-        isOnline: true,
-        avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBoRl8NTd68SRL_B98uIoSixtoSFJ_WzA_ARggqrddikGEZU5TvmSR2m3O5T1qeyIddTDbGEQsvKPHA9OaIHqdKNbaEb5u1y6Z7lJWYLA551IOrhSYBeCp6TvkUP0oZmg2-z7exCQilm2RhKk0JK8sQVbBkzugjOEBNCgSHCs-VPqtPnPKKBpqqAOzq715qm4QoA0LGmVrHKy2xEvxEK6dE-Oul3-ud2Yg-oRnIg92B1uE_UK7HuaIQHwfRC0N3gSrAxqZqnfedqwU'
-    },
-    {
-        id: 'conv-002',
-        patientId: 'pat-002',
-        patientName: 'Trần Thị B',
-        lastMessage: 'Vâng, tôi đã nhận được đơn thuốc.',
-        lastMessageAt: new Date(Date.now() - 86400000).toISOString(),
-        status: 'ACTIVE',
-        risk: 'NORMAL',
-        isOnline: false,
-        avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCBhD6WWkEmCMteDAhlg1khjJmteYcqGR_yWPtw7M8cvkR3Pz1-1ppF9o5AMWC6HaT2f-5pYOc8QcYtyOYqIwns5BwN129P-TJ0KCcF__-O9EC29r_C_OwDHLBNK4gPhThgBbxZTnZh6_65fKk1BuXOPABOf5XFyVqBB3elRY41Rw1LVHLJb67lK83eFMaCHBlpb8wxLmEDLfeNEowQbIJP7cHp5YfLb_9os0KnEGIqfCwFAk7CcH4yVH_nP5tWbnE2ExIYImKwspU'
-    },
-    {
-        id: 'conv-003',
-        patientId: 'pat-003',
-        patientName: 'Lê Văn C',
-        lastMessage: 'Cảm ơn bác sĩ nhiều lắm!',
-        lastMessageAt: new Date(Date.now() - 172800000).toISOString(),
-        status: 'ACTIVE',
-        risk: 'NORMAL',
-        isOnline: true,
-        avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAc-MU_mpYw71RWBRumDqWQSpX2jT6lqY_yymf4_8OwEvcAeGZzV7l3yAxJ5MF7jROH6_6fdNdNvtucQdPatsAfzP-B49W4vIFviX6tGN97yhtJTuP3BrvS6YgON1wqQxZEmplohMDKvuNYebXLrTKsq0q12FH8pdkhC93H4v8cZNbJLFkBV_JVSSRhTFssTOzM27hXOpef5uBaFNc9JV_YDbeJBtL4rMTTD0AGoZ3LRXHFIL1qr8Avgse8OBgMCCLHYBPdo6QmmNo'
-    }
-]
-
-const mockChatHistory: PatientChatMessageDto[] = [
-    {
-        id: 'msg-001',
-        senderType: 'PATIENT',
-        content: 'Bác sĩ ơi, chỉ số huyết áp của tôi sáng nay đo là 160/95 mmHg. Tôi cảm thấy hơi chóng mặt, có cần điều chỉnh thuốc không ạ?',
-        sentAt: new Date(Date.now() - 180000).toISOString()
-    },
-    {
-        id: 'msg-002',
-        senderType: 'DOCTOR',
-        content: 'Chào anh A, chỉ số 160/95 là khá cao. Anh hãy nghỉ ngơi tại chỗ trong 15-20 phút, tránh vận động mạnh và đo lại nhé.',
-        sentAt: new Date(Date.now() - 120000).toISOString()
-    },
-    {
-        id: 'msg-003',
-        senderType: 'PATIENT',
-        content: 'Vâng, tôi đang nằm nghỉ rồi ạ. Tôi có nên uống thêm liều thuốc hạ áp dự phòng không?',
-        sentAt: new Date(Date.now() - 60000).toISOString()
-    }
-]
 
 
 export default function DoctorChat() {
@@ -107,18 +40,62 @@ export default function DoctorChat() {
         refetchInterval: 10000
     })
 
-    const conversations: ExtendedConversation[] = realConversations?.length ? (realConversations as ExtendedConversation[]) : mockConversations
+    const conversations: ExtendedConversation[] = (realConversations as ExtendedConversation[]) || []
 
     const { user } = useAuth()
-    const doctorId = user?.id || 'd-01' // Fallback to map with mock patient chat ui
+    const doctorId = user?.id || ''
 
-    const [selectedPatientId, setSelectedPatientId] = useState<string | null>(conversations[0]?.patientId || null)
+    const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null)
     const [message, setMessage] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
     const [isVideoCallOpen, setIsVideoCallOpen] = useState(false)
     const [isSending, setIsSending] = useState(false)
     const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false)
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+    const [isAdviceModalOpen, setIsAdviceModalOpen] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const imageInputRef = useRef<HTMLInputElement>(null)
+
+    // Auto-select first conversation when loaded
+    if (!selectedPatientId && conversations.length > 0) {
+        setSelectedPatientId(conversations[0].patientId || null)
+    }
+
+    const { data: patientProfile } = useQuery({
+        queryKey: ['patient-profile', selectedPatientId],
+        queryFn: () => getPatientFullProfile(selectedPatientId!, headers),
+        enabled: !!selectedPatientId && !!headers?.tenantId,
+    })
+
+    const { data: healthMetrics } = useQuery({
+        queryKey: ['patient-health-metrics', selectedPatientId],
+        queryFn: () => getPatientHealthMetrics(selectedPatientId!, headers),
+        enabled: !!selectedPatientId && !!headers?.tenantId,
+    })
+
+    const calculateAge = (dob?: string) => {
+        if (!dob) return '–'
+        const birth = new Date(dob)
+        const diff = Date.now() - birth.getTime()
+        return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000))
+    }
+
+    const latestVitals = useMemo(() => {
+        if (!healthMetrics?.length) return null;
+        const bpSys = healthMetrics.find(m => m.metricType === 'BLOOD_PRESSURE_SYS');
+        const bpDia = healthMetrics.find(m => m.metricType === 'BLOOD_PRESSURE_DIA');
+        const hr = healthMetrics.find(m => m.metricType === 'HEART_RATE');
+        const bg = healthMetrics.find(m => m.metricType === 'BLOOD_GLUCOSE');
+        
+        let lastUpdated = healthMetrics[0]?.recordedAt;
+
+        return {
+            bp: bpSys && bpDia ? `${bpSys.value}/${bpDia.value}` : '–',
+            hr: hr ? `${hr.value} bpm` : '–',
+            bg: bg ? `${bg.value} ${bg.unit || 'mmol/L'}` : '–',
+            lastUpdated
+        }
+    }, [healthMetrics])
 
     // 2. Fetch Chat History (Realtime)
     const { messages: firebaseHistory, loading: loadingHistory, sendMessage } = useFirebaseChat(
@@ -127,7 +104,7 @@ export default function DoctorChat() {
         doctorId
     )
 
-    const chatHistory = firebaseHistory?.length ? firebaseHistory : (selectedPatientId === 'pat-001' ? mockChatHistory : [])
+    const chatHistory = firebaseHistory || []
 
     const handleSend = async () => {
         if (!message.trim() || isSending || !selectedPatientId || !doctorId) return
@@ -137,9 +114,37 @@ export default function DoctorChat() {
             await sendMessage(message, doctorId, 'DOCTOR')
             setMessage('')
         } catch (error) {
-            toast.error('Không thể gửi tin nhắn.')
+            toastService.error('Không thể gửi tin nhắn.')
         } finally {
             setIsSending(false)
+        }
+    }
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'IMAGE' | 'FILE') => {
+        const file = e.target.files?.[0]
+        if (!file || !selectedPatientId || !doctorId) return
+
+        setIsSending(true)
+        toastService.info('Đang tải tệp lên...')
+        try {
+            const result = await sendDoctorChatFile(selectedPatientId, file, '', headers)
+            if (result.fileUrl) {
+                const isImage = type === 'IMAGE' || file.type.startsWith('image/')
+                await sendMessage(
+                    isImage ? '📷 Hình ảnh' : `📎 ${file.name}`,
+                    doctorId,
+                    'DOCTOR',
+                    isImage ? result.fileUrl : undefined,
+                    !isImage ? result.fileUrl : undefined
+                )
+                toastService.success('Tải tệp thành công')
+            }
+        } catch (error) {
+            console.error(error)
+            toastService.error('Không thể tải tệp lên.')
+        } finally {
+            setIsSending(false)
+            if (e.target) e.target.value = ''
         }
     }
 
@@ -149,17 +154,8 @@ export default function DoctorChat() {
 
     const selectedConv = conversations?.find(c => c.patientId === selectedPatientId)
 
-    // Mock data for UI aesthetics (as requested "thiết kế i chang")
-    const mockVitals: any[] = []
-    const mockMeds: any[] = []
-    console.log(mockVitals, mockMeds) // Keep to avoid unused variable warning if needed, or just remove
 
 
-    const quickResponses = [
-        { label: 'Gửi khuyến nghị', icon: Activity, color: 'bg-primary/10 text-primary' },
-        { label: 'Gửi cảnh báo', icon: AlertTriangle, color: 'bg-red-100 text-red-600' },
-        { label: 'Đơn thuốc điện tử', icon: Pill, color: 'bg-blue-100 text-blue-600' },
-    ]
 
     if (loadingConvs) {
         return (
@@ -282,8 +278,11 @@ export default function DoctorChat() {
                                 <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
                                     <span className="material-symbols-outlined">call</span>
                                 </button>
-                                <button onClick={() => setIsVideoCallOpen(true)} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                                <button onClick={() => setIsVideoCallOpen(true)} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg" title="Cuộc gọi video">
                                     <span className="material-symbols-outlined">videocam</span>
+                                </button>
+                                <button onClick={() => setIsAdviceModalOpen(true)} className="p-2 text-primary hover:bg-primary/10 rounded-lg border border-primary/20" title="Gửi lời khuyên/Cảnh báo">
+                                    <span className="material-symbols-outlined">medical_services</span>
                                 </button>
                             </div>
                         </div>
@@ -332,6 +331,28 @@ export default function DoctorChat() {
                                                     ? 'bg-primary text-white p-3 rounded-2xl rounded-br-none shadow-md'
                                                     : 'bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-bl-none shadow-sm border border-slate-100 dark:border-slate-700'
                                                 }`}>
+                                                {m.imageUrl ? (
+                                                    <div className="mb-2">
+                                                        <img 
+                                                            src={m.imageUrl.startsWith('/') ? `${process.env.VITE_API_BASE_URL || ''}${m.imageUrl}` : m.imageUrl} 
+                                                            alt="Chat attachment" 
+                                                            className="max-w-full rounded-lg cursor-pointer hover:opacity-90"
+                                                            onClick={() => window.open(m.imageUrl, '_blank')}
+                                                        />
+                                                    </div>
+                                                ) : m.fileUrl ? (
+                                                    <div className="mb-2 flex items-center gap-2 bg-black/10 dark:bg-white/10 p-2 rounded-lg">
+                                                        <Paperclip className="w-4 h-4" />
+                                                        <a 
+                                                            href={m.fileUrl.startsWith('/') ? `${process.env.VITE_API_BASE_URL || ''}${m.fileUrl}` : m.fileUrl} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="text-xs font-bold underline truncate"
+                                                        >
+                                                            Tệp đính kèm
+                                                        </a>
+                                                    </div>
+                                                ) : null}
                                                 <p className="text-sm">{m.content}</p>
                                                 <span className={`text-[10px] mt-1 block ${isSelf ? 'opacity-70 text-right' : 'text-slate-400'}`}>
                                                     {new Date(m.sentAt || 0).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -370,11 +391,31 @@ export default function DoctorChat() {
                             </div>
                             <div className="flex items-end gap-2">
                                 <div className="flex gap-1 mb-2">
-                                    <button className="p-2 text-slate-400 hover:text-primary transition-colors">
-                                        <span className="material-symbols-outlined">image</span>
+                                    <input 
+                                        type="file" 
+                                        ref={imageInputRef} 
+                                        className="hidden" 
+                                        accept="image/*"
+                                        onChange={(e) => handleFileChange(e, 'IMAGE')}
+                                    />
+                                    <button 
+                                        onClick={() => imageInputRef.current?.click()}
+                                        className="p-2 text-slate-400 hover:text-primary transition-colors"
+                                    >
+                                        <ImageIcon className="w-5 h-5" />
                                     </button>
-                                    <button className="p-2 text-slate-400 hover:text-primary transition-colors">
-                                        <span className="material-symbols-outlined">attach_file</span>
+
+                                    <input 
+                                        type="file" 
+                                        ref={fileInputRef} 
+                                        className="hidden" 
+                                        onChange={(e) => handleFileChange(e, 'FILE')}
+                                    />
+                                    <button 
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="p-2 text-slate-400 hover:text-primary transition-colors"
+                                    >
+                                        <Paperclip className="w-5 h-5" />
                                     </button>
                                 </div>
                                 <div className="flex-1 relative">
@@ -432,19 +473,23 @@ export default function DoctorChat() {
                                 />
                             ) : (
                                 <div className="size-full flex items-center justify-center bg-slate-100 rounded-full font-black text-2xl text-slate-400">
-                                    {selectedConv?.patientName?.charAt(0)}
+                                    {patientProfile?.fullNameVi?.charAt(0) || selectedConv?.patientName?.charAt(0)}
                                 </div>
                             )}
                         </div>
-                        <h3 className="font-bold text-lg">{selectedConv?.patientName}</h3>
-                        <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Nam, 58 tuổi</p>
+                        <h3 className="font-bold text-lg">{patientProfile?.fullNameVi || selectedConv?.patientName}</h3>
+                        <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                            {patientProfile?.gender === 'female' ? 'Nữ' : patientProfile?.gender === 'male' ? 'Nam' : '–'}, {calculateAge(patientProfile?.dateOfBirth)} tuổi
+                        </p>
                     </div>
 
                     <div className="space-y-4">
                         <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
                             <div className="flex items-center justify-between mb-2">
                                 <h4 className="text-xs font-bold text-slate-500">CHỈ SỐ SINH TỒN</h4>
-                                <span className="text-[10px] text-primary font-bold">Cập nhật 1h trước</span>
+                                <span className="text-[10px] text-primary font-bold">
+                                    {latestVitals?.lastUpdated ? formatDistanceToNow(new Date(latestVitals.lastUpdated), { addSuffix: true, locale: vi }) : 'Chưa có'}
+                                </span>
                             </div>
                             <div className="grid grid-cols-1 gap-3">
                                 <div className="flex items-center justify-between">
@@ -452,21 +497,21 @@ export default function DoctorChat() {
                                         <span className="material-symbols-outlined text-red-500 text-sm">blood_pressure</span>
                                         <span className="text-xs text-slate-600 dark:text-slate-400">Huyết áp</span>
                                     </div>
-                                    <span className="text-sm font-bold text-red-500">160/95</span>
+                                    <span className="text-sm font-bold text-red-500">{latestVitals?.bp || '–'}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <span className="material-symbols-outlined text-blue-500 text-sm">favorite</span>
                                         <span className="text-xs text-slate-600 dark:text-slate-400">Nhịp tim</span>
                                     </div>
-                                    <span className="text-sm font-bold">82 bpm</span>
+                                    <span className="text-sm font-bold">{latestVitals?.hr || '–'}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <span className="material-symbols-outlined text-orange-500 text-sm">water_drop</span>
                                         <span className="text-xs text-slate-600 dark:text-slate-400">Đường huyết</span>
                                     </div>
-                                    <span className="text-sm font-bold">6.8 mmol/L</span>
+                                    <span className="text-sm font-bold">{latestVitals?.bg || '–'}</span>
                                 </div>
                             </div>
                         </div>
@@ -502,15 +547,17 @@ export default function DoctorChat() {
                             <span className="material-symbols-outlined text-primary text-lg">info</span>
                             <h5 className="text-xs font-bold text-primary">Ghi chú nhanh</h5>
                         </div>
-                        <p className="text-[11px] text-slate-600 dark:text-slate-400 italic">Bệnh nhân có tiền sử cao huyết áp mãn tính, cần theo dõi sát sao vào buổi sáng.</p>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-400 italic">
+                            {patientProfile?.chronicConditions ? `Bệnh nhân có tiền sử: ${patientProfile.chronicConditions}.` : 'Không có ghi chú bệnh lý'}
+                        </p>
                     </div>
                 </section>
             )}
 
             {isVideoCallOpen && (
                 <VideoCall
-                    roomID="telehealth-room"
-                    userID={`doctor-${Math.floor(Math.random() * 10000)}`}
+                    roomID={`telehealth-${selectedPatientId}`}
+                    userID={`doctor-${doctorId}`}
                     userName="Bác sĩ"
                     onClose={() => setIsVideoCallOpen(false)}
                 />
@@ -526,7 +573,15 @@ export default function DoctorChat() {
             <HistoryModal 
                 isOpen={isHistoryModalOpen} 
                 onClose={() => setIsHistoryModalOpen(false)} 
+                patientId={selectedPatientId!}
                 patientName={selectedConv?.patientName} 
+            />
+
+            <AdviceModal
+                isOpen={isAdviceModalOpen}
+                onClose={() => setIsAdviceModalOpen(false)}
+                patientId={selectedPatientId || ''}
+                patientName={selectedConv?.patientName}
             />
         </div>
     );

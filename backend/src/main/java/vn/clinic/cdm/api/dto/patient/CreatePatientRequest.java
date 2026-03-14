@@ -2,7 +2,7 @@ package vn.clinic.cdm.api.dto.patient;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +28,7 @@ public class CreatePatientRequest {
     private String fullNameVi;
 
     @NotNull
-    @Past
+    @PastOrPresent
     private LocalDate dateOfBirth;
 
     @Size(max = 20)
@@ -57,5 +57,10 @@ public class CreatePatientRequest {
 
     @Size(max = 100)
     private String ethnicity;
+
+    @Size(max = 20)
+    private String riskLevel;
+
+    private String chronicConditions;
 }
 

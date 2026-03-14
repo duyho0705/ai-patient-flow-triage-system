@@ -19,8 +19,53 @@ import {
     Activity
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useQuery } from '@tanstack/react-query'
+import { getDoctorRiskAnalysis, exportRiskReportPdf } from '@/api/doctor'
+import { useTenant } from '@/context/TenantContext'
+import { Loader2 } from 'lucide-react'
+import { toastService } from '@/services/toast'
+import { useState } from 'react'
 
 export function RiskAnalysis() {
+    const { headers, tenantId } = useTenant()
+    const [isExporting, setIsExporting] = useState(false)
+    
+    const { data: dashboard, isLoading } = useQuery({
+        queryKey: ['doctor-risk-analysis', tenantId],
+        queryFn: () => getDoctorRiskAnalysis(headers),
+        enabled: !!tenantId
+    })
+
+    const handleExportPdf = async () => {
+        setIsExporting(true)
+        toastService.info('Đang khởi tạo báo cáo rủi ro...')
+        try {
+            const blob = await exportRiskReportPdf(headers)
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `Risk_Analysis_Report_${new Date().toISOString().split('T')[0]}.pdf`
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            toastService.success('Xuất báo cáo thành công')
+        } catch (error) {
+            console.error(error)
+            toastService.error('Không thể xuất báo cáo rủi ro.')
+        } finally {
+            setIsExporting(false)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex-1 p-8 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] text-slate-400 gap-4">
+                <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
+                <p className="font-bold text-sm uppercase tracking-widest">Đang tải phân tích rủi ro...</p>
+            </div>
+        )
+    }
+
     return (
         <div className="flex-1 p-8 space-y-8 animate-in fade-in duration-700 bg-background-light dark:bg-background-dark font-display min-h-[calc(100vh-80px)]">
             {/* Statistics Overview */}
@@ -34,7 +79,7 @@ export function RiskAnalysis() {
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Nguy cơ cao</p>
                     <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-3xl font-black text-slate-900 dark:text-white">42</span>
+                        <span className="text-3xl font-black text-slate-900 dark:text-white">{dashboard?.criticalPatientsCount || 0}</span>
                         <span className="text-red-500 text-sm font-bold flex items-center gap-0.5">
                             <TrendingUp className="w-4 h-4" /> +12%
                         </span>
@@ -51,7 +96,7 @@ export function RiskAnalysis() {
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Cảnh báo 24h</p>
                     <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-3xl font-black text-slate-900 dark:text-white">+8</span>
+                        <span className="text-3xl font-black text-slate-900 dark:text-white">+{dashboard?.newAlerts24hCount || 0}</span>
                         <span className="text-amber-500 text-sm font-bold flex items-center gap-0.5">
                             <Activity className="w-4 h-4" /> Mới
                         </span>
@@ -68,7 +113,7 @@ export function RiskAnalysis() {
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Tỷ lệ ổn định</p>
                     <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-3xl font-black text-slate-900 dark:text-white">85%</span>
+                        <span className="text-3xl font-black text-slate-900 dark:text-white">{dashboard?.stablePatientsPercentage || 0}%</span>
                         <span className="text-emerald-500 text-sm font-bold flex items-center gap-0.5">
                             <CheckCircle className="w-4 h-4" /> Tốt
                         </span>
@@ -100,127 +145,62 @@ export function RiskAnalysis() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {/* Row 1 */}
-                                    <tr className="hover:bg-red-50/30 dark:hover:bg-red-900/5 transition-colors group">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-[10px] bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-[10px] text-slate-600 dark:text-slate-400">
-                                                    NL
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-sm text-slate-900 dark:text-white">Nguyễn Văn Lộc</div>
-                                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">BN-2024-0891</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-red-600 dark:text-red-400 font-bold text-sm">HA: 178/112 mmHg</span>
-                                                <span className="text-[10px] text-slate-500 font-medium italic">Tiền sử: Tăng HA giai đoạn 2</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center text-red-500 font-black gap-1">
-                                                <TrendingUp className="w-4 h-4" />
-                                                <span className="text-sm">+15%</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {[
-                                                    { icon: Send, color: 'text-emerald-600', bg: 'hover:bg-emerald-50', title: 'Gửi cảnh báo' },
-                                                    { icon: PhoneCall, color: 'text-red-500', bg: 'hover:bg-red-50', title: 'Gọi khẩn cấp' },
-                                                    { icon: ClipboardList, color: 'text-slate-600', bg: 'hover:bg-slate-100', title: 'Sửa đơn thuốc điện tử' }
-                                                ].map((action, idx) => (
-                                                    <button
-                                                        key={idx}
-                                                        title={action.title}
-                                                        className={`p-2 rounded-[10px] ${action.color} ${action.bg} dark:hover:bg-slate-800 transition-all`}
-                                                    >
-                                                        <action.icon className="w-4 h-4" />
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {/* Row 2 */}
-                                    <tr className="hover:bg-red-50/30 dark:hover:bg-red-900/5 transition-colors group">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-[10px] bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-[10px] text-slate-600 dark:text-slate-400">
-                                                    TT
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-sm text-slate-900 dark:text-white">Trần Minh Tâm</div>
-                                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">BN-2024-1022</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-red-600 dark:text-red-400 font-bold text-sm">Glucose: 215 mg/dL</span>
-                                                <span className="text-[10px] text-slate-500 font-medium italic">Sau ăn 2h</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center text-red-500 font-black gap-1">
-                                                <TrendingUp className="w-4 h-4" />
-                                                <span className="text-sm">+22%</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-2 rounded-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all">
-                                                    <Send className="w-4 h-4" />
-                                                </button>
-                                                <button className="p-2 rounded-[10px] text-red-500 hover:bg-red-500/10 dark:hover:bg-slate-800 transition-all">
-                                                    <PhoneCall className="w-4 h-4" />
-                                                </button>
-                                                <button className="p-2 rounded-[10px] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                                                    <ClipboardList className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {/* Row 3 - Amber Alert */}
-                                    <tr className="hover:bg-amber-50/30 dark:hover:bg-amber-900/5 transition-colors group border-l-4 border-amber-400">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-[10px] bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-[10px] text-slate-600 dark:text-slate-400">
-                                                    LH
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-sm text-slate-900 dark:text-white">Lê Hoàng Nam</div>
-                                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">BN-2024-0556</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-amber-600 dark:text-amber-400 font-bold text-sm">SpO2: 92%</span>
-                                                <span className="text-[10px] text-slate-500 font-medium italic">Giảm nhẹ lúc ngủ</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center text-amber-500 font-black gap-1">
-                                                <TrendingDown className="w-4 h-4" />
-                                                <span className="text-sm">-4%</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-2 rounded-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all">
-                                                    <Send className="w-4 h-4" />
-                                                </button>
-                                                <button className="p-2 rounded-[10px] text-red-500 hover:bg-red-500/10 dark:hover:bg-slate-800 transition-all">
-                                                    <PhoneCall className="w-4 h-4" />
-                                                </button>
-                                                <button className="p-2 rounded-[10px] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                                                    <ClipboardList className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    {dashboard?.priorityList && dashboard.priorityList.length > 0 ? (
+                                        dashboard.priorityList.slice(0, 5).map((patient: any, idx: number) => {
+                                            const isCritical = patient.riskLevel === 'CRITICAL'
+                                            return (
+                                            <tr key={patient.patientId || idx} className={`hover:bg-${isCritical ? 'red' : 'amber'}-50/30 dark:hover:bg-${isCritical ? 'red' : 'amber'}-900/5 transition-colors group ${!isCritical ? 'border-l-4 border-amber-400' : ''}`}>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-[10px] bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-[10px] text-slate-600 dark:text-slate-400">
+                                                            {patient.patientName?.substring(0, 2).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-sm text-slate-900 dark:text-white">{patient.patientName}</div>
+                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">BN-{patient.patientId?.substring(0, 5) || 'UNKNOWN'}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className={`${isCritical ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'} font-bold text-sm truncate max-w-[200px]`}>
+                                                            {patient.reason || 'Cần theo dõi sát'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className={`flex items-center justify-center ${isCritical ? 'text-red-500' : 'text-amber-500'} font-black gap-1`}>
+                                                        {patient.lastVitalTrend?.includes('xấu đi') ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                                                        <span className="text-sm truncate max-w-[100px]">{patient.lastVitalTrend || 'Không biến động'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button 
+                                                            title="Gửi cảnh báo"
+                                                            className="p-2 rounded-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all"
+                                                        >
+                                                            <Send className="w-4 h-4" />
+                                                        </button>
+                                                        <button 
+                                                            title="Gọi khẩn cấp"
+                                                            className="p-2 rounded-[10px] text-red-500 hover:bg-red-500/10 dark:hover:bg-slate-800 transition-all"
+                                                        >
+                                                            <PhoneCall className="w-4 h-4" />
+                                                        </button>
+                                                        <button 
+                                                            title="Sửa đơn thuốc"
+                                                            className="p-2 rounded-[10px] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                                                        >
+                                                            <ClipboardList className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )})
+                                    ) : (
+                                        <tr><td colSpan={4} className="p-8 text-center text-slate-500 font-medium">Không có bệnh nhân trong danh sách ưu tiên.</td></tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -252,14 +232,18 @@ export function RiskAnalysis() {
                         {/* Mockup Chart */}
                         <div className="h-64 w-full relative group">
                             <div className="absolute inset-x-0 bottom-0 top-0 flex items-end justify-between px-2 gap-4">
-                                {[40, 55, 45, 70, 60, 50, 80].map((h, i) => (
+                                {(dashboard?.riskTrend7Days || [0, 0, 0, 0, 0, 0, 0]).map((v: number, i: number) => {
+                                    const maxVal = Math.max(...(dashboard?.riskTrend7Days || [1]), 1);
+                                    let h = Math.round((v / maxVal) * 100);
+                                    if (h < 5) h = 5; // minimum visual height
+                                    return (
                                     <div key={i} className="flex-1 bg-emerald-600/10 dark:bg-emerald-600/5 rounded-t-[10px] relative transition-all duration-700 ease-out" style={{ height: `${h}%` }}>
                                         <div className="absolute top-0 inset-x-0 bg-red-500/30 dark:bg-red-500/20 rounded-t-[10px]" style={{ height: `${h * 0.4}%` }}></div>
                                         {i === 6 && <div className="absolute inset-x-0 bottom-0 bg-emerald-500 rounded-t-[10px] shadow-lg shadow-emerald-500/20" style={{ height: '100%' }}>
                                             <div className="absolute top-0 inset-x-0 bg-red-500 rounded-t-[10px]" style={{ height: '50%' }}></div>
                                         </div>}
                                     </div>
-                                ))}
+                                )})}
                             </div>
                             <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-100 dark:bg-slate-800"></div>
                         </div>
@@ -287,21 +271,31 @@ export function RiskAnalysis() {
                         </div>
 
                         <div className="space-y-4 relative z-10">
-                            {[
-                                { icon: Brain, color: 'text-amber-500', title: 'Xu hướng Tăng HA', desc: 'Bệnh nhân Lộc có chỉ số HA tăng 3 ngày liên tiếp vào buổi sáng.' },
-                                { icon: Pill, color: 'text-red-500', title: 'Vi phạm phác đồ', desc: 'Bệnh nhân Tâm quên uống thuốc 2 liều Insulin gần nhất.' },
-                                { icon: TrendingDown, color: 'text-emerald-500', title: 'Cải thiện tích cực', desc: 'Cần xem xét giảm liều Statins cho bệnh nhân Nguyễn Thị Hoa.' }
-                            ].map((insight, idx) => (
-                                <div key={idx} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-                                    <div className="flex gap-4">
-                                        <insight.icon className={`w-5 h-5 shrink-0 mt-0.5 ${insight.color}`} />
-                                        <div>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{insight.title}</p>
-                                            <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">{insight.desc}</p>
+                            {dashboard?.aiInsights && dashboard.aiInsights.length > 0 ? (
+                                dashboard.aiInsights.map((insight: any, idx: number) => {
+                                    let Icon = Brain;
+                                    let colorClass = 'text-amber-500';
+                                    if (insight.type === 'CRITICAL') { Icon = AlertTriangle; colorClass = 'text-red-500'; }
+                                    if (insight.type === 'WARNING') { Icon = Pill; colorClass = 'text-amber-500'; }
+                                    if (insight.type === 'POSITIVE') { Icon = TrendingDown; colorClass = 'text-emerald-500'; }
+
+                                    return (
+                                        <div key={idx} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+                                            <div className="flex gap-4">
+                                                <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${colorClass}`} />
+                                                <div>
+                                                    <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{insight.title}</p>
+                                                    <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">{insight.description}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )
+                                })
+                            ) : (
+                                <div className="text-center text-sm text-slate-500 border border-dashed border-emerald-200/50 p-6 rounded-2xl">
+                                    Không có Insights nào lúc này.
                                 </div>
-                            ))}
+                            )}
                         </div>
 
                         <button className="w-full mt-2 py-3 bg-primary text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 relative z-10 active:scale-95">
@@ -321,10 +315,14 @@ export function RiskAnalysis() {
                                 <Video className="w-6 h-6 group-hover:scale-110 transition-transform" />
                                 <span className="text-[10px] font-black uppercase tracking-tighter">Tele-Health</span>
                             </button>
-                            <button className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-all col-span-2 group scale-100 active:scale-95">
+                            <button 
+                                onClick={handleExportPdf}
+                                disabled={isExporting}
+                                className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-all col-span-2 group scale-100 active:scale-95 disabled:opacity-50"
+                            >
                                 <div className="flex items-center gap-3">
-                                    <FileText className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Xuất báo cáo rủi ro (.pdf)</span>
+                                    {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <FileText className="w-6 h-6 group-hover:scale-110 transition-transform" />}
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{isExporting ? 'Đang chuẩn bị...' : 'Xuất báo cáo rủi ro (.pdf)'}</span>
                                 </div>
                             </button>
                         </div>

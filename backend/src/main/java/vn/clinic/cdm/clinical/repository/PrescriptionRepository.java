@@ -33,4 +33,6 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
         @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "medications", "consultation",
                         "consultation.patient", "patient" })
         List<Prescription> findByDoctorIdOrderByCreatedAtDesc(UUID doctorId);
+
+        long countByDoctor_Id(UUID doctorId);
 }

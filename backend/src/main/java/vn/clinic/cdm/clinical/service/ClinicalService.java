@@ -10,14 +10,18 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.clinic.cdm.api.dto.clinical.ConsultationSummaryPdfDto;
 import vn.clinic.cdm.api.dto.medication.CreatePrescriptionRequest;
 import vn.clinic.cdm.api.dto.medication.PrescriptionDto;
-import vn.clinic.cdm.api.dto.medication.PrescriptionItemDto;
 import vn.clinic.cdm.clinical.domain.*;
 import vn.clinic.cdm.clinical.event.ConsultationCompletedEvent;
 import vn.clinic.cdm.clinical.repository.*;
-import vn.clinic.cdm.common.exception.ResourceNotFoundException;
+import vn.clinic.cdm.common.exception.ApiException;
+import vn.clinic.cdm.common.exception.ErrorCode;
 import vn.clinic.cdm.common.service.AuditLogService;
 import vn.clinic.cdm.common.tenant.TenantContext;
 import vn.clinic.cdm.identity.service.IdentityService;
+import vn.clinic.cdm.patient.domain.Patient;
+import vn.clinic.cdm.tenant.domain.Tenant;
+import vn.clinic.cdm.tenant.domain.TenantBranch;
+import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,7 +62,10 @@ public class ClinicalService {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
         return consultationRepository.findById(id)
                 .filter(c -> c.getTenant().getId().equals(tenantId))
-                .orElseThrow(() -> new ResourceNotFoundException("ClinicalConsultation", id));
+                .orElseThrow(() -> {
+                    log.warn("Consultation not found or tenant mismatch: id={}, tenant={}", id, tenantId);
+                    return new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy phiên khám");
+                });
     }
 
     @Transactional(readOnly = true)
@@ -68,14 +75,14 @@ public class ClinicalService {
 
     @Transactional
     public ClinicalConsultation startConsultation(UUID patientId, UUID doctorId) {
-        // In CDM, we start from a patient directly (or through an appointment)
         UUID tenantId = TenantContext.getTenantIdOrThrow();
         UUID branchId = TenantContext.getBranchIdOrThrow();
+        log.info("Starting new consultation for patient: {} in tenant: {}", patientId, tenantId);
 
         ClinicalConsultation consultation = ClinicalConsultation.builder()
-                .tenant(new vn.clinic.cdm.tenant.domain.Tenant(tenantId))
-                .branch(new vn.clinic.cdm.tenant.domain.TenantBranch(branchId))
-                .patient(new vn.clinic.cdm.patient.domain.Patient(patientId))
+                .tenant(new Tenant(tenantId))
+                .branch(new TenantBranch(branchId))
+                .patient(new Patient(patientId))
                 .doctorUser(doctorId != null ? identityService.getUserById(doctorId) : null)
                 .startedAt(Instant.now())
                 .status("IN_PROGRESS")
@@ -83,17 +90,19 @@ public class ClinicalService {
 
         consultation = consultationRepository.save(consultation);
         auditLogService.log("START_CONSULTATION", "CLINICAL_CONSULTATION", consultation.getId().toString(),
-                "Bắt đầu phiên khám CDM cho BN: " + consultation.getPatient().getId());
+                "Bắt đầu phiên khám cho bệnh nhân ID: " + consultation.getPatient().getId());
 
+        log.debug("Consultation started with ID: {}", consultation.getId());
         return consultation;
     }
 
     @Transactional
     public ClinicalConsultation updateConsultation(UUID id, String diagnosis, String prescription) {
-        var cons = getById(id);
-        cons.setDiagnosisNotes(diagnosis);
-        cons.setPrescriptionNotes(prescription);
-        return consultationRepository.save(cons);
+        log.info("Updating consultation: diagnosis and prescription for ID: {}", id);
+        var consultation = getById(id);
+        consultation.setDiagnosisNotes(diagnosis);
+        consultation.setPrescriptionNotes(prescription);
+        return consultationRepository.save(consultation);
     }
 
     @Transactional
@@ -177,7 +186,7 @@ public class ClinicalService {
         var labs = labResultRepository.findByConsultation(cons);
         var images = diagnosticImageRepository.findByConsultation(cons);
         var prescription = prescriptionRepository.findByConsultationId(id).orElse(null);
-        var pDto = prescription != null ? mapPrescriptionToDto(prescription) : null;
+        var pDto = prescription != null ? clinicalMapper.mapPrescriptionToDto(prescription) : null;
 
         return clinicalMapper.toPdfDto(cons, vitals, labs, images, prescription, pDto);
     }
@@ -185,23 +194,7 @@ public class ClinicalService {
     // --- Helper Methods ---
 
     public PrescriptionDto mapPrescriptionToDto(Prescription p) {
-        return PrescriptionDto.builder()
-                .id(p.getId())
-                .consultationId(p.getConsultation() != null ? p.getConsultation().getId() : null)
-                .patientId(p.getPatient().getId())
-                .patientName(p.getPatient().getFullNameVi())
-                .status(p.getStatus() != null ? p.getStatus().name() : "ISSUED")
-                .notes(p.getNotes())
-                .items(p.getMedications().stream().map(this::mapMedicationToDto).collect(Collectors.toList()))
-                .build();
-    }
-
-    private PrescriptionItemDto mapMedicationToDto(Medication med) {
-        return PrescriptionItemDto.builder()
-                .id(med.getId())
-                .productName(med.getMedicineName())
-                .dosageInstruction(med.getDosage())
-                .build();
+        return clinicalMapper.mapPrescriptionToDto(p);
     }
 
     @Transactional(readOnly = true)

@@ -290,27 +290,11 @@ export function Dashboard() {
               </button>
             </div>
             <div className="p-8 space-y-6">
-              <ActivityItem
-                icon={<UserCheck className="w-5 h-5" />}
-                title="Bệnh nhân mới tiếp nhận"
-                desc="Bệnh nhân Nguyễn Văn A vừa được check-in tại chi nhánh"
-                time="5 phút trước"
-                color="emerald"
-              />
-              <ActivityItem
-                icon={<CheckCircle2 className="w-5 h-5" />}
-                title="Phiên khám hoàn tất"
-                desc="Bác sĩ Trần Thị B đã hoàn thành phiên khám mã #4928"
-                time="12 phút trước"
-                color="emerald"
-              />
-              <ActivityItem
-                icon={<Calendar className="w-5 h-5" />}
-                title="Lịch hẹn xác nhận"
-                desc="Lịch hẹn mới cho bệnh nhân Lý Văn C đã được hệ thống phê duyệt"
-                time="30 phút trước"
-                color="amber"
-              />
+              <div className="flex flex-col items-center justify-center py-10 text-slate-400 opacity-60">
+                <Activity className="w-8 h-8 mb-2" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-center">Chưa có hoạt động mới trong hệ thống</p>
+                <p className="text-[9px] font-bold text-center mt-1">Hệ thống sẽ ghi nhận và hiển thị các hoạt động tiếp nhận và khám bệnh tại đây.</p>
+              </div>
             </div>
           </div>
 
@@ -352,29 +336,6 @@ export function Dashboard() {
 
 /* ─── Shared UI pieces ─── */
 
-function ActivityItem({ icon, title, desc, time, color }: {
-  icon: any; title: string; desc: string; time: string; color: string
-}) {
-  const colors: Record<string, string> = {
-    blue: 'bg-blue-50 text-emerald-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-600',
-  }
-  return (
-    <div className="flex items-start gap-4 group/item">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm shrink-0 transition-all group-hover/item:scale-110 ${colors[color] || colors.blue}`}>
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start gap-4 mb-1">
-          <h4 className="font-black text-slate-800 text-sm tracking-tight">{title}</h4>
-          <span className="text-[10px] font-black text-slate-300 uppercase shrink-0">{time}</span>
-        </div>
-        <p className="text-xs font-bold text-slate-400 line-clamp-1">{desc}</p>
-      </div>
-    </div>
-  )
-}
 
 function EnvRow({ label, value, status }: { label: string; value: string; status?: boolean }) {
   return (

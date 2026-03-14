@@ -134,10 +134,11 @@ export function PatientLayout({ children }: PatientLayoutProps) {
 
     const navItems = [
         { path: '/patient', label: 'Bảng điều khiển', icon: LayoutGrid },
-        { path: '/patient/history', label: 'Đơn thuốc', icon: Pill },
+        { path: '/patient/medications', label: 'Quản lý thuốc', icon: Pill },
         { path: '/patient/vitals', label: 'Chỉ số sức khỏe', icon: BarChart3 },
         { path: '/patient/appointments', label: 'Lịch hẹn', icon: Calendar },
         { path: '/patient/chat', label: 'Tin nhắn bác sĩ', icon: MessageSquare },
+        { path: '/patient/history', label: 'Lịch sử khám', icon: BriefcaseMedical },
         { path: '/patient/profile', label: 'Hồ sơ bệnh án', icon: User },
     ]
 

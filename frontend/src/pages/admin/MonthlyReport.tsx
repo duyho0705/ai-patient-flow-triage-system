@@ -7,23 +7,43 @@ import {
     TrendingDown,
     Search,
     Star,
-    StarHalf,
     FileText,
     Table as TableIcon,
     MoreHorizontal,
     CheckCircle
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getMonthlyReport, getDoctorPerformance, type DoctorPerformanceDto } from '@/api/management'
+import { useTenant } from '@/context/TenantContext'
+import { Loader2 } from 'lucide-react'
+
+const weeklyData = [
+    { week: 'Tuần 1', value: 45, height: '45%' },
+    { week: 'Tuần 2', value: 82, height: '82%' },
+    { week: 'Tuần 3', value: 64, height: '64%' },
+    { week: 'Tuần 4', value: 95, height: '95%' }
+]
 
 export function MonthlyReport() {
-    const [selectedMonth, setSelectedMonth] = useState('11/2023')
+    const { headers } = useTenant()
+    const [selectedDate, setSelectedDate] = useState({ 
+        month: new Date().getMonth() + 1, 
+        year: new Date().getFullYear() 
+    })
 
-    const stats = [
+    const { data: report, isLoading } = useQuery({
+        queryKey: ['monthly-report', selectedDate.month, selectedDate.year],
+        queryFn: () => getMonthlyReport(selectedDate.year, selectedDate.month, headers),
+        enabled: !!headers?.tenantId
+    })
+
+    const stats = useMemo(() => [
         {
             label: 'Bệnh nhân mới',
-            value: '120',
-            trend: '+12% so với tháng trước',
+            value: report?.newPatients?.toString() || '0',
+            trend: '+10% so với tháng trước',
             isPositive: true,
             icon: Users,
             color: 'text-emerald-600',
@@ -31,17 +51,17 @@ export function MonthlyReport() {
         },
         {
             label: 'Tổng lượt khám',
-            value: '850',
-            trend: '-5% mục tiêu tháng',
-            isPositive: false,
+            value: report?.totalConsultations?.toString() || '0',
+            trend: 'Đang theo dõi',
+            isPositive: true,
             icon: Activity,
             color: 'text-indigo-600',
             bgColor: 'bg-indigo-50 dark:bg-indigo-900/30'
         },
         {
             label: 'Tỷ lệ tái khám',
-            value: '65%',
-            trend: '+2.4% so với tháng trước',
+            value: (report?.retentionRate || 0) + '%',
+            trend: 'Phát triển',
             isPositive: true,
             icon: Repeat,
             color: 'text-emerald-600',
@@ -49,36 +69,40 @@ export function MonthlyReport() {
         },
         {
             label: 'Chỉ số CSAT',
-            value: '4.8/5',
-            trend: 'Vượt 5% mức kỳ vọng',
+            value: (report?.avgSatisfaction || 0).toFixed(1) + '/5',
+            trend: 'Vượt kỳ vọng',
             isPositive: true,
             icon: Smile,
             isCheck: true,
             color: 'text-amber-600',
             bgColor: 'bg-amber-50 dark:bg-amber-900/30'
         }
-    ]
+    ], [report])
 
-    const weeklyData = [
-        { week: 'Tuần 1', height: '70%', value: '180 lượt' },
-        { week: 'Tuần 2', height: '85%', value: '210 lượt' },
-        { week: 'Tuần 3', height: '60%', value: '150 lượt' },
-        { week: 'Tuần 4', height: '95%', value: '240 lượt' }
-    ]
+    const { data: performance } = useQuery({
+        queryKey: ['doctor-performance', headers?.tenantId],
+        queryFn: () => getDoctorPerformance(headers),
+        enabled: !!headers?.tenantId
+    })
 
-    const diseaseGroups = [
-        { name: 'Tiểu đường', percent: 35, color: 'bg-emerald-600' },
-        { name: 'Huyết áp', percent: 40, color: 'bg-emerald-500' },
-        { name: 'Tim mạch', percent: 15, color: 'bg-amber-500' },
-        { name: 'Khác', percent: 10, color: 'bg-slate-400' }
-    ]
+    const diseaseGroups = useMemo(() => {
+        if (!report?.diseaseDistribution) return []
+        const total = Object.values(report.diseaseDistribution).reduce((a, b) => a + b, 0)
+        return Object.entries(report.diseaseDistribution).map(([name, count]) => ({
+            name,
+            percent: Math.round((count / total) * 100),
+            color: name.includes('Tiểu đường') ? 'bg-emerald-600' : name.includes('Huyết áp') ? 'bg-emerald-500' : 'bg-amber-500'
+        }))
+    }, [report])
 
-    const doctorPerformance = [
-        { name: 'TS. BS. Nguyễn Lan', initials: 'NL', visits: 185, prescriptions: 172, rating: 4.9, color: 'bg-emerald-100 text-emerald-600' },
-        { name: 'BS. Phạm Văn Hùng', initials: 'PV', visits: 162, prescriptions: 158, rating: 4.8, color: 'bg-emerald-100 text-emerald-600' },
-        { name: 'ThS. BS. Lê Thu Trà', initials: 'LT', visits: 205, prescriptions: 198, rating: 4.7, color: 'bg-indigo-100 text-indigo-600', halfStar: true },
-        { name: 'BS. Dương Thành Đạt', initials: 'DT', visits: 145, prescriptions: 135, rating: 4.9, color: 'bg-orange-100 text-orange-600' }
-    ]
+    if (isLoading) {
+        return (
+            <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-12 h-12 animate-spin text-emerald-500" />
+                <p className="font-black text-slate-400 uppercase tracking-widest text-sm">Đang tổng hợp báo cáo chiến lược...</p>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-10">
@@ -106,13 +130,17 @@ export function MonthlyReport() {
                     <div className="flex flex-col min-w-[200px] w-full sm:w-auto">
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1.5 ml-1">Chọn Tháng/Năm</p>
                         <select
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            value={`${selectedDate.month}/${selectedDate.year}`}
+                            onChange={(e) => {
+                                const [m, y] = e.target.value.split('/')
+                                setSelectedDate({ month: parseInt(m), year: parseInt(y) })
+                            }}
                             className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-xs font-bold px-4 py-2.5 focus:ring-2 focus:ring-emerald-600/20 outline-none cursor-pointer"
                         >
-                            <option>Tháng 10, 2023</option>
+                            <option value="10/2023">Tháng 10, 2023</option>
                             <option value="11/2023">Tháng 11, 2023</option>
-                            <option>Tháng 12, 2023</option>
+                            <option value="12/2023">Tháng 12, 2023</option>
+                            <option value="3/2026">Tháng 03, 2026</option>
                         </select>
                     </div>
                 </div>
@@ -120,7 +148,7 @@ export function MonthlyReport() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, i) => (
+                {stats.map((stat: any, i: number) => (
                     <motion.div
                         key={i}
                         initial={{ opacity: 0, y: 20 }}
@@ -160,7 +188,7 @@ export function MonthlyReport() {
                         <MoreHorizontal className="w-5 h-5 text-slate-400 cursor-pointer" />
                     </div>
                     <div className="flex items-end justify-between h-64 gap-6 px-4">
-                        {weeklyData.map((data, i) => (
+                        {weeklyData.map((data: any, i: number) => (
                             <div key={i} className="flex-1 flex flex-col items-center gap-4 group h-full justify-end">
                                 <div className="w-full bg-emerald-600/5 rounded-2xl relative h-48 overflow-hidden">
                                     <motion.div
@@ -193,7 +221,7 @@ export function MonthlyReport() {
                             </div>
                         </div>
                         <div className="w-full grid grid-cols-2 gap-4">
-                            {diseaseGroups.map((group, i) => (
+                            {diseaseGroups.map((group: any, i: number) => (
                                 <div key={i} className="flex items-center gap-3">
                                     <div className={`size-2.5 rounded-full ${group.color}`} />
                                     <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{group.name} ({group.percent}%)</span>
@@ -228,22 +256,22 @@ export function MonthlyReport() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                            {doctorPerformance.map((doc, i) => (
+                            {(performance || []).map((doc: DoctorPerformanceDto, i: number) => (
                                 <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all group">
                                     <td className="px-10 py-6">
                                         <div className="flex items-center gap-4">
-                                            <div className={`size-10 rounded-2xl ${doc.color} flex items-center justify-center font-black text-xs transition-transform group-hover:scale-110 shadow-sm`}>
-                                                {doc.initials}
+                                            <div className="size-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center font-black text-xs transition-transform group-hover:scale-110 shadow-sm">
+                                                {doc.fullName.charAt(0)}
                                             </div>
-                                            <span className="text-sm font-black text-slate-800 dark:text-white tracking-tight">{doc.name}</span>
+                                            <span className="text-sm font-black text-slate-800 dark:text-white tracking-tight">{doc.fullName}</span>
                                         </div>
                                     </td>
-                                    <td className="px-10 py-6 text-sm font-bold text-slate-600 dark:text-slate-300">{doc.visits}</td>
-                                    <td className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">{doc.prescriptions}</td>
+                                    <td className="px-10 py-6 text-sm font-bold text-slate-600 dark:text-slate-300">{doc.consultationCount}</td>
+                                    <td className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">{doc.prescriptionCount}</td>
                                     <td className="px-10 py-6 text-right">
                                         <div className="flex items-center justify-end gap-1.5 bg-amber-50 dark:bg-amber-900/20 w-fit ml-auto px-4 py-1.5 rounded-full">
-                                            <span className="text-amber-600 text-xs font-black">{doc.rating}</span>
-                                            {doc.halfStar ? <StarHalf className="w-3.5 h-3.5 text-amber-500 fill-current" /> : <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />}
+                                            <span className="text-amber-600 text-xs font-black">{doc.avgRating.toFixed(1)}</span>
+                                            <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />
                                         </div>
                                     </td>
                                 </tr>

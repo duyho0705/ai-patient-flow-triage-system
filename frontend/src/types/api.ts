@@ -82,10 +82,19 @@ export interface SetPasswordRequest {
   newPassword: string
 }
 
+export interface PermissionDto {
+  id: string
+  code: string
+  name: string
+  description?: string
+}
+
 export interface RoleDto {
   id: string
   code: string
   nameVi: string
+  description?: string
+  permissions?: PermissionDto[]
 }
 
 export interface TenantDto {
@@ -167,6 +176,10 @@ export interface PatientDto {
   avatarUrl?: string
   height?: string
   weight?: string
+  riskLevel?: string
+  chronicConditions?: string
+  allergies?: string
+  bloodType?: string
   createdAt?: string
   updatedAt?: string
 }
@@ -655,12 +668,18 @@ export interface PatientPortalStatusDto {
 
 export interface AuditLogDto {
   id: string
+  userId: string
   userEmail: string
   action: string
-  resourceType: string
-  resourceId: string
+  entityName: string
+  entityId: string
   details: string
-  createdAt: string
+  oldValue?: string
+  newValue?: string
+  ipAddress: string
+  userAgent: string
+  timestamp: string
+  status: string
 }
 
 export interface SlotAvailabilityDto {
@@ -703,6 +722,7 @@ export interface PatientChatMessageDto {
   senderType: string // PATIENT or DOCTOR
   content: string
   sentAt: string
+  fileUrl?: string
 }
 
 export interface PatientChatConversationDto {

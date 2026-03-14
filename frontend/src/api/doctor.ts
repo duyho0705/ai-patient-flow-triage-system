@@ -4,7 +4,9 @@ import type {
     PatientDto,
     PagedResponse,
     PrescriptionDto,
-    UpdatePrescriptionRequest
+    UpdatePrescriptionRequest,
+    ConsultationDto,
+    ConsultationDetailDto
 } from '@/types/api'
 
 // ═══════════════════════════════════════════════════
@@ -44,14 +46,24 @@ export async function getDoctorDashboard(headers: TenantHeaders | null): Promise
 //  Quản lý Bệnh nhân
 // ═══════════════════════════════════════════════════
 
-/** Danh sách bệnh nhân (phân trang) — Doctor Portal */
+/** Danh sách bệnh nhân (phân trang, tìm kiếm, lọc) — Doctor Portal */
 export async function getDoctorPatientList(
     headers: TenantHeaders | null,
     page = 0,
-    size = 20
+    size = 20,
+    search?: string,
+    riskLevel?: string,
+    chronicCondition?: string
 ): Promise<PagedResponse<PatientDto>> {
+    const params = new URLSearchParams()
+    params.set('page', String(page))
+    params.set('size', String(size))
+    if (search) params.set('search', search)
+    if (riskLevel) params.set('riskLevel', riskLevel)
+    if (chronicCondition) params.set('chronicCondition', chronicCondition)
+
     return get<PagedResponse<PatientDto>>(
-        `/doctor-portal/patients?page=${page}&size=${size}`,
+        `/doctor-portal/patients?${params.toString()}`,
         headers
     )
 }
@@ -64,6 +76,18 @@ export async function getDoctorPatients(
 ): Promise<PagedResponse<PatientDto>> {
     return get<PagedResponse<PatientDto>>(
         `/patients?page=${page}&size=${size}`,
+        headers
+    )
+}
+
+/** Thêm bệnh nhân mới */
+export async function createPatient(
+    data: any,
+    headers: TenantHeaders | null
+): Promise<PatientDto> {
+    return post<PatientDto>(
+        `/patients`,
+        data,
         headers
     )
 }
@@ -88,6 +112,49 @@ export async function getPatientClinicalSummary(
         `/doctor-portal/patients/${patientId}/clinical-summary`,
         headers
     )
+}
+
+/** Lấy lịch sử khám của bệnh nhân (Dành cho bác sĩ) */
+export async function getPatientMedicalHistory(
+    patientId: string,
+    headers: TenantHeaders | null,
+    page = 0,
+    size = 10
+): Promise<PagedResponse<ConsultationDto>> {
+    return get<PagedResponse<ConsultationDto>>(
+        `/doctor-portal/patients/${patientId}/history?page=${page}&size=${size}`,
+        headers
+    )
+}
+
+/** Chi tiết ca khám của bệnh nhân (Dành cho bác sĩ) */
+export async function getConsultationDetailForDoctor(
+    patientId: string,
+    consultationId: string,
+    headers: TenantHeaders | null
+): Promise<ConsultationDetailDto> {
+    return get<ConsultationDetailDto>(
+        `/doctor-portal/patients/${patientId}/history/${consultationId}`,
+        headers
+    )
+}
+
+/** Xuất báo cáo sức khỏe bệnh nhân (PDF) — Doctor Portal */
+export async function exportPatientReportPdf(
+    patientId: string,
+    headers: TenantHeaders | null
+): Promise<Blob> {
+    const url = `${process.env.VITE_API_BASE_URL || ''}/doctor-portal/patients/${patientId}/export-pdf`
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            ...headers,
+            'Accept': 'application/pdf'
+        } as HeadersInit
+    })
+    
+    if (!res.ok) throw new Error('Failed to export PDF')
+    return await res.blob()
 }
 
 // ═══════════════════════════════════════════════════
@@ -166,6 +233,24 @@ export async function updateDoctorPrescriptionStatus(
     )
 }
 
+/** Xuất đơn thuốc điện tử (PDF) */
+export async function exportPrescriptionPdf(
+    id: string,
+    headers: TenantHeaders | null
+): Promise<Blob> {
+    const url = `${process.env.VITE_API_BASE_URL || ''}/doctor-portal/prescriptions/${id}/export-pdf`
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            ...headers,
+            'Accept': 'application/pdf'
+        } as HeadersInit
+    })
+    
+    if (!res.ok) throw new Error('Failed to export Prescription PDF')
+    return await res.blob()
+}
+
 // ═══════════════════════════════════════════════════
 //  Gửi Khuyến nghị / Cảnh báo
 // ═══════════════════════════════════════════════════
@@ -201,4 +286,46 @@ export async function sendPatientAlert(
         data,
         headers
     )
+}
+
+// ═══════════════════════════════════════════════════
+//  Risk Analysis
+// ═══════════════════════════════════════════════════
+
+export interface RiskInsightDto {
+    type: string
+    title: string
+    description: string
+}
+
+export interface RiskAnalysisDashboardDto {
+    criticalPatientsCount: number
+    newAlerts24hCount: number
+    stablePatientsPercentage: number
+    priorityList: any[]
+    aiInsights: RiskInsightDto[]
+    riskTrend7Days: number[]
+}
+
+export async function getDoctorRiskAnalysis(
+    headers: TenantHeaders | null
+): Promise<RiskAnalysisDashboardDto> {
+    return get<RiskAnalysisDashboardDto>('/doctor-portal/risk-analysis', headers)
+}
+
+/** Xuất báo cáo rủi ro tổng hợp (PDF) */
+export async function exportRiskReportPdf(
+    headers: TenantHeaders | null
+): Promise<Blob> {
+    const url = `${process.env.VITE_API_BASE_URL || ''}/doctor-portal/risk-analysis/export-pdf`
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            ...headers,
+            'Accept': 'application/pdf'
+        } as HeadersInit
+    })
+    
+    if (!res.ok) throw new Error('Failed to export Risk Report PDF')
+    return await res.blob()
 }

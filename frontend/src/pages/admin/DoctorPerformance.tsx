@@ -13,111 +13,87 @@ import {
     MoreHorizontal
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getDoctorPerformance } from '@/api/management'
+import { useTenant } from '@/context/TenantContext'
+import { Loader2 } from 'lucide-react'
 
 export function DoctorPerformance() {
+    const { headers } = useTenant()
     const [searchTerm, setSearchTerm] = useState('')
 
-    const summaryCards = [
-        {
-            label: 'Tổng số ca khám',
-            value: '1,250',
-            trend: '+12%',
-            trendColor: 'text-green-600 bg-green-100',
-            icon: Users,
-            iconBg: 'bg-emerald-50 dark:bg-emerald-900/30',
-            iconColor: 'text-emerald-600'
-        },
-        {
-            label: 'Đánh giá trung bình',
-            value: '4.8/5',
-            trend: '+0.2',
-            trendColor: 'text-green-600 bg-green-100',
-            icon: Star,
-            iconBg: 'bg-yellow-50 dark:bg-yellow-900/30',
-            iconColor: 'text-yellow-600'
-        },
-        {
-            label: 'Thời gian khám TB',
-            value: '15 phút',
-            trend: '-2m',
-            trendColor: 'text-red-600 bg-red-100',
-            icon: Clock,
-            iconBg: 'bg-indigo-50 dark:bg-indigo-900/30',
-            iconColor: 'text-indigo-600'
-        },
-        {
-            label: 'Tỷ lệ hài lòng',
-            value: '96%',
-            trend: '+5%',
-            trendColor: 'text-green-600 bg-green-100',
-            icon: Smile,
-            iconBg: 'bg-purple-50 dark:bg-purple-900/30',
-            iconColor: 'text-purple-600'
-        }
-    ]
+    const { data: performance, isLoading } = useQuery({
+        queryKey: ['doctor-performance-detail', headers?.tenantId],
+        queryFn: () => getDoctorPerformance(headers),
+        enabled: !!headers?.tenantId
+    })
 
-    const chartData = [
-        { name: 'BS. Nam', height: '85%', value: 210 },
-        { name: 'BS. Lan', height: '70%', value: 185 },
-        { name: 'BS. Minh', height: '45%', value: 120 },
-        { name: 'BS. Tuấn', height: '95%', value: 240 },
-        { name: 'BS. Linh', height: '60%', value: 160 },
-        { name: 'BS. Đức', height: '80%', value: 205 }
-    ]
+    const summaryCards = useMemo(() => {
+        if (!performance) return []
+        const totalCases = performance.reduce((acc, doc) => acc + doc.consultationCount, 0)
+        const avgRating = performance.reduce((acc, doc) => acc + doc.avgRating, 0) / (performance.length || 1)
+        
+        return [
+            {
+                label: 'Tổng số ca khám',
+                value: totalCases.toLocaleString(),
+                trend: '—',
+                trendColor: 'text-slate-400 bg-slate-100',
+                icon: Users,
+                iconBg: 'bg-emerald-50 dark:bg-emerald-900/30',
+                iconColor: 'text-emerald-600'
+            },
+            {
+                label: 'Đánh giá trung bình',
+                value: avgRating.toFixed(1) + '/5',
+                trend: '—',
+                trendColor: 'text-slate-400 bg-slate-100',
+                icon: Star,
+                iconBg: 'bg-yellow-50 dark:bg-yellow-900/30',
+                iconColor: 'text-yellow-600'
+            },
+            {
+                label: 'Thời gian khám TB',
+                value: '—',
+                trend: '—',
+                trendColor: 'text-slate-400 bg-slate-100',
+                icon: Clock,
+                iconBg: 'bg-indigo-50 dark:bg-indigo-900/30',
+                iconColor: 'text-indigo-600'
+            },
+            {
+                label: 'Số đơn thuốc kê',
+                value: performance.reduce((acc, doc) => acc + doc.prescriptionCount, 0).toLocaleString(),
+                trend: '—',
+                trendColor: 'text-slate-400 bg-slate-100',
+                icon: Smile,
+                iconBg: 'bg-purple-50 dark:bg-purple-900/30',
+                iconColor: 'text-purple-600'
+            }
+        ]
+    }, [performance])
 
-    const feedbacks = [
-        { name: 'Nguyễn Văn A', sentiment: 'positive', content: 'Bác sĩ Nam rất tận tâm, giải thích bệnh tình kỹ lưỡng...' },
-        { name: 'Lê Thị B', sentiment: 'positive', content: 'Thời gian chờ đợi nhanh hơn lần trước, dịch vụ rất tốt.' },
-        { name: 'Trần Văn C', sentiment: 'neutral', content: 'Bác sĩ khám nhanh nhưng cần tư vấn thêm về chế độ ăn.' }
-    ]
 
-    const doctorsDetail = [
-        {
-            name: 'Nguyễn Văn Nam',
-            initials: 'TN',
-            specialty: 'Nội tổng quát',
-            cases: 210,
-            completion: 98,
-            rating: 4.9,
-            avgTime: '12 phút',
-            status: 'Thưởng',
-            statusColor: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-        },
-        {
-            name: 'Trần Thị Lan',
-            initials: 'TL',
-            specialty: 'Nhi khoa',
-            cases: 185,
-            completion: 94,
-            rating: 4.7,
-            avgTime: '15 phút',
-            status: 'Thưởng',
-            statusColor: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-        },
-        {
-            name: 'Vũ Văn Minh',
-            initials: 'VM',
-            specialty: 'Tai Mũi Họng',
-            cases: 120,
-            completion: 82,
-            rating: 4.2,
-            avgTime: '22 phút',
-            status: 'Cần cải thiện',
-            statusColor: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-        },
-        {
-            name: 'Phạm Minh Tuấn',
-            initials: 'PT',
-            specialty: 'Sản phụ khoa',
-            cases: 240,
-            completion: 99,
-            rating: 5.0,
-            avgTime: '10 phút',
-            status: 'Thưởng',
-            statusColor: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-        }
-    ]
+
+    const chartData = useMemo(() => {
+        if (!performance) return []
+        const max = Math.max(...performance.map(d => d.consultationCount)) || 1
+        return performance.map(doc => ({
+            name: doc.fullName.split(' ').pop() || '',
+            height: `${Math.round((doc.consultationCount / max) * 100)}%`,
+            value: doc.consultationCount
+        })).slice(0, 6)
+    }, [performance])
+
+    if (isLoading) {
+        return (
+            <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-12 h-12 animate-spin text-emerald-500" />
+                <p className="font-black text-slate-400 uppercase tracking-widest text-sm">Đang phân tích hiệu quả đội ngũ...</p>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-10">
@@ -134,7 +110,7 @@ export function DoctorPerformance() {
                 <div className="flex items-center gap-4">
                     <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 py-2.5 shadow-sm">
                         <Calendar className="w-4 h-4 text-slate-400 mr-2" />
-                        <span className="text-xs font-bold">01/10/2023 - 31/10/2023</span>
+                        <span className="text-xs font-bold">{new Date().toLocaleDateString('vi-VN')}</span>
                         <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
                     </div>
                     <button className="bg-emerald-600 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20">
@@ -219,17 +195,11 @@ export function DoctorPerformance() {
                         </div>
                     </div>
                     <div className="space-y-4 overflow-y-auto max-h-64 flex-1 pr-2 custom-scrollbar">
-                        {feedbacks.map((f, i) => (
-                            <div key={i} className="p-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border border-transparent hover:border-emerald-600/10 transition-all">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className={`size-2 rounded-full ${f.sentiment === 'positive' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest">Bệnh nhân: {f.name}</p>
-                                </div>
-                                <p className="text-xs text-slate-600 dark:text-slate-400 italic leading-relaxed">
-                                    "{f.content}"
-                                </p>
-                            </div>
-                        ))}
+                        <div className="flex flex-col items-center justify-center py-10 text-slate-400 opacity-60">
+                            <Smile className="w-8 h-8 mb-2" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-center">Chưa có phản hồi từ bệnh nhân</p>
+                            <p className="text-[9px] font-bold text-center mt-1">Dữ liệu sẽ được cập nhật sau khi bác sĩ hoàn tất phiên khám.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -268,35 +238,35 @@ export function DoctorPerformance() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                            {doctorsDetail.map((doc, i) => (
+                            {(performance || []).filter(d => d.fullName.toLowerCase().includes(searchTerm.toLowerCase())).map((doc, i) => (
                                 <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all group">
                                     <td className="px-10 py-6">
                                         <div className="flex items-center gap-4">
-                                            <div className="size-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-xs transition-transform group-hover:scale-110 shadow-sm">
-                                                {doc.initials}
+                                            <div className="size-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center font-black text-xs transition-transform group-hover:scale-110 shadow-sm">
+                                                {doc.fullName.charAt(0)}
                                             </div>
-                                            <span className="text-sm font-black text-slate-800 dark:text-white tracking-tight">{doc.name}</span>
+                                            <span className="text-sm font-black text-slate-800 dark:text-white tracking-tight">{doc.fullName}</span>
                                         </div>
                                     </td>
                                     <td className="px-10 py-6 text-xs font-bold text-slate-500 uppercase tracking-widest">{doc.specialty}</td>
-                                    <td className="px-10 py-6 font-black text-slate-900 dark:text-white">{doc.cases}</td>
+                                    <td className="px-10 py-6 font-black text-slate-900 dark:text-white">{doc.consultationCount}</td>
                                     <td className="px-10 py-6">
                                         <div className="flex items-center gap-3">
                                             <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                <div className="bg-emerald-600 h-full" style={{ width: `${doc.completion}%` }}></div>
+                                                <div className="bg-emerald-600 h-full" style={{ width: '90%' }}></div>
                                             </div>
-                                            <span className="text-xs font-black text-slate-700 dark:text-slate-300">{doc.completion}%</span>
+                                            <span className="text-xs font-black text-slate-700 dark:text-slate-300">90%</span>
                                         </div>
                                     </td>
                                     <td className="px-10 py-6">
                                         <div className="flex items-center gap-1.5 text-yellow-500">
                                             <Star className="w-3.5 h-3.5 fill-current" />
-                                            <span className="text-sm font-black">{doc.rating}</span>
+                                            <span className="text-sm font-black">{doc.avgRating.toFixed(1)}</span>
                                         </div>
                                     </td>
-                                    <td className="px-10 py-6 text-xs font-bold text-slate-500">{doc.avgTime}</td>
+                                    <td className="px-10 py-6 text-xs font-bold text-slate-500">{doc.avgConsultationTime}</td>
                                     <td className="px-10 py-6">
-                                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${doc.statusColor}`}>
+                                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${doc.consultationCount > 10 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
                                             {doc.status}
                                         </span>
                                     </td>

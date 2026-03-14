@@ -1,4 +1,3 @@
-import { get, post, patch } from './client'
 import type {
   PagedResponse,
   AdminUserDto,
@@ -6,8 +5,10 @@ import type {
   UpdateUserRequest,
   SetPasswordRequest,
   RoleDto,
+  PermissionDto,
   AuditLogDto,
 } from '@/types/api'
+import { get, post, patch, put, del } from './client'
 
 export async function getAuditLogs(params: {
   tenantId?: string | null
@@ -55,6 +56,38 @@ export async function getRoles(): Promise<RoleDto[]> {
   return get<RoleDto[]>('/admin/roles')
 }
 
+export async function createRole(body: RoleDto): Promise<RoleDto> {
+  return post<RoleDto>('/admin/roles', body)
+}
+
+export async function updateRole(id: string, body: RoleDto): Promise<RoleDto> {
+  return put<RoleDto>(`/admin/roles/${id}`, body)
+}
+
+export async function deleteRole(id: string): Promise<void> {
+  return del<void>(`/admin/roles/${id}`)
+}
+
+export async function getPermissions(): Promise<PermissionDto[]> {
+  return get<PermissionDto[]>('/admin/permissions')
+}
+
 export async function getRevenueReport(branchId: string, from: string, to: string): Promise<any> {
-  return get<any>(`/admin/revenue-report?branchId=${branchId}&from=${from}&to=${to}`)
+    return get<any>(`/admin/revenue-report?branchId=${branchId}&from=${from}&to=${to}`)
+}
+
+export interface SystemSettingDto {
+    id: string
+    settingKey: string
+    settingValue: string
+    description: string
+    category: string
+}
+
+export async function getSystemSettings(): Promise<SystemSettingDto[]> {
+    return get<SystemSettingDto[]>('/admin/settings')
+}
+
+export async function updateSystemSetting(key: string, value: string): Promise<SystemSettingDto> {
+    return patch<SystemSettingDto>(`/admin/settings/${key}?value=${encodeURIComponent(value)}`)
 }

@@ -17,6 +17,10 @@ import vn.clinic.cdm.clinical.domain.Prescription;
 import vn.clinic.cdm.clinical.service.ClinicalService;
 import vn.clinic.cdm.clinical.service.DoctorPrescriptionService;
 
+import vn.clinic.cdm.common.service.PdfService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.io.ByteArrayInputStream;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,6 +42,7 @@ public class DoctorPrescriptionController {
 
     private final DoctorPrescriptionService doctorPrescriptionService;
     private final ClinicalService clinicalService;
+    private final PdfService pdfService;
 
     @GetMapping
     @Operation(summary = "Danh sách đơn thuốc điện tử do bác sĩ kê (phân trang)")
@@ -49,7 +54,7 @@ public class DoctorPrescriptionController {
 
         var data = PagedResponse.of(page,
                 page.getContent().stream()
-                        .map(clinicalService::mapPrescriptionToDto)
+                        .map(this::toDto)
                         .collect(Collectors.toList()));
 
         return ResponseEntity.ok(ApiResponse.success(data));
@@ -60,7 +65,7 @@ public class DoctorPrescriptionController {
     public ResponseEntity<ApiResponse<PrescriptionDto>> getPrescriptionById(@PathVariable UUID id) {
         UUID doctorUserId = AuthPrincipal.getCurrentUserId();
         Prescription p = doctorPrescriptionService.getPrescriptionById(id, doctorUserId);
-        return ResponseEntity.ok(ApiResponse.success(clinicalService.mapPrescriptionToDto(p)));
+        return ResponseEntity.ok(ApiResponse.success(toDto(p)));
     }
 
     @PostMapping
@@ -69,7 +74,7 @@ public class DoctorPrescriptionController {
             @jakarta.validation.Valid @RequestBody vn.clinic.cdm.api.dto.medication.CreatePrescriptionRequest request) {
         Prescription p = clinicalService.createPrescription(request);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
-                .body(ApiResponse.success(clinicalService.mapPrescriptionToDto(p)));
+                .body(ApiResponse.success(toDto(p)));
     }
 
     @PutMapping("/{id}")
@@ -81,7 +86,7 @@ public class DoctorPrescriptionController {
         UUID doctorUserId = AuthPrincipal.getCurrentUserId();
         Prescription updated = doctorPrescriptionService
                 .updatePrescription(id, doctorUserId, request.diagnosis, request.notes);
-        return ResponseEntity.ok(ApiResponse.success(clinicalService.mapPrescriptionToDto(updated)));
+        return ResponseEntity.ok(ApiResponse.success(toDto(updated)));
     }
 
     @PatchMapping("/{id}/status")
@@ -93,7 +98,29 @@ public class DoctorPrescriptionController {
         UUID doctorUserId = AuthPrincipal.getCurrentUserId();
         Prescription.PrescriptionStatus newStatus = Prescription.PrescriptionStatus.valueOf(status.toUpperCase());
         Prescription updated = doctorPrescriptionService.updatePrescriptionStatus(id, doctorUserId, newStatus);
-        return ResponseEntity.ok(ApiResponse.success(clinicalService.mapPrescriptionToDto(updated)));
+        return ResponseEntity.ok(ApiResponse.success(toDto(updated)));
+    }
+
+    @GetMapping("/{id}/export-pdf")
+    @Operation(summary = "Xuất đơn thuốc (PDF)")
+    public ResponseEntity<byte[]> exportPrescriptionPdf(@PathVariable UUID id) {
+        UUID doctorUserId = AuthPrincipal.getCurrentUserId();
+        Prescription p = doctorPrescriptionService.getPrescriptionById(id, doctorUserId);
+        PrescriptionDto dto = toDto(p);
+
+        ByteArrayInputStream bis = pdfService.generatePrescriptionPdf(dto);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=prescription_" + id.toString().substring(0, 8) + ".pdf");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bis.readAllBytes());
+    }
+
+    private PrescriptionDto toDto(Prescription p) {
+        return clinicalService.mapPrescriptionToDto(p);
     }
 
     // ─── Inner Request DTO ───────────────────────

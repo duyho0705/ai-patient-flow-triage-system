@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getPortalDashboard, logPortalVital, getPortalVitalTrends } from '@/api/portal'
+import { getPortalDashboard, logPortalVital, getPortalVitalTrends, logPortalVitalWithImage } from '@/api/portal'
+import { ChronicDiseaseService } from '@/services/ChronicDiseaseService'
 import { useTenant } from '@/context/TenantContext'
 import {
     Activity,
@@ -16,8 +17,11 @@ import {
     Loader2,
     X,
     Save,
+    Camera,
     TrendingUp,
     TrendingDown,
+    AlertTriangle,
+    PhoneCall
 } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
@@ -60,6 +64,14 @@ const TIME_FILTERS = [
     { label: 'Năm', days: 365 },
 ]
 
+const DANGER_THRESHOLDS: Record<string, { min: number, max: number, message: string }> = {
+    BLOOD_GLUCOSE: { min: 3.5, max: 15.0, message: "Chỉ số đường huyết có dấu hiệu bất thường nghiêm trọng. Vui lòng nghỉ ngơi và liên hệ bác sĩ nếu cảm thấy mệt mỏi." },
+    BLOOD_PRESSURE_SYS: { min: 80, max: 180, message: "Huyết áp tâm thu đang ở mức nguy hiểm. Vui lòng ngồi nghỉ và theo dõi thêm, liên hệ cấp cứu nếu có triệu chứng đau ngực, khó thở." },
+    BLOOD_PRESSURE_DIA: { min: 50, max: 110, message: "Huyết áp tâm trương bất thường. Hãy duy trì trạng thái nghỉ ngơi." },
+    HEART_RATE: { min: 40, max: 120, message: "Nhịp tim đập nhanh/chậm bất thường. Hãy thả lỏng cơ thể và hít thở sâu." },
+    SPO2: { min: 90, max: 100, message: "Nồng độ Oxy trong máu đang ở mức cảnh báo. Nếu cảm thấy khó thở, hãy sử dụng bình oxy hoặc liên hệ y tế ngay." },
+}
+
 function getVitalStatus(type: string, value: number): { label: string; className: string } {
     const config = VITAL_CONFIG[type]
     if (!config) return { label: 'N/A', className: 'bg-slate-100 text-slate-500' }
@@ -88,6 +100,9 @@ export default function PatientVitals() {
     const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0])
     const [inputTime, setInputTime] = useState(new Date().toTimeString().slice(0, 5))
     const [inputNotes, setInputNotes] = useState('')
+    const [inputImage, setInputImage] = useState<File | null>(null)
+    const [imagePreview, setImagePreview] = useState<string | null>(null)
+    const [criticalAlert, setCriticalAlert] = useState<{ type: string, value: number, message: string } | null>(null)
 
     const { data: dashboard, isLoading } = useQuery({
         queryKey: ['portal-dashboard'],
@@ -110,7 +125,17 @@ export default function PatientVitals() {
     })
 
     const logMutation = useMutation({
-        mutationFn: (data: any) => logPortalVital(data, headers),
+        mutationFn: (data: any) => {
+            if (inputImage) {
+                return logPortalVitalWithImage({
+                    vitalType: data.vitalType,
+                    valueNumeric: data.valueNumeric,
+                    unit: data.unit,
+                    notes: data.notes
+                }, inputImage, headers)
+            }
+            return logPortalVital(data, headers)
+        },
         onSuccess: () => {
             toast.success('Đã lưu chỉ số thành công!')
             queryClient.invalidateQueries({ queryKey: ['portal-dashboard'] })
@@ -118,6 +143,8 @@ export default function PatientVitals() {
             setShowInputModal(false)
             setInputValue('')
             setInputNotes('')
+            setInputImage(null)
+            setImagePreview(null)
         },
         onError: () => toast.error('Có lỗi xảy ra.')
     })
@@ -125,16 +152,31 @@ export default function PatientVitals() {
     const handleSubmitVital = async () => {
         const recordedAt = new Date(`${inputDate}T${inputTime}`).toISOString()
 
+        const checkThreshold = (type: string, val: number) => {
+            const threshold = DANGER_THRESHOLDS[type]
+            if (threshold && (val < threshold.min || val > threshold.max)) {
+                setCriticalAlert({ type, value: val, message: threshold.message })
+                return true
+            }
+            return false
+        }
+
         if (inputType === 'BLOOD_PRESSURE') {
             if (!inputSysValue || !inputDiaValue) {
                 toast.error('Vui lòng nhập đầy đủ Huyết áp Tâm thu và Tâm trương')
                 return
             }
 
+            const sys = parseFloat(inputSysValue)
+            const dia = parseFloat(inputDiaValue)
+
+            checkThreshold('BLOOD_PRESSURE_SYS', sys)
+            checkThreshold('BLOOD_PRESSURE_DIA', dia)
+
             // Log Sys
             await logMutation.mutateAsync({
                 vitalType: 'BLOOD_PRESSURE_SYS',
-                valueNumeric: parseFloat(inputSysValue),
+                valueNumeric: sys,
                 unit: 'mmHg',
                 notes: inputNotes || undefined,
                 recordedAt
@@ -143,7 +185,7 @@ export default function PatientVitals() {
             // Log Dia
             await logMutation.mutateAsync({
                 vitalType: 'BLOOD_PRESSURE_DIA',
-                valueNumeric: parseFloat(inputDiaValue),
+                valueNumeric: dia,
                 unit: 'mmHg',
                 notes: inputNotes || undefined,
                 recordedAt
@@ -154,10 +196,13 @@ export default function PatientVitals() {
                 return
             }
 
+            const val = parseFloat(inputValue)
+            checkThreshold(inputType, val)
+
             const config = VITAL_CONFIG[inputType]
             await logMutation.mutateAsync({
                 vitalType: inputType as VitalType,
-                valueNumeric: parseFloat(inputValue),
+                valueNumeric: val,
                 unit: config?.unit || '',
                 notes: inputNotes || undefined,
                 recordedAt
@@ -471,6 +516,11 @@ export default function PatientVitals() {
                                             ⚠️ {alert}
                                         </p>
                                     ))}
+                                    {ChronicDiseaseService.checkConsecutiveAbnormalVitals(dashboard?.vitalHistory || [], VITAL_CONFIG) && (
+                                        <p className="text-sm text-rose-500 font-black leading-relaxed pt-2 border-t border-slate-100 dark:border-slate-800">
+                                            🚨 Cảnh báo: Bạn có chỉ số bất thường liên tiếp trong 3 ngày qua. Khuyến nghị liên hệ bác sĩ ngay để được tư vấn.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         ) : (
@@ -478,9 +528,15 @@ export default function PatientVitals() {
                                 <div className="absolute top-4 right-4 text-[#4ade80]/10 scale-150">
                                     <Activity className="w-16 h-16" />
                                 </div>
-                                <p className="text-sm text-slate-600 dark:text-slate-300 italic font-medium leading-relaxed relative z-10">
-                                    "Các chỉ số sức khỏe của bạn đang ổn định. Tiếp tục duy trì lối sống lành mạnh nhé!"
-                                </p>
+                                {ChronicDiseaseService.checkConsecutiveAbnormalVitals(dashboard?.vitalHistory || [], VITAL_CONFIG) ? (
+                                    <p className="text-sm text-rose-500 font-black leading-relaxed relative z-10">
+                                        🚨 Hệ thống ghi nhận các chỉ số bất thường liên tiếp trong 3 ngày. Vui lòng liên hệ bác sĩ điều trị của bạn sớm nhất có thể.
+                                    </p>
+                                ) : (
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 italic font-medium leading-relaxed relative z-10">
+                                        "Các chỉ số sức khỏe của bạn đang ổn định. Tiếp tục duy trì lối sống lành mạnh nhé!"
+                                    </p>
+                                )}
                             </div>
                         )}
 
@@ -846,6 +902,47 @@ export default function PatientVitals() {
                                                 rows={3}
                                             />
                                         </div>
+
+                                        {/* Image Upload */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Ảnh minh chứng (Ví dụ: ảnh máy đo)</label>
+                                            <div className="flex items-center gap-4">
+                                                {imagePreview ? (
+                                                    <div className="relative size-24 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                                                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                                        <button
+                                                            onClick={() => {
+                                                                setInputImage(null)
+                                                                setImagePreview(null)
+                                                            }}
+                                                            className="absolute top-1 right-1 p-1 bg-rose-500 text-white rounded-full shadow-lg"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <label className="flex flex-col items-center justify-center size-24 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#4ade80] transition-all cursor-pointer bg-slate-50 dark:bg-slate-800 group">
+                                                        <Camera className="w-6 h-6 text-slate-400 group-hover:text-[#4ade80]" />
+                                                        <span className="text-[10px] font-bold text-slate-400 mt-1">Upload</span>
+                                                        <input
+                                                            type="file"
+                                                            className="hidden"
+                                                            accept="image/*"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0]
+                                                                if (file) {
+                                                                    setInputImage(file)
+                                                                    setImagePreview(URL.createObjectURL(file))
+                                                                }
+                                                            }}
+                                                        />
+                                                    </label>
+                                                )}
+                                                <div className="flex-1">
+                                                    <p className="text-xs text-slate-400 font-medium">Đính kèm ảnh kết quả đo từ thiết bị để bác sĩ dễ dàng đối chiếu và chẩn đoán chính xác hơn.</p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {/* Modal Footer */}
@@ -879,6 +976,64 @@ export default function PatientVitals() {
                 document.body
             )}
 
-        </div >
+            {/* Critical Alert Modal */}
+            <AnimatePresence>
+                {criticalAlert && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                            onClick={() => setCriticalAlert(null)}
+                        />
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-white dark:bg-slate-900 rounded-[2rem] w-full max-w-md p-8 shadow-2xl relative z-10 border-4 border-rose-500/20"
+                        >
+                            <div className="flex flex-col items-center text-center space-y-6">
+                                <div className="size-20 bg-rose-100 dark:bg-rose-500/20 text-rose-500 rounded-full flex items-center justify-center animate-bounce">
+                                    <AlertTriangle className="size-10" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Cảnh báo Nguy cơ</h3>
+                                    <p className="text-rose-500 font-black text-lg mt-1">
+                                        {VITAL_CONFIG[criticalAlert.type === 'BLOOD_PRESSURE_SYS' || criticalAlert.type === 'BLOOD_PRESSURE_DIA' ? 'BLOOD_PRESSURE' : criticalAlert.type]?.label}: {criticalAlert.value} {VITAL_CONFIG[criticalAlert.type === 'BLOOD_PRESSURE_SYS' || criticalAlert.type === 'BLOOD_PRESSURE_DIA' ? 'BLOOD_PRESSURE' : criticalAlert.type]?.unit}
+                                    </p>
+                                </div>
+                                
+                                <div className="bg-rose-50 dark:bg-rose-500/5 p-4 rounded-2xl border border-rose-100 dark:border-rose-500/20">
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300 leading-relaxed">
+                                        {criticalAlert.message}
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col w-full gap-3">
+                                    <button 
+                                        onClick={() => window.open('tel:115')}
+                                        className="w-full flex items-center justify-center gap-3 bg-rose-500 text-white py-4 rounded-2xl font-black shadow-lg shadow-rose-500/30 hover:bg-rose-600 transition-all uppercase tracking-widest text-sm"
+                                    >
+                                        <PhoneCall className="size-5" />
+                                        Gọi cấp cứu (115)
+                                    </button>
+                                    <button 
+                                        onClick={() => setCriticalAlert(null)}
+                                        className="w-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all text-sm"
+                                    >
+                                        Tôi đã hiểu và đang nghỉ ngơi
+                                    </button>
+                                </div>
+
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                    Hệ thống đã tự động gửi thông báo khẩn cấp tới bác sĩ điều trị của bạn
+                                </p>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
     )
 }

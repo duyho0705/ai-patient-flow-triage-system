@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PrescriptionModal } from '@/components/modals/PrescriptionModal'
 import { AppointmentModal } from '@/components/modals/AppointmentModal'
+import { PatientAddModal } from '@/components/modals/PatientAddModal'
 import { Loader2, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTenant } from '@/context/TenantContext'
 import { useQuery } from '@tanstack/react-query'
@@ -16,14 +17,26 @@ export function PatientList() {
     const [selectedDisease, setSelectedDisease] = useState('Tất cả loại bệnh')
     const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false)
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false)
+    const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false)
     const [selectedPatientName, setSelectedPatientName] = useState('')
+    const [selectedPatientId, setSelectedPatientId] = useState('')
     const [currentPage, setCurrentPage] = useState(0)
+    const [searchText, setSearchText] = useState('')
     const pageSize = 10
 
-    // ─── Fetch Real Data ───
+    // ─── Map UI labels to backend values ───
+    const riskLabelToBackend: Record<string, string> = {
+        'Nguy cơ cao': 'HIGH',
+        'Cần theo dõi': 'MEDIUM',
+        'Bình thường': 'LOW'
+    }
+    const backendRiskLevel = selectedRisk ? riskLabelToBackend[selectedRisk] || undefined : undefined
+    const backendChronicCondition = selectedDisease !== 'Tất cả loại bệnh' ? selectedDisease : undefined
+
+    // ─── Fetch Real Data (server-side search + filter) ───
     const { data: patientPage, isLoading } = useQuery({
-        queryKey: ['doctor-patient-list', tenantId, currentPage, pageSize],
-        queryFn: () => getDoctorPatientList(headers, currentPage, pageSize),
+        queryKey: ['doctor-patient-list', tenantId, currentPage, pageSize, searchText, backendRiskLevel, backendChronicCondition],
+        queryFn: () => getDoctorPatientList(headers, currentPage, pageSize, searchText || undefined, backendRiskLevel, backendChronicCondition),
         enabled: !!tenantId
     })
 
@@ -70,53 +83,66 @@ export function PatientList() {
         return pages
     }
 
-    // ─── Mock Data Helpers for UI Template ───
-    const getMockDisease = (id?: string) => {
-        if (!id) return 'Tiểu đường';
-        const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const diseases = ['Tiểu đường, Cao huyết áp', 'Tim mạch', 'Bệnh thận', 'Tiểu đường', 'Phổi tắc nghẽn'];
-        return diseases[hash % diseases.length];
+    // ─── Real Data Mappers (for display) ───
+    const getRiskStatus = (riskLevel?: string) => {
+        switch (riskLevel?.toUpperCase()) {
+            case 'HIGH':
+            case 'CRITICAL':
+                return { label: 'Nguy cơ cao', classes: 'bg-red-100 text-red-600' };
+            case 'MEDIUM':
+                return { label: 'Cần theo dõi', classes: 'bg-orange-100 text-orange-500' };
+            default:
+                return { label: 'Bình thường', classes: 'bg-emerald-100 text-emerald-600' };
+        }
     }
-    const getMockStatus = (id?: string) => {
-        if (!id) return { label: 'Bình thường', classes: 'bg-emerald-100 text-emerald-600' };
-        const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        if (hash % 3 === 0) return { label: 'Nguy cơ cao', classes: 'bg-red-100 text-red-600' };
-        if (hash % 3 === 1) return { label: 'Cần theo dõi', classes: 'bg-orange-100 text-orange-500' };
-        return { label: 'Bình thường', classes: 'bg-emerald-100 text-emerald-600' };
+
+    const getDisease = (chronicConditions?: string) => {
+        return chronicConditions || '–';
     }
-    const getMockMetric = (id?: string) => {
-        if (!id) return { title: 'Nhịp tim: 75 bpm', trend: 'Ổn định', trendUp: false, colorClass: 'text-emerald-500' };
-        const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        if (hash % 3 === 0) return { title: 'Đường huyết: 8.5 mmol/L', trend: 'Tăng 0.5 so với hôm qua', trendUp: true, colorClass: 'text-red-500' };
-        if (hash % 3 === 1) return { title: 'Huyết áp: 140/90 mmHg', trend: 'Tăng nhẹ', trendUp: true, colorClass: 'text-orange-500' };
-        return { title: 'Nhịp tim: 75 bpm', trend: 'Ổn định', trendUp: false, colorClass: 'text-emerald-500' };
+
+    // Reset page when filter changes
+    const handleRiskFilter = (risk: string) => {
+        setSelectedRisk(selectedRisk === risk ? null : risk)
+        setCurrentPage(0)
+    }
+    const handleDiseaseFilter = (disease: string) => {
+        setSelectedDisease(disease)
+        setCurrentPage(0)
     }
 
     return (
         <div className="font-display bg-background-light dark:bg-background-dark p-8 flex-1 overflow-y-auto">
-            <div className="mb-8">
-                <h2 className="text-3xl font-black tracking-tight mb-2 text-slate-900 dark:text-white">Danh sách bệnh nhân</h2>
-                <p className="text-slate-500 dark:text-slate-400">Quản lý và theo dõi chỉ số sức khỏe của bệnh nhân theo thời gian thực.</p>
-            </div>
 
             {/* Filters Section */}
             <div className="flex flex-wrap items-center gap-3 mb-6">
+                {/* Search */}
+                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 h-[40px]">
+                    <span className="material-symbols-outlined text-slate-400 text-lg">search</span>
+                    <input
+                        type="text"
+                        placeholder="Tìm theo tên bệnh nhân..."
+                        value={searchText}
+                        onChange={(e) => { setSearchText(e.target.value); setCurrentPage(0); }}
+                        className="bg-transparent border-none text-sm text-slate-800 focus:ring-0 outline-none w-[200px] placeholder:text-slate-400"
+                    />
+                </div>
+
                 <div className="flex items-center gap-1.5 bg-white p-1 rounded-full border border-slate-200">
                     <span className="pl-3 pr-1 text-xs font-medium text-slate-400">MỨC ĐỘ NGUY CƠ:</span>
                     <button
-                        onClick={() => setSelectedRisk(selectedRisk === 'Nguy cơ cao' ? null : 'Nguy cơ cao')}
+                        onClick={() => handleRiskFilter('Nguy cơ cao')}
                         className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-colors ${selectedRisk === 'Nguy cơ cao' ? 'bg-red-500 text-white shadow-sm' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
                     >
                         Nguy cơ cao
                     </button>
                     <button
-                        onClick={() => setSelectedRisk(selectedRisk === 'Cần theo dõi' ? null : 'Cần theo dõi')}
+                        onClick={() => handleRiskFilter('Cần theo dõi')}
                         className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-colors ${selectedRisk === 'Cần theo dõi' ? 'bg-orange-500 text-white shadow-sm' : 'bg-orange-100 text-orange-500 hover:bg-orange-200'}`}
                     >
                         Cần theo dõi
                     </button>
                     <button
-                        onClick={() => setSelectedRisk(selectedRisk === 'Bình thường' ? null : 'Bình thường')}
+                        onClick={() => handleRiskFilter('Bình thường')}
                         className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-colors ${selectedRisk === 'Bình thường' ? 'bg-[#22c55e] text-white shadow-sm' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'}`}
                     >
                         Bình thường
@@ -127,7 +153,7 @@ export function PatientList() {
                     <span className="text-xs font-medium text-slate-400">LOẠI BỆNH:</span>
                     <select
                         value={selectedDisease}
-                        onChange={(e) => setSelectedDisease(e.target.value)}
+                        onChange={(e) => handleDiseaseFilter(e.target.value)}
                         className="bg-transparent border-none text-sm font-semibold text-slate-800 focus:ring-0 py-0 pl-1 pr-6 cursor-pointer outline-none w-[160px]"
                     >
                         <option>Tất cả loại bệnh</option>
@@ -137,13 +163,16 @@ export function PatientList() {
                     </select>
                 </div>
 
-                <button className="ml-auto flex items-center gap-2 px-6 py-2 bg-[#4ade80] text-white font-semibold rounded-full hover:bg-green-500 transition-colors h-[40px] shadow-sm">
+                <button 
+                    onClick={() => setIsAddPatientModalOpen(true)}
+                    className="ml-auto flex items-center gap-2 px-6 py-2 bg-[#4ade80] text-white font-semibold rounded-full hover:bg-green-500 transition-colors h-[40px] shadow-sm"
+                >
                     <span className="material-symbols-outlined text-xl">person_add</span>
                     <span className="text-sm">Thêm bệnh nhân</span>
                 </button>
             </div>
 
-            {/* Loading State */}
+            {/* Loading & Empty States */}
             {isLoading ? (
                 <div className="h-[40vh] flex flex-col items-center justify-center gap-4 text-slate-400">
                     <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
@@ -154,6 +183,11 @@ export function PatientList() {
                     <Users className="w-12 h-12 opacity-20" />
                     <p className="font-bold text-sm">Chưa có bệnh nhân nào</p>
                 </div>
+            ) : patients.length === 0 && (searchText || selectedRisk || selectedDisease !== 'Tất cả loại bệnh') ? (
+                <div className="h-[40vh] flex flex-col items-center justify-center gap-4 text-slate-400">
+                    <Users className="w-12 h-12 opacity-20" />
+                    <p className="font-bold text-sm">Không tìm thấy bệnh nhân nào phù hợp với bộ lọc</p>
+                </div>
             ) : (
                 /* Patient Table */
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
@@ -163,16 +197,15 @@ export function PatientList() {
                                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Bệnh nhân</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Loại bệnh</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Chỉ số gần nhất</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Liên hệ</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Trạng thái</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Cập nhật</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {patients.map((patient, idx) => {
-                                    const mockStatus = getMockStatus(patient.id);
-                                    const mockMetric = getMockMetric(patient.id);
+                                {patients.map((patient: PatientDto, idx: number) => {
+                                        const riskStatus = getRiskStatus(patient.riskLevel);
 
                                     return (
                                         <motion.tr
@@ -201,20 +234,19 @@ export function PatientList() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 border-b border-slate-100">
-                                                <div className="font-medium text-slate-700 dark:text-slate-300">{getMockDisease(patient.id)}</div>
+                                                <div className="font-medium text-slate-700 dark:text-slate-300">{getDisease(patient.chronicConditions)}</div>
                                             </td>
                                             <td className="px-6 py-4 border-b border-slate-100">
-                                                <div className="font-bold text-slate-800 dark:text-slate-200">{mockMetric.title}</div>
-                                                <div className={`text-xs ${mockMetric.colorClass} flex items-center`}>
-                                                    <span className="material-symbols-outlined text-[14px]">
-                                                        {mockMetric.trendUp ? 'trending_up' : 'trending_flat'}
-                                                    </span>
-                                                    {mockMetric.trend}
+                                                <div className="font-bold text-slate-800 dark:text-slate-200">
+                                                    {patient.phone || '–'}
+                                                </div>
+                                                <div className="text-xs text-slate-400">
+                                                    {patient.gender === 'male' ? 'Nam' : patient.gender === 'female' ? 'Nữ' : patient.gender || '–'}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 border-b border-slate-100">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${mockStatus.classes}`}>
-                                                    {mockStatus.label}
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${riskStatus.classes}`}>
+                                                    {riskStatus.label}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 border-b border-slate-100">
@@ -234,6 +266,7 @@ export function PatientList() {
                                                         title="Đặt lịch tái khám"
                                                         onClick={() => {
                                                             setSelectedPatientName(patient.fullNameVi || '')
+                                                            setSelectedPatientId(patient.id || '')
                                                             setIsAppointmentModalOpen(true)
                                                         }}
                                                     >
@@ -251,6 +284,7 @@ export function PatientList() {
                                                         title="Kê đơn thuốc điện tử"
                                                         onClick={() => {
                                                             setSelectedPatientName(patient.fullNameVi || '')
+                                                            setSelectedPatientId(patient.id || '')
                                                             setIsPrescriptionModalOpen(true)
                                                         }}
                                                     >
@@ -310,12 +344,19 @@ export function PatientList() {
                 isOpen={isPrescriptionModalOpen}
                 onClose={() => setIsPrescriptionModalOpen(false)}
                 patientName={selectedPatientName}
+                patientId={selectedPatientId}
             />
 
             <AppointmentModal
                 isOpen={isAppointmentModalOpen}
                 onClose={() => setIsAppointmentModalOpen(false)}
                 patientName={selectedPatientName}
+                patientId={selectedPatientId}
+            />
+
+            <PatientAddModal 
+                isOpen={isAddPatientModalOpen}
+                onClose={() => setIsAddPatientModalOpen(false)}
             />
         </div>
     )

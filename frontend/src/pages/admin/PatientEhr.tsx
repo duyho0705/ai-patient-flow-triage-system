@@ -3,10 +3,14 @@ import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { PrescriptionModal } from '@/components/modals/PrescriptionModal'
 import { AppointmentModal } from '@/components/modals/AppointmentModal'
+import { AdviceModal } from '@/components/modals/AdviceModal'
 import { ThresholdModal } from '@/components/modals/ThresholdModal'
 import { useTenant } from '@/context/TenantContext'
-import { getPatientFullProfile, getPatientClinicalSummary } from '@/api/doctor'
+import { getPatientFullProfile, getPatientClinicalSummary, getPatientMedicalHistory, exportPatientReportPdf } from '@/api/doctor'
 import { getPatientHealthMetrics, getPatientHealthTrends, METRIC_TYPE_UNITS } from '@/api/doctorHealth'
+import { toastService } from '@/services/toast'
+import { format } from 'date-fns'
+import { vi } from 'date-fns/locale'
 import { Loader2 } from 'lucide-react'
 import {
     LineChart,
@@ -25,8 +29,10 @@ export function PatientEhr() {
 
     const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false)
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false)
+    const [isAdviceModalOpen, setIsAdviceModalOpen] = useState(false)
     const [isThresholdModalOpen, setIsThresholdModalOpen] = useState(false)
     const [chartDays, setChartDays] = useState(30)
+    const [isExporting, setIsExporting] = useState(false)
 
     // ─── Lấy Thông tin bệnh nhân ───
     const { data: profile, isLoading: loadingProfile } = useQuery({
@@ -62,6 +68,24 @@ export function PatientEhr() {
         enabled: !!patientId && !!tenantId
     })
 
+    const { data: hrTrends } = useQuery({
+        queryKey: ['patient-trends', 'HEART_RATE', chartDays, tenantId, patientId],
+        queryFn: () => getPatientHealthTrends(patientId!, 'HEART_RATE', headers, chartDays),
+        enabled: !!patientId && !!tenantId
+    })
+
+    const { data: history } = useQuery({
+        queryKey: ['patient-history', tenantId, patientId],
+        queryFn: () => getPatientMedicalHistory(patientId!, headers),
+        enabled: !!patientId && !!tenantId
+    })
+
+    const latestPrescription = useMemo(() => {
+        // Find the first consultation that has prescription notes or find via dedicated prescription API
+        // For now, let's just use the first consultation's prescription if we had detailed history
+        return history?.content?.find(c => c.prescriptionNotes)?.prescriptionNotes;
+    }, [history])
+
     // ─── Helper: Chỉ số hiển thị trên thẻ (Vitals) ───
     const getMetricValue = (type: string) => {
         const met = (metrics || []).filter(m => m.metricType === type).sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())[0]
@@ -96,6 +120,12 @@ export function PatientEhr() {
             map.get(date)!.glu = t.value
         })
 
+        hrTrends?.forEach(t => {
+            const date = formatDate(t.recordedAt)
+            if (!map.has(date)) map.set(date, { date, sortTime: new Date(t.recordedAt).getTime() })
+            map.get(date)!.hr = t.value
+        })
+
         // Sort theo thời gian
         return Array.from(map.values()).sort((a, b) => a.sortTime - b.sortTime)
     }, [sysTrends, gluTrends])
@@ -105,6 +135,27 @@ export function PatientEhr() {
         if (!dob) return '--'
         const diff = Date.now() - new Date(dob).getTime()
         return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000))
+    }
+
+    const handleExportPdf = async () => {
+        if (!patientId) return
+        try {
+            setIsExporting(true)
+            const blob = await exportPatientReportPdf(patientId, headers)
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `Bao_cao_CDM_${profile?.fullNameVi || 'BN'}_${format(new Date(), 'ddMMyyyy')}.pdf`
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            toastService.success('Xuất báo cáo PDF thành công')
+        } catch (error) {
+            console.error(error)
+            toastService.error('Không thể xuất báo cáo PDF')
+        } finally {
+            setIsExporting(false)
+        }
     }
 
     if (loadingProfile) {
@@ -140,6 +191,18 @@ export function PatientEhr() {
                         >
                             <span className="material-symbols-outlined text-lg">settings</span>
                             Thiết lập ngưỡng cảnh báo
+                        </button>
+                        <button
+                            onClick={handleExportPdf}
+                            disabled={isExporting}
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 text-sm font-bold transition-all disabled:opacity-50"
+                        >
+                            {isExporting ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
+                            )}
+                            {isExporting ? 'Đang xuất...' : 'Xuất báo cáo PDF'}
                         </button>
                         <button
                             onClick={() => setIsPrescriptionModalOpen(true)}
@@ -184,7 +247,11 @@ export function PatientEhr() {
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs text-slate-400 uppercase font-extrabold">Dị ứng</p>
-                                    <p className="text-sm font-bold text-red-500">Chưa ghi nhận</p>
+                                    <p className="text-sm font-bold text-red-500">{profile?.allergies || 'Chưa ghi nhận'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-slate-400 uppercase font-extrabold">Nhóm máu</p>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{profile?.bloodType || '–'}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs text-slate-400 uppercase font-extrabold">Dân tộc</p>
@@ -223,6 +290,17 @@ export function PatientEhr() {
                                 <span className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-xl">forum</span>
                                     Gửi tin nhắn tư vấn
+                                </span>
+                                <span className="material-symbols-outlined text-slate-300 text-lg">chevron_right</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsAdviceModalOpen(true)}
+                                className="w-full flex items-center justify-between px-4 py-2.5 bg-white dark:bg-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:shadow-md transition-all active:scale-[0.98]"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary text-xl">notification_important</span>
+                                    Gửi lời khuyên/Cảnh báo
                                 </span>
                                 <span className="material-symbols-outlined text-slate-300 text-lg">chevron_right</span>
                             </button>
@@ -338,6 +416,16 @@ export function PatientEhr() {
                                                 dot={{ fill: '#4ade80', strokeWidth: 2, r: 4, stroke: '#fff' }}
                                                 activeDot={{ r: 6, strokeWidth: 0, fill: '#4ade80' }}
                                             />
+                                            <Line
+                                                name="Nhịp tim"
+                                                type="monotone"
+                                                dataKey="hr"
+                                                stroke="#3b82f6"
+                                                strokeWidth={2}
+                                                strokeDasharray="5 5"
+                                                dot={{ fill: '#3b82f6', strokeWidth: 2, r: 3, stroke: '#fff' }}
+                                                activeDot={{ r: 5, strokeWidth: 0, fill: '#3b82f6' }}
+                                            />
                                         </LineChart>
                                     </ResponsiveContainer>
                                 ) : (
@@ -355,6 +443,10 @@ export function PatientEhr() {
                                     <span className="size-3 rounded-full bg-primary"></span>
                                     <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Đường huyết</span>
                                 </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="size-3 rounded-full bg-blue-500"></span>
+                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Nhịp tim</span>
+                                </div>
                             </div>
                         </div>
 
@@ -365,22 +457,72 @@ export function PatientEhr() {
                                 <TimelineItem
                                     date="Hôm nay"
                                     tag="Lâm sàng"
-                                    title="Tóm tắt sức khỏe mới nhất"
+                                    title="Tóm tắt sức khỏe mới nhất (AI)"
                                     content={clinicalSummary || 'Chưa có phân tích lâm sàng từ hệ thống AI.'}
                                     isActive={true}
                                 />
-                                <TimelineItem
-                                    date="05 Tháng 09, 2023"
-                                    tag="Khám định kỳ"
-                                    title="Kiểm tra huyết áp & Đo điện tâm đồ"
-                                    content="Bệnh nhân có phản ứng tốt với phác đồ hiện tại. Chỉ số nhịp tim ổn định."
-                                    diagnosis="Tăng huyết áp vô căn (nguyên phát)"
-                                    isActive={false}
-                                />
+                                {history?.content?.map((item) => (
+                                    <TimelineItem
+                                        key={item.id}
+                                        date={item.startedAt ? format(new Date(item.startedAt), 'dd/MM/yyyy HH:mm', { locale: vi }) : '–'}
+                                        tag={item.status === 'COMPLETED' ? 'Đã khám' : 'Đang khám'}
+                                        title={item.diagnosisNotes || 'Phiên khám định kỳ'}
+                                        content={item.prescriptionNotes || 'Không có ghi chú đơn thuốc.'}
+                                        diagnosis={item.diagnosisNotes}
+                                        isActive={false}
+                                    />
+                                ))}
                             </div>
-                            <button className="w-full mt-8 py-3 text-sm font-bold text-primary hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/30">
-                                Xem tất cả lịch sử
-                            </button>
+                            {(!history?.content || history.content.length === 0) && !clinicalSummary && (
+                                <p className="text-center text-slate-400 py-8 text-sm font-bold italic">Chưa có lịch sử khám bệnh nào.</p>
+                            )}
+                        </div>
+
+                        {/* Detailed Metrics Comparison Table */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">So sánh chỉ số chi tiết</h3>
+                                    <p className="text-sm text-slate-500 font-semibold">Bảng đối chiếu các thông số lâm sàng qua từng mốc thời gian</p>
+                                </div>
+                                <button className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-primary hover:bg-primary/20 transition-all">
+                                    <span className="material-symbols-outlined">filter_list</span>
+                                </button>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-slate-100 dark:border-slate-800">
+                                            <th className="py-3 px-4 text-[10px] font-black uppercase text-slate-400">Ngày đo</th>
+                                            <th className="py-3 px-4 text-[10px] font-black uppercase text-slate-400">Huyết áp (SYS)</th>
+                                            <th className="py-3 px-4 text-[10px] font-black uppercase text-slate-400">Đường huyết</th>
+                                            <th className="py-3 px-4 text-[10px] font-black uppercase text-slate-400">Nhịp tim</th>
+                                            <th className="py-3 px-4 text-[10px] font-black uppercase text-slate-400">SpO2</th>
+                                            <th className="py-3 px-4 text-[10px] font-black uppercase text-slate-400">Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                                        {chartData.length > 0 ? (
+                                            [...chartData].reverse().slice(0, 5).map((row, i) => (
+                                                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                    <td className="py-4 px-4 text-xs font-bold text-slate-900 dark:text-white">{row.date}</td>
+                                                    <td className="py-4 px-4 text-xs font-black text-red-500">{row.sys || '--'} <span className="text-[10px] font-bold text-slate-400">mmHg</span></td>
+                                                    <td className="py-4 px-4 text-xs font-black text-emerald-500">{row.glu || '--'} <span className="text-[10px] font-bold text-slate-400">mg/dL</span></td>
+                                                    <td className="py-4 px-4 text-xs font-black text-blue-500">{row.hr || '--'} <span className="text-[10px] font-bold text-slate-400">bpm</span></td>
+                                                    <td className="py-4 px-4 text-xs font-black text-slate-700 dark:text-slate-300">--</td>
+                                                    <td className="py-4 px-4">
+                                                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded uppercase">Ổn định</span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={6} className="py-8 text-center text-slate-400 text-xs italic font-bold">Chưa có dữ liệu so sánh</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -389,24 +531,21 @@ export function PatientEhr() {
                         {/* Current Medications */}
                         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Đơn thuốc hiện tại</h3>
+                                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Ghi chú lâm sàng gần nhất</h3>
                                 <span className="size-8 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400">
                                     <span className="material-symbols-outlined text-xl">pill</span>
                                 </span>
                             </div>
                             <div className="space-y-4">
-                                <MedicationItem
-                                    name="Amlodipine 5mg"
-                                    instruction="Uống 1 viên vào buổi sáng sau ăn"
-                                    status="ĐANG DÙNG"
-                                    daysLeft={12}
-                                />
-                                <MedicationItem
-                                    name="Metformin 500mg"
-                                    instruction="Uống 2 viên chia 2 lần (Sáng/Chiều)"
-                                    status="ĐANG DÙNG"
-                                    daysLeft={5}
-                                />
+                                {latestPrescription ? (
+                                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">
+                                            {latestPrescription}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-400 italic">Chưa có đơn thuốc hoặc ghi chú điều trị gần đây.</p>
+                                )}
                             </div>
                         </div>
 
@@ -448,10 +587,104 @@ export function PatientEhr() {
                 </div>
             </div>
 
+            {/* --- Print-only Report Layout (Enterprise Template) --- */}
+            <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-10 font-sans text-slate-900 overflow-visible h-auto">
+                <div className="border-b-4 border-primary pb-6 mb-8 flex justify-between items-start">
+                    <div>
+                        <h1 className="text-3xl font-black text-primary uppercase tracking-tighter">Báo cáo sức khỏe Bệnh nhân</h1>
+                        <p className="text-sm font-bold text-slate-500">Hệ thống Quản lý Bệnh mãn tính AI-CDM</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-xs font-bold uppercase text-slate-400">Ngày xuất báo cáo</p>
+                        <p className="text-sm font-black">{new Date().toLocaleDateString('vi-VN')} {new Date().toLocaleTimeString('vi-VN')}</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-10 mb-10">
+                    <div className="space-y-4">
+                        <h3 className="text-xs font-black uppercase text-primary tracking-widest border-b border-primary/20 pb-1">Hành chính</h3>
+                        <div className="grid grid-cols-2 gap-y-2 text-sm">
+                            <span className="text-slate-500 font-bold">Họ và tên:</span>
+                            <span className="font-black uppercase">{profile?.fullNameVi}</span>
+                            <span className="text-slate-500 font-bold">Ngày sinh:</span>
+                            <span className="font-bold">{profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                            <span className="text-slate-500 font-bold">Giới tính:</span>
+                            <span className="font-bold">{profile?.gender === 'MALE' ? 'Nam' : 'Nữ'}</span>
+                            <span className="text-slate-500 font-bold">Mã số BN:</span>
+                            <span className="font-mono font-bold text-xs">{profile?.id}</span>
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <h3 className="text-xs font-black uppercase text-primary tracking-widest border-b border-primary/20 pb-1">Thông số sinh tồn gần nhất</h3>
+                        <div className="grid grid-cols-2 gap-y-2 text-sm">
+                            <span className="text-slate-500 font-bold">Huyết áp:</span>
+                            <span className="font-black text-red-600">{getMetricValue('BLOOD_PRESSURE_SYS')} mmHg</span>
+                            <span className="text-slate-500 font-bold">Đường huyết:</span>
+                            <span className="font-black text-emerald-600">{getMetricValue('BLOOD_GLUCOSE')} {METRIC_TYPE_UNITS['BLOOD_GLUCOSE']}</span>
+                            <span className="text-slate-500 font-bold">Nhịp tim:</span>
+                            <span className="font-black">{getMetricValue('HEART_RATE')} bpm</span>
+                            <span className="text-slate-500 font-bold">SpO2:</span>
+                            <span className="font-black">{getMetricValue('SPO2')} %</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mb-10 p-6 bg-slate-50 border border-slate-200 rounded-2xl">
+                    <h3 className="text-xs font-black uppercase text-primary mb-3">Tóm tắt lâm sàng (AI Analysis)</h3>
+                    <p className="text-sm italic leading-relaxed text-slate-700">
+                        {clinicalSummary || 'Không có bản tóm tắt lâm sàng khả dụng.'}
+                    </p>
+                </div>
+
+                <div className="mb-10">
+                    <h3 className="text-xs font-black uppercase text-primary mb-4">Lịch sử điều trị gần đây</h3>
+                    <table className="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr className="bg-slate-100">
+                                <th className="p-3 border border-slate-200 font-black">Thời gian</th>
+                                <th className="p-3 border border-slate-200 font-black">Chẩn đoán</th>
+                                <th className="p-3 border border-slate-200 font-black">Chỉ định / Toa thuốc</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {history?.content?.slice(0, 5).map((item: any, i: number) => (
+                                <tr key={i}>
+                                    <td className="p-3 border border-slate-200 font-bold">{item.startedAt ? new Date(item.startedAt).toLocaleDateString('vi-VN') : '—'}</td>
+                                    <td className="p-3 border border-slate-200 font-black text-primary">{item.diagnosisNotes || '—'}</td>
+                                    <td className="p-3 border border-slate-200 text-xs italic">{item.prescriptionNotes || '—'}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="mt-20 flex justify-end gap-20 px-10">
+                    <div className="text-center">
+                        <p className="text-xs font-bold uppercase text-slate-400 mb-16">Bác sĩ điều trị</p>
+                        <p className="text-sm font-black border-t border-slate-200 pt-2 min-w-[150px] italic">Ký và ghi rõ họ tên</p>
+                    </div>
+                </div>
+
+                <footer className="mt-auto pt-10 border-t border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-widest flex justify-between">
+                    <span>Trang 1 / 1</span>
+                    <span>Báo cáo này được tạo tự động bởi CDM-System v2.5</span>
+                </footer>
+            </div>
+
+            <style>{`
+                @media print {
+                    body * { visibility: hidden; }
+                    .print\\:block, .print\\:block * { visibility: visible; }
+                    .print\\:block { position: absolute; left: 0; top: 0; width: 100%; }
+                    @page { size: A4; margin: 0; }
+                }
+            `}</style>
+
             <PrescriptionModal
                 isOpen={isPrescriptionModalOpen}
                 onClose={() => setIsPrescriptionModalOpen(false)}
                 patientName={patientName}
+                patientId={patientId}
             />
 
             <AppointmentModal
@@ -459,6 +692,13 @@ export function PatientEhr() {
                 onClose={() => setIsAppointmentModalOpen(false)}
                 patientName={patientName}
                 patientId={patientId}
+            />
+
+            <AdviceModal
+                isOpen={isAdviceModalOpen}
+                onClose={() => setIsAdviceModalOpen(false)}
+                patientId={patientId || ''}
+                patientName={patientName}
             />
 
             <ThresholdModal
@@ -531,23 +771,6 @@ function TimelineItem({ date, tag, title, content, diagnosis, isActive }: { date
     )
 }
 
-function MedicationItem({ name, instruction, status, daysLeft, isStopped }: { name: string, instruction: string, status: string, daysLeft?: number, isStopped?: boolean }) {
-    return (
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:border-primary/30 transition-colors">
-            <div className="flex justify-between items-start">
-                <h4 className={`font-bold text-sm ${isStopped ? 'text-slate-400 line-through' : 'text-slate-800 dark:text-slate-200'}`}>{name}</h4>
-                <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${isStopped ? 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400'}`}>{status}</span>
-            </div>
-            <p className={`text-xs mt-2 font-semibold ${isStopped ? 'text-slate-400' : 'text-slate-500'}`}>{instruction}</p>
-            {!isStopped && daysLeft && (
-                <div className="mt-3 flex items-center gap-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-t border-slate-200 dark:border-slate-700 pt-3">
-                    <span className="material-symbols-outlined text-sm text-primary">schedule</span>
-                    Còn <span className="text-primary">{daysLeft}</span> ngày thuốc
-                </div>
-            )}
-        </div>
-    )
-}
 
 function CareMember({ name, role, avatar }: { name: string, role: string, avatar: string }) {
     return (

@@ -61,18 +61,27 @@ export default function PatientChatDoctor() {
 
     const [isSending, setIsSending] = useState(false)
 
-    // Send file (we'll keep Cloudinary upload for file then post the URL to Firebase)
+    // Send file (Upload to backend storage then sync to Firebase)
     const fileMutation = useMutation({
         mutationFn: (file: File) => sendPortalChatFile(selectedDoctor?.id, file, message || undefined, headers),
-        onSuccess: async () => {
-            // Note: Cloudinary backend should return fileUrl or imageUrl
-            // Since we're shifting to purely Firebase, ideally we upload to Firebase Storage
-            // For now, let's assume the backend saves it and we don't have the URL right away.
-            // Wait, we need the imageUrl to put into Firebase if we do pure Firebase.
-            // To keep it simple, we just show toast and say "Đã gửi file"
-            toast.success('Đã gửi file! (Tính năng file Realtime đang cập nhật)')
+        onSuccess: async (data: any) => {
+            const fileUrl = data.fileUrl;
+            if (fileUrl && patientId) {
+                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
+                await sendMessage(
+                    message || (isImage ? 'Đã gửi một ảnh' : 'Đã gửi một file'),
+                    patientId,
+                    'PATIENT',
+                    isImage ? fileUrl : undefined,
+                    !isImage ? fileUrl : undefined
+                );
+            }
+            toast.success('Đã gửi file thành công!')
             setSelectedFile(null)
             setMessage('')
+        },
+        onError: () => {
+            toast.error('Lỗi khi tải file lên.')
         }
     })
 
@@ -384,9 +393,9 @@ export default function PatientChatDoctor() {
 
             {isVideoCallOpen && (
                 <VideoCall
-                    roomID="telehealth-room"
-                    userID={`patient-${Math.floor(Math.random() * 10000)}`}
-                    userName="Bệnh nhân"
+                    roomID={`telehealth-${patientId}`}
+                    userID={`patient-${patientId}`}
+                    userName={user?.fullNameVi || "Bệnh nhân"}
                     onClose={() => setIsVideoCallOpen(false)}
                 />
             )}

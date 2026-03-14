@@ -163,5 +163,54 @@ public class PatientChatService {
                                 .sentAt(msg.getSentAt())
                                 .build();
         }
+
+        @Transactional
+        public PatientChatMessageDto doctorSendMessageWithFile(UUID doctorUserId, UUID patientId, String content,
+                        MultipartFile file) {
+                Patient patient = patientRepository.findById(patientId)
+                                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                var conv = getOrCreateConversation(patient, doctorUserId);
+
+                String fileUrl = null;
+                if (file != null && !file.isEmpty()) {
+                        fileUrl = fileStorageService.saveChatFile(file, patient.getId());
+                }
+
+                PatientChatMessage msg = PatientChatMessage.builder()
+                                .conversation(conv)
+                                .senderType("DOCTOR")
+                                .content(content != null ? content : "📎 File đính kèm")
+                                .sentAt(Instant.now())
+                                .fileUrl(fileUrl)
+                                .build();
+
+                messageRepository.save(msg);
+
+                return PatientChatMessageDto.builder()
+                                .id(msg.getId())
+                                .senderType(msg.getSenderType())
+                                .content(msg.getContent())
+                                .sentAt(msg.getSentAt())
+                                .fileUrl(msg.getFileUrl())
+                                .build();
+        }
+
+    @Transactional(readOnly = true)
+    public long getUnreadCountForDoctor(UUID doctorUserId) {
+        return messageRepository.countUnreadForDoctor(doctorUserId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PatientChatMessageDto> getUnreadMessagesForDoctor(UUID doctorUserId) {
+        return messageRepository.findUnreadForDoctor(doctorUserId).stream()
+                .map(m -> PatientChatMessageDto.builder()
+                        .id(m.getId())
+                        .senderType(m.getSenderType())
+                        .content(m.getContent())
+                        .sentAt(m.getSentAt())
+                        .fileUrl(m.getFileUrl())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
 

@@ -32,7 +32,7 @@ export const STAFF_NAV: StaffNavItem[] = [
   { to: '/analytics', label: 'Phân tích nguy cơ', icon: Activity, roles: ['doctor', 'clinic_manager', 'admin'], type: 'link' },
   { to: '/prescriptions', label: 'Đơn thuốc điện tử', icon: ClipboardList, roles: ['doctor', 'admin'], type: 'link' },
   { to: '/scheduling', label: 'Lịch hẹn khám', icon: Calendar, roles: ['doctor', 'admin'], type: 'link' },
-  { to: '/chat', label: 'Tin nhắn', icon: MessageSquare, roles: ['doctor', 'admin'], badge: 3, type: 'link' },
+  { to: '/chat', label: 'Tin nhắn', icon: MessageSquare, roles: ['doctor', 'admin'], type: 'link' },
 
   // SECTION: PHÂN TÍCH & BÁO CÁO (Clinic Manager & Admin)
   { label: 'Quản lý CDM', type: 'header', roles: ['clinic_manager', 'admin'] },

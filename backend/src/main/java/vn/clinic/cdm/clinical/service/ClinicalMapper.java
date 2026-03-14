@@ -4,12 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import vn.clinic.cdm.api.dto.clinical.ConsultationSummaryPdfDto;
 import vn.clinic.cdm.api.dto.clinical.LabResultDto;
-import vn.clinic.cdm.clinical.domain.ClinicalConsultation;
-import vn.clinic.cdm.clinical.domain.ClinicalVital;
-import vn.clinic.cdm.clinical.domain.DiagnosticImage;
-import vn.clinic.cdm.clinical.domain.LabResult;
-import vn.clinic.cdm.clinical.domain.Prescription;
-
+import vn.clinic.cdm.api.dto.medication.PrescriptionDto;
+import vn.clinic.cdm.api.dto.medication.PrescriptionItemDto;
+import vn.clinic.cdm.clinical.domain.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +25,7 @@ public class ClinicalMapper {
             List<LabResult> labs,
             List<DiagnosticImage> images,
             Prescription prescription,
-            vn.clinic.cdm.api.dto.medication.PrescriptionDto prescriptionDto) {
+            PrescriptionDto prescriptionDto) {
 
         var builder = ConsultationSummaryPdfDto.builder()
                 .consultationId(cons.getId())
@@ -77,6 +74,28 @@ public class ClinicalMapper {
         }
 
         return builder.build();
+    }
+
+    public PrescriptionDto mapPrescriptionToDto(Prescription p) {
+        if (p == null) return null;
+        return PrescriptionDto.builder()
+                .id(p.getId())
+                .consultationId(p.getConsultation() != null ? p.getConsultation().getId() : null)
+                .patientId(p.getPatient().getId())
+                .patientName(p.getPatient().getFullNameVi())
+                .status(p.getStatus() != null ? p.getStatus().name() : "ISSUED")
+                .notes(p.getNotes())
+                .items(p.getMedications().stream().map(this::mapMedicationToDto).collect(Collectors.toList()))
+                .build();
+    }
+
+    public PrescriptionItemDto mapMedicationToDto(Medication med) {
+        if (med == null) return null;
+        return PrescriptionItemDto.builder()
+                .id(med.getId())
+                .productName(med.getMedicineName())
+                .dosageInstruction(med.getDosage())
+                .build();
     }
 }
 

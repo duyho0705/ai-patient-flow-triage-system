@@ -48,5 +48,17 @@ public class PagedResponse<T> {
                 .last(page.isLast())
                 .build();
     }
+
+    public static <T> PagedResponse<T> empty() {
+        return PagedResponse.<T>builder()
+                .content(java.util.Collections.emptyList())
+                .page(0)
+                .size(0)
+                .totalElements(0)
+                .totalPages(0)
+                .first(true)
+                .last(true)
+                .build();
+    }
 }
 

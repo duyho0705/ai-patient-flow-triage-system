@@ -5,17 +5,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.clinic.cdm.common.exception.ResourceNotFoundException;
+import vn.clinic.cdm.common.exception.ApiException;
+import vn.clinic.cdm.common.exception.ErrorCode;
 import vn.clinic.cdm.common.tenant.TenantContext;
 import vn.clinic.cdm.patient.domain.Patient;
-import vn.clinic.cdm.patient.domain.PatientInsurance;
-import vn.clinic.cdm.tenant.domain.Tenant;
-import vn.clinic.cdm.tenant.repository.TenantRepository;
-import vn.clinic.cdm.patient.repository.PatientDeviceTokenRepository;
 import vn.clinic.cdm.patient.domain.PatientDeviceToken;
+import vn.clinic.cdm.patient.domain.PatientInsurance;
+import vn.clinic.cdm.patient.repository.PatientDeviceTokenRepository;
 import vn.clinic.cdm.patient.repository.PatientInsuranceRepository;
 import vn.clinic.cdm.patient.repository.PatientRepository;
-
+import vn.clinic.cdm.tenant.domain.Tenant;
+import vn.clinic.cdm.tenant.repository.TenantRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +28,7 @@ import java.util.UUID;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PatientService {
 
     private final PatientRepository patientRepository;
@@ -36,14 +39,37 @@ public class PatientService {
     @Transactional(readOnly = true)
     public Patient getById(UUID id) {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
+        log.debug("Fetching patient by ID: {} for tenant: {}", id, tenantId);
         return patientRepository.findById(id)
                 .filter(p -> p.getTenant().getId().equals(tenantId))
-                .orElseThrow(() -> new ResourceNotFoundException("Patient", id));
+                .orElseThrow(() -> {
+                    log.warn("Patient not found: {} in tenant: {}", id, tenantId);
+                    return new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy bệnh nhân");
+                });
     }
 
     @Transactional(readOnly = true)
     public Page<Patient> listByTenant(Pageable pageable) {
         return patientRepository.findByTenantIdAndIsActiveTrue(TenantContext.getTenantIdOrThrow(), pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Patient> searchPatients(String search, String riskLevel, String chronicCondition, Pageable pageable) {
+        UUID tenantId = TenantContext.getTenantIdOrThrow();
+        // Normalize empty strings to null for JPQL conditional
+        String s = (search != null && !search.isBlank()) ? search.trim() : null;
+        String r = (riskLevel != null && !riskLevel.isBlank()) ? riskLevel.trim().toUpperCase() : null;
+        String c = (chronicCondition != null && !chronicCondition.isBlank()) ? chronicCondition.trim() : null;
+        return patientRepository.searchPatients(tenantId, s, r, c, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Patient> searchPatientsForDoctor(UUID doctorId, String search, String riskLevel, String chronicCondition, Pageable pageable) {
+        UUID tenantId = TenantContext.getTenantIdOrThrow();
+        String s = (search != null && !search.isBlank()) ? search.trim() : null;
+        String r = (riskLevel != null && !riskLevel.isBlank()) ? riskLevel.trim().toUpperCase() : null;
+        String c = (chronicCondition != null && !chronicCondition.isBlank()) ? chronicCondition.trim() : null;
+        return patientRepository.searchPatientsForDoctor(tenantId, doctorId, s, r, c, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -75,18 +101,29 @@ public class PatientService {
     @Transactional
     public Patient create(Patient patient) {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
+        log.info("Creating new patient in tenant: {} with CCCD: {}", tenantId, patient.getCccd());
+
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tenant", tenantId));
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Tenant doesn't exist"));
+        
         patient.setTenant(tenant);
+        
+        // Validation: Unique CCCD/ExternalID per tenant
         if (patient.getCccd() != null && !patient.getCccd().isBlank()
                 && patientRepository.findByTenantIdAndCccd(tenantId, patient.getCccd()).isPresent()) {
-            throw new IllegalArgumentException("Patient with CCCD already exists: " + patient.getCccd());
+            log.error("Patient creation failed: CCCD {} already exists", patient.getCccd());
+            throw new ApiException(ErrorCode.PATIENT_ALREADY_EXISTS, HttpStatus.BAD_REQUEST, "Số CCCD đã tồn tại trên hệ thống");
         }
+        
         if (patient.getExternalId() != null && !patient.getExternalId().isBlank()
                 && patientRepository.findByTenantIdAndExternalId(tenantId, patient.getExternalId()).isPresent()) {
-            throw new IllegalArgumentException("Patient with external_id already exists: " + patient.getExternalId());
+            log.error("Patient creation failed: ExternalID {} already exists", patient.getExternalId());
+            throw new ApiException(ErrorCode.PATIENT_ALREADY_EXISTS, HttpStatus.BAD_REQUEST, "Mã bệnh nhân đã tồn tại trên hệ thống");
         }
-        return patientRepository.save(patient);
+
+        Patient saved = patientRepository.save(patient);
+        log.info("Patient created successfully with ID: {}", saved.getId());
+        return saved;
     }
 
     @Transactional
@@ -127,7 +164,7 @@ public class PatientService {
 
     public Patient getByUserId(UUID userId) {
         return patientRepository.findFirstByIdentityUser_Id(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found for user: " + userId));
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy hồ sơ bệnh nhân cho người dùng này"));
     }
 
     public Optional<Patient> getByIdentityUserId(UUID identityUserId) {

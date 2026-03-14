@@ -10,5 +10,22 @@ import java.util.UUID;
 @Repository
 public interface PatientChatMessageRepository extends JpaRepository<PatientChatMessage, UUID> {
     List<PatientChatMessage> findByConversationIdOrderBySentAtAsc(UUID conversationId);
+
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT COUNT(m) FROM PatientChatMessage m
+        WHERE m.conversation.doctorUser.id = :doctorUserId
+          AND m.senderType = 'PATIENT'
+          AND m.readAt IS NULL
+    """)
+    long countUnreadForDoctor(@org.springframework.data.repository.query.Param("doctorUserId") UUID doctorUserId);
+
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT m FROM PatientChatMessage m
+        WHERE m.conversation.doctorUser.id = :doctorUserId
+          AND m.senderType = 'PATIENT'
+          AND m.readAt IS NULL
+        ORDER BY m.sentAt DESC
+    """)
+    List<PatientChatMessage> findUnreadForDoctor(@org.springframework.data.repository.query.Param("doctorUserId") UUID doctorUserId);
 }
 

@@ -1,13 +1,27 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
+import { useQuery } from '@tanstack/react-query'
+import { getPatientMedicalHistory } from '@/api/doctor'
+import { useTenant } from '@/context/TenantContext'
+import { format } from 'date-fns'
+import { Loader2 } from 'lucide-react'
 
 interface HistoryModalProps {
     isOpen: boolean
     onClose: () => void
+    patientId?: string
     patientName?: string
 }
 
-export function HistoryModal({ isOpen, onClose, patientName = 'Nguyễn Văn A' }: HistoryModalProps) {
+export function HistoryModal({ isOpen, onClose, patientId, patientName = 'Bệnh nhân' }: HistoryModalProps) {
+    const { headers } = useTenant()
+
+    const { data, isLoading } = useQuery({
+        queryKey: ['patient-history', patientId],
+        queryFn: () => getPatientMedicalHistory(patientId!, headers),
+        enabled: !!patientId && isOpen
+    })
+
     if (!isOpen) return null
 
     return createPortal(
@@ -80,87 +94,58 @@ export function HistoryModal({ isOpen, onClose, patientName = 'Nguyễn Văn A' 
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-primary/5 dark:divide-slate-800 w-full">
-                                    {/* Row 1 */}
-                                    <tr className="hover:bg-primary/5 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-6 py-4 text-sm">15/10/2023</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className="size-8 rounded-full bg-primary/20 bg-cover bg-center"
-                                                    style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBjcXN-qRsLViGyn-0ors3YT1KZJhFM-K3iJUpP0-Mg3fZ0tu_O2thTG4ritCwEqpB72saarYhAueX6JVX0xqxG3Wbqy9Ztniab-6vnyEy_Bo5vE4LArGez9kdIFEf9rG7QmuiecxEnSfOgVdsAqLfzeNZco42wYUmXKRrtE6G82OaY-BttDFLrqcbPQJQ22mdMN8yscn3dr6_7QkGG6nuOL8m2lemRoimo6sJpTEY5Kx9qRNo2pF2Q3fuksWDs4zLNlQAcx7jnZ6o')" }}
-                                                ></div>
-                                                <span className="text-sm font-medium">BS. Trần Đức</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-medium">Viêm họng cấp tính</td>
-                                        <td className="px-6 py-4">
-                                            <span className="px-3 py-1 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-[10px] font-bold">Online</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-center gap-2">
-                                                <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Xem chi tiết">
-                                                    <span className="material-symbols-outlined text-lg">visibility</span>
-                                                </button>
-                                                <button className="p-2 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" title="Tải xuống PDF">
-                                                    <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {/* Row 2 */}
-                                    <tr className="hover:bg-primary/5 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-6 py-4 text-sm">02/09/2023</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className="size-8 rounded-full bg-primary/20 bg-cover bg-center"
-                                                    style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCGyzAG86KXz8QRPEZRrcMv0ZEjfpJfNaDZsfmz3WC8STjXwlOtrV8TB1ajSBf5JpkriYkkN_u1MnI6cqWXQajObxRBflSGsKAuwBCFP9sPr1v9Q8jO1zMP4gvprh3bDSpyCQBlYRjZUgHU08NBI283yjn0f-6NUduLRR4K4Xcv6N4UyJIRQnexRw1npeM05f3nI8wjYqVY1LaEfYih5Kx7SFd4fR4Tdk1z3AeWcxduPGaVjpONyfK_57qz3E3Ii_HKYOGcP3qXPhM')" }}
-                                                ></div>
-                                                <span className="text-sm font-medium">BS. Hoàng My</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-medium">Kiểm tra tổng quát</td>
-                                        <td className="px-6 py-4">
-                                            <span className="px-3 py-1 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-full text-[10px] font-bold">Trực tiếp</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-center gap-2">
-                                                <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors">
-                                                    <span className="material-symbols-outlined text-lg">visibility</span>
-                                                </button>
-                                                <button className="p-2 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors">
-                                                    <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {/* Row 3 */}
-                                    <tr className="hover:bg-primary/5 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-6 py-4 text-sm">20/05/2023</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className="size-8 rounded-full bg-primary/20 bg-cover bg-center"
-                                                    style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDo6bEXnkYfGTI9qEHIcUkGIa7D9c_FShlyDq7I9eQ5NrW0IUi0Mcx-LXqwL8_SZ1v8hBvP4A8zPwAKVzxf4NQ3MOVwlkL4n0bQBS5_xSWshHsnYDynuaXioev1TZSyDeaQEeHh1f82JsYmiAuCatUKkr9-4Sa5aBz0chZQhaz6oi8xPVG18u-Tcwvc31XvlpArR0kqw9h5uSri81gJR2_pfoZ7Hhf3sBYJr7lkAn1axx4c-76YVjNH9dBE3S9TgLBds4nUMxN0FD8')" }}
-                                                ></div>
-                                                <span className="text-sm font-medium">BS. Trần Đức</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-medium">Viêm xoang nhẹ</td>
-                                        <td className="px-6 py-4">
-                                            <span className="px-3 py-1 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-full text-[10px] font-bold">Trực tiếp</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-center gap-2">
-                                                <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors">
-                                                    <span className="material-symbols-outlined text-lg">visibility</span>
-                                                </button>
-                                                <button className="p-2 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors">
-                                                    <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    {isLoading ? (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-12 text-center">
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <Loader2 className="size-8 text-primary animate-spin" />
+                                                    <p className="text-sm font-bold text-slate-400">Đang tải lịch sử khám...</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : data?.content?.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                                                Chưa có lịch sử khám bệnh
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        data?.content?.map((item) => (
+                                            <tr key={item.id} className="hover:bg-primary/5 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td className="px-6 py-4 text-sm font-bold">
+                                                    {item.startedAt ? format(new Date(item.startedAt), 'dd/MM/yyyy') : '–'}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-black text-primary uppercase">
+                                                            {item.doctorName?.charAt(0) || 'D'}
+                                                        </div>
+                                                        <span className="text-sm font-medium">{item.doctorName || 'Bác sĩ'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm font-medium">{item.diagnosisNotes || 'Chưa cập nhật'}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                                                        item.status === 'COMPLETED' 
+                                                            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                            : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                                    }`}>
+                                                        {item.status === 'COMPLETED' ? 'Hoàn thành' : (item.status || 'Đang khám')}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex justify-center gap-2">
+                                                        <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Xem chi tiết">
+                                                            <span className="material-symbols-outlined text-lg">visibility</span>
+                                                        </button>
+                                                        <button className="p-2 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" title="Tải xuống PDF">
+                                                            <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
