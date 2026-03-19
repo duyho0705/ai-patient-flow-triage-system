@@ -86,13 +86,14 @@ export function PatientList() {
     // ─── Real Data Mappers (for display) ───
     const getRiskStatus = (riskLevel?: string) => {
         switch (riskLevel?.toUpperCase()) {
-            case 'HIGH':
             case 'CRITICAL':
-                return { label: 'Nguy cơ cao', classes: 'bg-red-100 text-red-600' };
+                return { label: 'Báo động đỏ', classes: 'bg-rose-500 text-white shadow-lg shadow-rose-500/40 animate-pulse ring-2 ring-rose-500 ring-offset-2 dark:ring-offset-slate-900', icon: '🚨' };
+            case 'HIGH':
+                return { label: 'Nguy cơ cao', classes: 'bg-red-100 text-red-700 font-black border border-red-200', icon: '⚠️' };
             case 'MEDIUM':
-                return { label: 'Cần theo dõi', classes: 'bg-orange-100 text-orange-500' };
+                return { label: 'Cần theo dõi', classes: 'bg-orange-100 text-orange-600', icon: '👁️' };
             default:
-                return { label: 'Bình thường', classes: 'bg-emerald-100 text-emerald-600' };
+                return { label: 'Bình thường', classes: 'bg-emerald-100 text-emerald-600', icon: '✅' };
         }
     }
 
@@ -165,7 +166,7 @@ export function PatientList() {
 
                 <button 
                     onClick={() => setIsAddPatientModalOpen(true)}
-                    className="ml-auto flex items-center gap-2 px-6 py-2 bg-[#4ade80] text-white font-semibold rounded-full hover:bg-green-500 transition-colors h-[40px] shadow-sm"
+                    className="ml-auto flex items-center gap-2 px-6 py-2 bg-[#10b981] text-white font-semibold rounded-full hover:bg-green-500 transition-colors h-[40px] shadow-sm"
                 >
                     <span className="material-symbols-outlined text-xl">person_add</span>
                     <span className="text-sm">Thêm bệnh nhân</span>
@@ -245,9 +246,12 @@ export function PatientList() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 border-b border-slate-100">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${riskStatus.classes}`}>
-                                                    {riskStatus.label}
-                                                </span>
+                                                <div className="flex items-center gap-1.5 min-w-[max-content]">
+                                                    {riskStatus.icon && <span className="text-sm">{riskStatus.icon}</span>}
+                                                    <span className={`px-3 py-1 flex-1 text-center rounded-full text-[11px] uppercase tracking-wider font-black ${riskStatus.classes}`}>
+                                                        {riskStatus.label}
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 border-b border-slate-100">
                                                 <span className="text-xs text-slate-500">{formatUpdate(patient.updatedAt)}</span>

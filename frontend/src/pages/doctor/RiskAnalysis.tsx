@@ -1,4 +1,7 @@
 import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell
+} from 'recharts'
+import {
     AlertTriangle,
     BellRing,
     ShieldCheck,
@@ -215,7 +218,7 @@ export function RiskAnalysis() {
                     <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-8">
                         <div className="flex justify-between items-center mb-10">
                             <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <BarChart3 className="w-5 h-5 text-emerald-600" /> Xu hướng rủi ro (7 ngày qua)
+                                <BarChart3 className="w-5 h-5 text-emerald-600" /> Xu hướng nguy cơ (7 ngày qua)
                             </h3>
                             <div className="flex gap-4">
                                 <div className="flex items-center gap-2">
@@ -223,36 +226,44 @@ export function RiskAnalysis() {
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Nguy cấp</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 shadow-sm"></div>
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Theo dõi</span>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-600/20 shadow-sm"></div>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Khác</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Mockup Chart */}
-                        <div className="h-64 w-full relative group">
-                            <div className="absolute inset-x-0 bottom-0 top-0 flex items-end justify-between px-2 gap-4">
-                                {(dashboard?.riskTrend7Days || [0, 0, 0, 0, 0, 0, 0]).map((v: number, i: number) => {
-                                    const maxVal = Math.max(...(dashboard?.riskTrend7Days || [1]), 1);
-                                    let h = Math.round((v / maxVal) * 100);
-                                    if (h < 5) h = 5; // minimum visual height
-                                    return (
-                                    <div key={i} className="flex-1 bg-emerald-600/10 dark:bg-emerald-600/5 rounded-t-[10px] relative transition-all duration-700 ease-out" style={{ height: `${h}%` }}>
-                                        <div className="absolute top-0 inset-x-0 bg-red-500/30 dark:bg-red-500/20 rounded-t-[10px]" style={{ height: `${h * 0.4}%` }}></div>
-                                        {i === 6 && <div className="absolute inset-x-0 bottom-0 bg-emerald-500 rounded-t-[10px] shadow-lg shadow-emerald-500/20" style={{ height: '100%' }}>
-                                            <div className="absolute top-0 inset-x-0 bg-red-500 rounded-t-[10px]" style={{ height: '50%' }}></div>
-                                        </div>}
-                                    </div>
-                                )})}
-                            </div>
-                            <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-100 dark:bg-slate-800"></div>
-                        </div>
-                        <div className="flex justify-between mt-4 px-2">
-                            {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day, i) => (
-                                <span key={i} className={`text-[10px] font-black uppercase tracking-widest ${i === 6 ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                    {day} {i === 6 && '(Hôm nay)'}
-                                </span>
-                            ))}
+                        <div className="h-64 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    data={(dashboard?.riskTrend7Days || []).map((v, i) => ({
+                                        day: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][i],
+                                        value: v
+                                    }))}
+                                    margin={{ top: 10, right: 10, left: -40, bottom: 0 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
+                                    <XAxis 
+                                        dataKey="day" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fontSize: 10, fontWeight: 900, fill: '#64748B' }}
+                                    />
+                                    <YAxis hide domain={[0, 'dataMax + 2']} />
+                                    <RechartsTooltip 
+                                        cursor={{ fill: '#F1F5F9', opacity: 0.5 }}
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    />
+                                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                                        {(dashboard?.riskTrend7Days || []).map((_entry, index) => (
+                                            <Cell 
+                                                key={`cell-${index}`} 
+                                                fill={index === 6 ? '#10b981' : '#ef4444'} 
+                                                fillOpacity={index === 6 ? 1 : 0.6}
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </section>
                 </div>

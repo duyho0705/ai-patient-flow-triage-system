@@ -15,6 +15,7 @@ import {
 import { motion } from 'framer-motion'
 import { DoctorDashboard } from './doctor/DoctorDashboard'
 import { ManagerDashboard } from './admin/ManagerDashboard'
+import { Admin } from './Admin'
 
 /* ─── role-based quick actions ─── */
 const ROLE_ACTIONS: Record<Role, { to: string; label: string; desc: string; icon: any; color: string }[]> = {
@@ -51,7 +52,7 @@ const ROLE_ACTIONS: Record<Role, { to: string; label: string; desc: string; icon
 }
 
 const ROLE_TITLES: Record<Role, { title: string; subtitle: string; icon: any }> = {
-  admin: { title: 'Quản trị Hệ thống', subtitle: 'Tổng quan hoạt động toàn hệ thống', icon: ShieldCheck },
+  admin: { title: '', subtitle: 'Tổng quan hoạt động toàn hệ thống', icon: ShieldCheck },
   receptionist: { title: 'Tiếp nhận', subtitle: 'Quản lý đăng ký và lịch hẹn', icon: Users },
   triage_nurse: { title: 'Tiếp nhận', subtitle: 'Hỗ trợ đăng ký bệnh nhân', icon: Activity },
   doctor: { title: 'Phòng khám', subtitle: 'Bảng điều khiển bác sĩ', icon: Stethoscope },
@@ -72,7 +73,7 @@ function StatCard({ label, value, icon: Icon, color, bgColor, trend, trendUp }: 
       whileHover={{ y: -5, scale: 1.02 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm transition-all"
+      className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-100 shadow-sm transition-all"
     >
       <div className={`absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full opacity-[0.03] ${bgColor}`} />
 
@@ -81,7 +82,7 @@ function StatCard({ label, value, icon: Icon, color, bgColor, trend, trendUp }: 
           <Icon className="w-6 h-6" />
         </div>
         {trend && (
-          <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${trendUp ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+          <div className={`px-2 py-1 rounded-lg text-[10px] font-black tracking-wider flex items-center gap-1 ${trendUp ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
             {trendUp ? <TrendingUp className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
             {trend}
           </div>
@@ -90,7 +91,7 @@ function StatCard({ label, value, icon: Icon, color, bgColor, trend, trendUp }: 
 
       <div className="space-y-1">
         <h4 className="text-3xl font-black text-slate-900 tracking-tightest">{value}</h4>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+        <p className="text-[10px] font-bold text-slate-400 tracking-tight">{label}</p>
       </div>
     </motion.div>
   )
@@ -119,13 +120,13 @@ function ActionTile({ to, label, desc, icon: Icon, color, index }: {
       transition={{ delay: index * 0.05 }}
     >
       <Link to={to} className="group relative block h-full">
-        <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity blur-xl -z-10 rounded-[1.5rem] scale-95" />
-        <div className="bg-white border border-slate-100 rounded-[1.5rem] p-5 shadow-sm group-hover:border-transparent group-hover:shadow-2xl transition-all h-full flex flex-col items-center text-center">
+        <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity blur-xl -z-10 rounded-xl scale-95" />
+        <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm group-hover:border-transparent group-hover:shadow-2xl transition-all h-full flex flex-col items-center text-center">
           <div className={`w-14 h-14 rounded-2xl mb-4 flex items-center justify-center transition-all group-hover:scale-110 group-hover:-rotate-3 ${colorStyles.split(' ').slice(-2).join(' ')} group-hover:bg-gradient-to-br ${colorStyles.split(' ').slice(0, 2).join(' ')} group-hover:text-white`}>
             <Icon className="w-7 h-7" />
           </div>
           <h5 className="font-black text-slate-800 tracking-tight text-sm mb-1 group-hover:text-emerald-600 transition-colors">{label}</h5>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 line-clamp-1">
+          <p className="text-[10px] text-slate-400 font-bold tracking-tight opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 line-clamp-1">
             {desc}
           </p>
           <div className="mt-4 w-6 h-1 bg-slate-100 group-hover:bg-emerald-500 group-hover:w-10 rounded-full transition-all" />
@@ -142,6 +143,7 @@ export function Dashboard() {
 
   if (role === 'doctor') return <DoctorDashboard />
   if (role === 'clinic_manager') return <ManagerDashboard />
+  if (role === 'admin') return <Admin />
 
   const config = ROLE_TITLES[role] || ROLE_TITLES.receptionist
   const actions = ROLE_ACTIONS[role] || ROLE_ACTIONS.receptionist
@@ -161,10 +163,10 @@ export function Dashboard() {
   const greeting = getGreeting()
 
   return (
-    <div className="pb-20 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="px-4 sm:px-8 pb-20 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
       {/* ── Premium Hero Header ── */}
-      <div className="bg-slate-900 -mx-4 sm:-mx-6 lg:-mx-8 p-10 lg:p-14 relative overflow-hidden shadow-2xl">
+      <div className="bg-slate-900 -mx-4 sm:-mx-8 p-10 lg:p-14 relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-emerald-600/20 to-transparent skew-x-12 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[100px] -translate-x-1/2 translate-y-1/2" />
 
@@ -175,7 +177,7 @@ export function Dashboard() {
               className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/5 backdrop-blur-md"
             >
               <Sparkles className="w-3 h-3 text-emerald-400" />
-              <span className="text-[10px] font-black text-emerald-100 uppercase tracking-widest">{greeting}</span>
+              <span className="text-[10px] font-black text-emerald-100 tracking-tight">{greeting}</span>
             </motion.div>
 
             <div className="flex items-center gap-6">
@@ -201,15 +203,15 @@ export function Dashboard() {
 
           <div className="flex items-center gap-10">
             <div className="text-center">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Trạng thái Live</p>
+              <p className="text-[10px] font-black text-slate-500 tracking-tight mb-3">Trạng thái Live</p>
               <div className="flex items-center gap-2 px-6 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">Ổn định</span>
+                <span className="text-xs font-black text-emerald-400 tracking-tight">Ổn định</span>
               </div>
             </div>
             <div className="w-px h-12 bg-white/10 hidden sm:block" />
             <div className="hidden sm:block text-right">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Phiên bản</p>
+              <p className="text-[10px] font-black text-slate-500 tracking-tight mb-1">Phiên bản</p>
               <p className="text-2xl font-black text-white italic">v2.4.0</p>
             </div>
           </div>
@@ -279,33 +281,33 @@ export function Dashboard() {
         {/* ── System Details ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Alerts/Activity */}
-          <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
             <div className="p-8 border-b border-slate-50 flex items-center justify-between">
               <h3 className="font-black text-slate-900 tracking-tight flex items-center gap-3 uppercase text-xs">
                 <Bell className="w-4 h-4 text-rose-500" />
                 Hoạt động gần đây
               </h3>
-              <button className="text-[10px] font-black text-emerald-600 hover:text-emerald-500 uppercase tracking-widest">
+              <button className="text-[10px] font-black text-emerald-600 hover:text-emerald-500 tracking-tight">
                 Xem tất cả
               </button>
             </div>
             <div className="p-8 space-y-6">
               <div className="flex flex-col items-center justify-center py-10 text-slate-400 opacity-60">
                 <Activity className="w-8 h-8 mb-2" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-center">Chưa có hoạt động mới trong hệ thống</p>
+                <p className="text-[10px] font-black tracking-tight text-center">Chưa có hoạt động mới trong hệ thống</p>
                 <p className="text-[9px] font-bold text-center mt-1">Hệ thống sẽ ghi nhận và hiển thị các hoạt động tiếp nhận và khám bệnh tại đây.</p>
               </div>
             </div>
           </div>
 
           {/* System Environment */}
-          <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden group">
+          <div className="bg-slate-900 rounded-2xl p-8 text-white relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-1000">
               <Monitor className="w-32 h-32" />
             </div>
 
             <h3 className="font-black text-white tracking-tight flex items-center gap-3 uppercase text-xs mb-8">
-              <Globe className="w-4 h-4 text-emerald-400" />
+               <Globe className="w-4 h-4 text-emerald-400" />
               Thông số vận hành
             </h3>
 
@@ -322,7 +324,7 @@ export function Dashboard() {
                   <Monitor className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Thiết bị</p>
+                  <p className="text-[10px] font-black text-slate-500 tracking-tight leading-none mb-1">Thiết bị</p>
                   <p className="text-sm font-bold text-white">Quản trị viên Desktop</p>
                 </div>
               </div>
@@ -340,7 +342,7 @@ export function Dashboard() {
 function EnvRow({ label, value, status }: { label: string; value: string; status?: boolean }) {
   return (
     <div className="flex items-center justify-between py-1">
-      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
+      <span className="text-[10px] font-black text-slate-500 tracking-tight">{label}</span>
       <div className="flex items-center gap-2">
         {status && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
         <span className="text-sm font-black text-white">{value}</span>

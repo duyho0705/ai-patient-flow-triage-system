@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTenant } from '@/context/TenantContext'
 import {
-    getWaitTimeSummary, getDailyVolume, getAiEffectiveness, getRevenueReport,
+    getWaitTimeSummary, getDailyVolume, getAiEffectiveness,
     exportDailyVolumeExcel, exportAiEffectivenessPdf, getAiOperationalInsights
 } from '@/api/reports'
 import {
-    FileDown, FileBarChart, Download, Calendar,
+    FileDown, FileBarChart, Calendar,
     Activity, Users,
-    Clock, DollarSign, TrendingUp,
+    Clock, TrendingUp,
     BarChart3, Filter, Target, AlertTriangle, ShieldCheck
 } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -44,11 +44,7 @@ export function Reports() {
         enabled,
     })
 
-    const revenueQuery = useQuery({
-        queryKey: ['report-revenue', commonParams],
-        queryFn: () => getRevenueReport(commonParams, headers),
-        enabled,
-    })
+
 
     const aiInsightsQuery = useQuery({
         queryKey: ['report-ai-insights', commonParams],
@@ -232,25 +228,7 @@ export function Reports() {
 
                     {/* Main Stats Grid */}
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                        {/* Revenue Stats */}
-                        <motion.div whileHover={{ y: -5 }} className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm group hover:shadow-2xl hover:shadow-emerald-100/50 hover:border-emerald-100 transition-all">
-                            <div className="flex justify-between items-start mb-6">
-                                <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-[1.5rem] flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                                    <DollarSign className="w-7 h-7" />
-                                </div>
-                                <div className="flex items-center gap-1 text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                                    <TrendingUp className="w-3 h-3" />
-                                    Theo kỳ
-                                </div>
-                            </div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-3">Tổng doanh thu</p>
-                            <div className="flex items-baseline gap-2">
-                                <h4 className="text-3xl font-black text-slate-900 tracking-tighter">
-                                    {revenueQuery.data?.totalRevenue?.toLocaleString('vi-VN')}
-                                </h4>
-                                <span className="text-sm font-bold text-slate-400 uppercase">đ</span>
-                            </div>
-                        </motion.div>
+
 
                         {/* Wait Time Stats */}
                         <motion.div whileHover={{ y: -5 }} className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm group hover:shadow-2xl hover:shadow-emerald-100/50 hover:border-emerald-100 transition-all">
@@ -356,96 +334,9 @@ export function Reports() {
                             </div>
                         </div>
 
-                        {/* Daily Revenue Chart */}
-                        <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm">
-                            <div className="flex items-center justify-between mb-10">
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-900">Doanh thu theo ngày</h3>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Hiệu quả tài chính chi nhánh</p>
-                                </div>
-                                <button className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-900 hover:text-white transition-all">
-                                    <Download className="w-5 h-5" />
-                                </button>
-                            </div>
 
-                            <div className="relative h-64 w-full flex items-end justify-between gap-1 group/chart">
-                                {revenueQuery.data?.dailyRevenue?.map((d) => {
-                                    const max = Math.max(...revenueQuery.data!.dailyRevenue.map(i => i.amount), 1000000)
-                                    const h = (d.amount / max) * 100
-                                    return (
-                                        <div key={d.date} className="relative flex flex-1 flex-col justify-end h-full group">
-                                            <div className="absolute bottom-full left-1/2 mb-4 hidden -translate-x-1/2 whitespace-nowrap rounded-2xl bg-emerald-600 p-4 text-xs text-white z-20 shadow-2xl group-hover:block animate-in zoom-in duration-200 text-center">
-                                                <div className="text-emerald-200 uppercase text-[8px] font-black mb-1">{d.date}</div>
-                                                <div className="text-lg font-black">{d.amount.toLocaleString('vi-VN')} đ</div>
-                                            </div>
-                                            <div className="w-full bg-emerald-100 rounded-t-lg group-hover:bg-emerald-500 transition-all" style={{ height: `${h}%` }} />
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
 
-                        {/* Popular Services Chart */}
-                        <div className="bg-slate-50 p-10 rounded-[3.5rem] border border-slate-100 shadow-sm lg:col-span-2">
-                            <div className="flex items-center justify-between mb-10">
-                                <div>
-                                    <h3 className="text-2xl font-black text-slate-900">Dịch vụ phổ biến</h3>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Các hạng mục mang lại doanh thu cao nhất</p>
-                                </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <div className="space-y-6">
-                                    {revenueQuery.data?.topServices?.map((s: any, idx: number) => {
-                                        const maxAmount = Math.max(...(revenueQuery.data?.topServices || []).map((it: any) => it.amount), 1)
-                                        const percent = (s.amount / maxAmount) * 100
-                                        return (
-                                            <div key={idx} className="space-y-2">
-                                                <div className="flex justify-between items-end px-1">
-                                                    <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{s.serviceName}</span>
-                                                    <span className="text-xs font-black text-slate-400">{s.amount.toLocaleString('vi-VN')} đ</span>
-                                                </div>
-                                                <div className="h-3 bg-white rounded-full overflow-hidden border border-slate-100 p-0.5">
-                                                    <motion.div
-                                                        initial={{ width: 0 }}
-                                                        whileInView={{ width: `${percent}%` }}
-                                                        className={`h-full rounded-full ${idx === 0 ? 'bg-emerald-500' : idx === 1 ? 'bg-emerald-500' : 'bg-slate-400'}`}
-                                                    />
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 flex flex-col justify-center space-y-6 shadow-xl shadow-slate-200/50">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black text-xl">1</div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dẫn đầu doanh thu</p>
-                                            <p className="text-lg font-black text-slate-900 uppercase">
-                                                {revenueQuery.data?.topServices && revenueQuery.data.topServices.length > 0
-                                                    ? revenueQuery.data.topServices[0].serviceName
-                                                    : 'N/A'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="h-px bg-slate-50" />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Số lượt sử dụng</p>
-                                            <p className="text-2xl font-black text-slate-900">{revenueQuery.data?.topServices?.[0]?.count || 0}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tỉ trọng (%)</p>
-                                            <p className="text-2xl font-black text-emerald-600">
-                                                {revenueQuery.data?.topServices && revenueQuery.data.topServices.length > 0 && revenueQuery.data.totalRevenue
-                                                    ? ((revenueQuery.data.topServices[0].amount / revenueQuery.data.totalRevenue) * 100).toFixed(1)
-                                                    : 0}%
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Quality Audit Section Area */}

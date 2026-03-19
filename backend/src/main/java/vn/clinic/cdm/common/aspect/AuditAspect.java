@@ -11,9 +11,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import vn.clinic.cdm.auth.AuthPrincipal;
+import vn.clinic.cdm.security.AuthPrincipal;
 import vn.clinic.cdm.common.annotation.AuditAction;
-import vn.clinic.cdm.common.service.AuditService;
+import vn.clinic.cdm.service.common.AuditService;
+import vn.clinic.cdm.dto.common.AuditRequest;
 
 @Aspect
 @Component
@@ -43,13 +44,13 @@ public class AuditAspect {
         String ip = request.getRemoteAddr();
         String ua = request.getHeader("User-Agent");
 
-        auditService.log(
+        auditService.log(new AuditRequest(
                 principal.getUserId(),
                 principal.getEmail(),
                 action,
                 details,
                 status,
                 ip,
-                ua);
+                ua));
     }
 }

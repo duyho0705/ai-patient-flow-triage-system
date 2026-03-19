@@ -26,10 +26,10 @@ INSERT INTO patient (id, tenant_id, identity_user_id, full_name_vi, date_of_birt
 ('00000000-0000-0000-0003-000000000007', '00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0003-000000000006', 'Phạm Thị D', '1992-11-20', 'FEMALE', 'MEDIUM', 'Hen suyễn', NULL);
 
 -- 3. Add System Settings (For Configuration Feature)
-INSERT INTO system_settings (id, tenant_id, setting_key, setting_value, category, description) VALUES 
-(uuid_generate_v4(), '00000000-0000-0000-0002-000000000001', 'GLUCOSE_HIGH_THRESHOLD', '180', 'THRESHOLD', 'Ngưỡng đường huyết cao cảnh báo'),
-(uuid_generate_v4(), '00000000-0000-0000-0002-000000000001', 'BP_SYSTOLIC_HIGH_THRESHOLD', '140', 'THRESHOLD', 'Ngưỡng huyết áp tâm thu cao'),
-(uuid_generate_v4(), '00000000-0000-0000-0002-000000000001', 'AI_RISK_RESCAN_INTERVAL_HOURS', '6', 'AI_CONFIG', 'Khoảng thời gian quét lại rủi ro AI');
+INSERT INTO system_settings (id, setting_key, setting_value, category, description) VALUES 
+(uuid_generate_v4(), 'GLUCOSE_HIGH_THRESHOLD', '180', 'THRESHOLD', 'Ngưỡng đường huyết cao cảnh báo'),
+(uuid_generate_v4(), 'BP_SYSTOLIC_HIGH_THRESHOLD', '140', 'THRESHOLD', 'Ngưỡng huyết áp tâm thu cao'),
+(uuid_generate_v4(), 'AI_RISK_RESCAN_INTERVAL_HOURS', '6', 'AI_CONFIG', 'Khoảng thời gian quét lại rủi ro AI');
 
 -- 4. Add Audit Logs (For Audit Feature)
 INSERT INTO audit_log (id, tenant_id, user_id, email, entity_name, entity_id, action, details, ip_address, created_at) VALUES 
@@ -38,6 +38,6 @@ INSERT INTO audit_log (id, tenant_id, user_id, email, entity_name, entity_id, ac
 
 -- 5. Add some mock data for performance reports
 -- Let's say Dr. Tú (doctor@gmail.com) has handled some consultations
-INSERT INTO clinical_consultation (id, tenant_id, patient_id, doctor_user_id, symptoms, diagnosis, started_at, finished_at) VALUES 
-(uuid_generate_v4(), '00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0002-000000000008', (SELECT id FROM identity_user WHERE email='doctor@gmail.com'), 'Đau đầu, mệt mỏi', 'Cơn tăng huyết áp kịch phát', CURRENT_TIMESTAMP - INTERVAL '5 days', CURRENT_TIMESTAMP - INTERVAL '5 days' + INTERVAL '20 minutes'),
-(uuid_generate_v4(), '00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0002-000000000008', (SELECT id FROM identity_user WHERE email='doctor@gmail.com'), 'Kiểm tra định kỳ', 'Tiểu đường type 2 ổn định', CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days' + INTERVAL '15 minutes');
+INSERT INTO clinical_consultation (id, tenant_id, branch_id, patient_id, doctor_user_id, status, chief_complaint_summary, diagnosis_notes, started_at, ended_at) VALUES 
+(uuid_generate_v4(), '00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0002-000000000002', '00000000-0000-0000-0002-000000000008', (SELECT id FROM identity_user WHERE email='doctor@gmail.com'), 'COMPLETED', 'Đau đầu, mệt mỏi', 'Cơn tăng huyết áp kịch phát', CURRENT_TIMESTAMP - INTERVAL '5 days', CURRENT_TIMESTAMP - INTERVAL '5 days' + INTERVAL '20 minutes'),
+(uuid_generate_v4(), '00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0002-000000000002', '00000000-0000-0000-0002-000000000008', (SELECT id FROM identity_user WHERE email='doctor@gmail.com'), 'COMPLETED', 'Kiểm tra định kỳ', 'Tiểu đường type 2 ổn định', CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days' + INTERVAL '15 minutes');

@@ -13,7 +13,7 @@ import type {
     CreateAppointmentRequest,
     PatientNotificationDto,
     UpdatePatientProfileRequest,
-    InvoiceDto,
+
     ChangePasswordRequest,
     AiChatRequest,
     AiChatResponse,
@@ -57,18 +57,7 @@ export async function getPortalDashboard(tenant: TenantHeaders | null): Promise<
     return data
 }
 
-export async function getPortalInvoices(tenant: TenantHeaders | null): Promise<InvoiceDto[]> {
-    return get<InvoiceDto[]>('/portal/billing/invoices', tenant)
-}
 
-export async function payPortalInvoice(id: string, method: string, tenant: TenantHeaders | null): Promise<InvoiceDto> {
-    return post<InvoiceDto>(`/portal/billing/invoices/${id}/pay`, method, tenant)
-}
-
-export async function getVnpayPaymentUrl(id: string, returnUrl: string, tenant: TenantHeaders | null): Promise<string> {
-    const res = await get<{ paymentUrl: string }>(`/portal/billing/invoices/${id}/vnpay-url?returnUrl=${encodeURIComponent(returnUrl)}`, tenant)
-    return res.paymentUrl
-}
 
 export async function getPortalAppointments(tenant: TenantHeaders | null): Promise<AppointmentDto[]> {
     try {

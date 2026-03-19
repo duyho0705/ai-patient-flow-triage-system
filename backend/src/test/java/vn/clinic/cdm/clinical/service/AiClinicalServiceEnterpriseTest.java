@@ -5,8 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import vn.clinic.cdm.clinical.domain.ClinicalConsultation;
-import vn.clinic.cdm.tenant.domain.TenantBranch;
+import vn.clinic.cdm.entity.clinical.ClinicalConsultation;
+import vn.clinic.cdm.entity.tenant.TenantBranch;
+import vn.clinic.cdm.service.clinical.AiClinicalService;
 
 import java.util.UUID;
 
@@ -38,12 +39,11 @@ public class AiClinicalServiceEnterpriseTest {
         for (int i = 0; i < 20; i++) {
             String result = aiClinicalService.generateLongTermCarePlan(consultation);
             assertNotNull(result);
-            assertFalse(result.contains("Há»‡ thá»‘ng Ä‘ang báº­n"));
+            assertFalse(result.contains("Hệ thống đang bận"));
         }
 
         // The 21st call should be rate limited
         String limitedResult = aiClinicalService.generateLongTermCarePlan(consultation);
-        assertTrue(limitedResult.contains("Há»‡ thá»‘ng Ä‘ang báº­n"));
+        assertTrue(limitedResult.contains("Hệ thống đang bận"));
     }
 }
-

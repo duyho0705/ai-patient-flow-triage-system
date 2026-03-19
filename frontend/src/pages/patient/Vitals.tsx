@@ -1003,7 +1003,7 @@ export default function PatientVitals() {
                                         {VITAL_CONFIG[criticalAlert.type === 'BLOOD_PRESSURE_SYS' || criticalAlert.type === 'BLOOD_PRESSURE_DIA' ? 'BLOOD_PRESSURE' : criticalAlert.type]?.label}: {criticalAlert.value} {VITAL_CONFIG[criticalAlert.type === 'BLOOD_PRESSURE_SYS' || criticalAlert.type === 'BLOOD_PRESSURE_DIA' ? 'BLOOD_PRESSURE' : criticalAlert.type]?.unit}
                                     </p>
                                 </div>
-                                
+
                                 <div className="bg-rose-50 dark:bg-rose-500/5 p-4 rounded-2xl border border-rose-100 dark:border-rose-500/20">
                                     <p className="text-sm font-bold text-slate-700 dark:text-slate-300 leading-relaxed">
                                         {criticalAlert.message}
@@ -1011,14 +1011,14 @@ export default function PatientVitals() {
                                 </div>
 
                                 <div className="flex flex-col w-full gap-3">
-                                    <button 
+                                    <button
                                         onClick={() => window.open('tel:115')}
                                         className="w-full flex items-center justify-center gap-3 bg-rose-500 text-white py-4 rounded-2xl font-black shadow-lg shadow-rose-500/30 hover:bg-rose-600 transition-all uppercase tracking-widest text-sm"
                                     >
                                         <PhoneCall className="size-5" />
                                         Gọi cấp cứu (115)
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setCriticalAlert(null)}
                                         className="w-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all text-sm"
                                     >

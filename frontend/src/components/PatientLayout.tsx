@@ -21,7 +21,7 @@ import {
     BriefcaseMedical,
     Headset
 } from 'lucide-react'
-import { getPortalNotifications, markPortalNotificationAsRead, markPortalAllNotificationsAsRead, getPortalProfile, getPortalInvoices } from '@/api/portal'
+import { getPortalNotifications, markPortalNotificationAsRead, markPortalAllNotificationsAsRead, getPortalProfile } from '@/api/portal'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePatientRealtime } from '@/hooks/usePatientRealtime'
@@ -55,19 +55,10 @@ export function PatientLayout({ children }: PatientLayoutProps) {
         enabled: !!user && !!headers?.tenantId && isPatient,
         refetchInterval: 60000
     })
-
-    const { data: invoices = [] } = useQuery({
-        queryKey: ['portal-invoices'],
-        queryFn: () => getPortalInvoices(headers),
-        enabled: !!user && !!headers?.tenantId && isPatient,
-        refetchInterval: 120000 // Invoices less frequent than notifications
-    })
-
     // Global Real-time Listener
     usePatientRealtime(profile?.id, undefined)
 
     const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.isRead).length : 0
-    const hasPendingInvoice = Array.isArray(invoices) && invoices.some(inv => inv.status === 'PENDING')
 
     useEffect(() => {
         if (!user || !headers?.tenantId) return
@@ -159,7 +150,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                 <nav className="flex-1 space-y-2">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path
-                        const isBilling = item.path === '/patient/billing'
+
                         return (
                             <Link
                                 key={item.path}
@@ -171,9 +162,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                             >
                                 <item.icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-slate-900 dark:text-white'}`} />
                                 <span className="text-base tracking-tight">{item.label}</span>
-                                {isBilling && hasPendingInvoice && !isActive && (
-                                    <span className="ml-auto w-2 h-2 bg-rose-500 rounded-full" />
-                                )}
+
                             </Link>
                         )
                     })}
@@ -344,7 +333,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
             <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-2 py-3 flex items-center justify-around z-40">
                 {navItems.map((item) => {
                     const isActive = location.pathname === item.path
-                    const isBilling = item.path === '/patient/billing'
+
                     return (
                         <Link
                             key={item.path}
@@ -354,9 +343,7 @@ export function PatientLayout({ children }: PatientLayoutProps) {
                         >
                             <div className={`p-2 rounded-xl transition-all relative ${isActive ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : ''}`}>
                                 <item.icon className="w-5 h-5" />
-                                {isBilling && hasPendingInvoice && (
-                                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white" />
-                                )}
+
                             </div>
                             <span className="text-[10px] font-bold">{item.label}</span>
                         </Link>

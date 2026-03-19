@@ -17,11 +17,14 @@ export function PatientAddModal({ isOpen, onClose }: PatientAddModalProps) {
     const [formData, setFormData] = useState({
         fullNameVi: '',
         dateOfBirth: '',
+        email: '',
+        password: '',
         phone: '',
         gender: 'male',
         roleDisease: 'Tiểu đường',
         riskLevel: 'normal',
-        chronicConditions: ''
+        chronicConditions: '',
+        cccd: ''
     });
 
     const mutation = useMutation({
@@ -32,11 +35,14 @@ export function PatientAddModal({ isOpen, onClose }: PatientAddModalProps) {
             setFormData({
                 fullNameVi: '',
                 dateOfBirth: '',
+                email: '',
+                password: '',
                 phone: '',
                 gender: 'male',
                 roleDisease: 'Tiểu đường',
                 riskLevel: 'normal',
-                chronicConditions: ''
+                chronicConditions: '',
+                cccd: ''
             });
             onClose();
         },
@@ -48,7 +54,7 @@ export function PatientAddModal({ isOpen, onClose }: PatientAddModalProps) {
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         
-        if (!formData.fullNameVi || !formData.dateOfBirth || !formData.phone) {
+        if (!formData.fullNameVi || !formData.dateOfBirth || !formData.phone || !formData.email || !formData.password) {
             toastService.error("Vui lòng điền đầy đủ các trường bắt buộc (*)");
             return;
         }
@@ -63,10 +69,13 @@ export function PatientAddModal({ isOpen, onClose }: PatientAddModalProps) {
         mutation.mutate({
             fullNameVi: formData.fullNameVi,
             dateOfBirth: formData.dateOfBirth,
+            email: formData.email,
+            password: formData.password,
             phone: formData.phone,
             gender: formData.gender,
             riskLevel: mappedRisk,
-            chronicConditions: finalConditions
+            chronicConditions: finalConditions,
+            cccd: formData.cccd
         });
     };
 
@@ -125,6 +134,45 @@ export function PatientAddModal({ isOpen, onClose }: PatientAddModalProps) {
                             />
                         </div>
                         
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                Email (Tài khoản) <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-400"
+                                placeholder="patient@example.com"
+                                type="email"
+                                value={formData.email}
+                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                Mật khẩu <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-400"
+                                placeholder="Nhập mật khẩu ban đầu"
+                                type="password"
+                                value={formData.password}
+                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                Số định danh (CCCD/Passport)
+                            </label>
+                            <input
+                                className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-2.5 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-400"
+                                placeholder="Nhập số CCCD"
+                                type="text"
+                                value={formData.cccd}
+                                onChange={e => setFormData({ ...formData, cccd: e.target.value })}
+                            />
+                        </div>
+
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
                                 Ngày sinh <span className="text-red-500">*</span>

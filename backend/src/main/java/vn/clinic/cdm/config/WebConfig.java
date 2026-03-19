@@ -1,5 +1,7 @@
 package vn.clinic.cdm.config;
 
+import vn.clinic.cdm.filter.RateLimitInterceptor;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;

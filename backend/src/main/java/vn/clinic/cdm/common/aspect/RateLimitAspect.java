@@ -11,9 +11,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import vn.clinic.cdm.common.annotation.RateLimit;
-import vn.clinic.cdm.common.exception.ApiException;
-import vn.clinic.cdm.common.exception.ErrorCode;
-import vn.clinic.cdm.common.service.RateLimitService;
+import vn.clinic.cdm.exception.ApiException;
+import vn.clinic.cdm.exception.ErrorCode;
+import vn.clinic.cdm.service.common.RateLimitService;
 
 @Aspect
 @Component

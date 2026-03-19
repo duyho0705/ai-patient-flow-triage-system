@@ -1,16 +1,16 @@
-﻿import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 
-/** Role chÃ­nh theo thá»±c táº¿ phÃ²ng khÃ¡m VN */
+/** Role chính theo thực tế phòng khám VN */
 export type Role = 'admin' | 'receptionist' | 'triage_nurse' | 'doctor' | 'clinic_manager' | 'pharmacist' | 'patient'
 
 const ROLES: { value: Role; label: string }[] = [
-  { value: 'admin', label: 'Quáº£n trá»‹ há»‡ thá»‘ng' },
-  { value: 'receptionist', label: 'Lá»… tÃ¢n' },
-  { value: 'triage_nurse', label: 'Y tÃ¡ phÃ¢n loáº¡i' },
-  { value: 'doctor', label: 'BÃ¡c sÄ©' },
-  { value: 'clinic_manager', label: 'Quáº£n lÃ½ phÃ²ng khÃ¡m' },
-  { value: 'pharmacist', label: 'DÆ°á»£c sÄ©' },
-  { value: 'patient', label: 'Bá»‡nh nhÃ¢n' },
+  { value: 'admin', label: 'Quản trị hệ thống' },
+  { value: 'receptionist', label: 'Lễ tân' },
+  { value: 'triage_nurse', label: 'Y tá phân loại' },
+  { value: 'doctor', label: 'Bác sĩ' },
+  { value: 'clinic_manager', label: 'Quản lý phòng khám' },
+  { value: 'pharmacist', label: 'Dược sĩ' },
+  { value: 'patient', label: 'Bệnh nhân' },
 ]
 
 const STORAGE_KEY = 'cdm-platform-role'

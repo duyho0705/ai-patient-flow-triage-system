@@ -86,7 +86,7 @@ export async function createPatient(
     headers: TenantHeaders | null
 ): Promise<PatientDto> {
     return post<PatientDto>(
-        `/patients`,
+        `/doctor-portal/patients`,
         data,
         headers
     )

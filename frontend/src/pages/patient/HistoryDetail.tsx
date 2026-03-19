@@ -8,7 +8,7 @@ import {
     Activity,
     Clipboard,
     FileText,
-    Receipt,
+
     Printer,
     Download,
     CheckCircle2,
@@ -125,8 +125,6 @@ export default function PatientHistoryDetail() {
                         { label: 'Tiếp nhận', status: 'completed', icon: CheckCircle2 },
                         { label: 'Phân loại', status: detail.consultation.triageSessionId ? 'completed' : 'pending', icon: CheckCircle2 },
                         { label: 'Thăm khám', status: detail.consultation.status === 'COMPLETED' ? 'completed' : 'active', icon: CheckCircle2 },
-                        { label: 'Thanh toán', status: detail.invoice?.status === 'PAID' ? 'completed' : 'pending', icon: CheckCircle2 },
-                        { label: 'Nhận thuốc', status: detail.invoice?.status === 'PAID' ? 'active' : 'pending', icon: CheckCircle2 }
                     ].map((step, idx) => (
                         <div key={idx} className="flex flex-col items-center gap-4 relative z-10 group">
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${step.status === 'completed'
@@ -404,33 +402,7 @@ export default function PatientHistoryDetail() {
                         </motion.div>
                     )}
 
-                    {/* Invoice Card */}
-                    {detail.invoice && (
-                        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/20">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Thanh toán</h3>
-                                <span className={`text-[8px] font-black px-2 py-0.5 rounded-full ${detail.invoice.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                                    }`}>
-                                    {detail.invoice.status === 'PAID' ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN'}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2.5 bg-slate-50 text-slate-400 rounded-xl">
-                                    <Receipt className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-lg font-black text-slate-900 tracking-tight">{detail.invoice.finalAmount.toLocaleString('vi-VN')} đ</p>
-                                    <p className="text-[10px] font-bold text-slate-400">Hóa đơn #{detail.invoice.invoiceNumber.toUpperCase()}</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => navigate('/patient/billing')}
-                                className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all shadow-lg shadow-slate-200"
-                            >
-                                Xem chi tiết & Thanh toán
-                            </button>
-                        </div>
-                    )}
+
                 </div>
             </div>
         </div>

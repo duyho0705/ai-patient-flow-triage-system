@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     MessageSquare,
@@ -34,6 +34,8 @@ export default function PatientChatDoctor() {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [isVideoCallOpen, setIsVideoCallOpen] = useState(false)
+    const messagesEndRef = useRef<HTMLDivElement>(null)
+    const messageInputRef = useRef<HTMLInputElement>(null)
 
     const { user } = useAuth()
     const patientId = user?.id || ''
@@ -59,6 +61,10 @@ export default function PatientChatDoctor() {
         selectedDoctor?.id
     );
 
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [chatHistory])
+
     const [isSending, setIsSending] = useState(false)
 
     // Send file (Upload to backend storage then sync to Firebase)
@@ -79,6 +85,9 @@ export default function PatientChatDoctor() {
             toast.success('Đã gửi file thành công!')
             setSelectedFile(null)
             setMessage('')
+            setTimeout(() => {
+                messageInputRef.current?.focus()
+            }, 50)
         },
         onError: () => {
             toast.error('Lỗi khi tải file lên.')
@@ -97,6 +106,9 @@ export default function PatientChatDoctor() {
         try {
             await sendMessage(message, patientId, 'PATIENT')
             setMessage('')
+            setTimeout(() => {
+                messageInputRef.current?.focus()
+            }, 50)
         } catch (error) {
             toast.error('Lỗi khi gửi tin nhắn.')
         } finally {
@@ -156,14 +168,14 @@ export default function PatientChatDoctor() {
                             key={doc.id}
                             onClick={() => setSelectedDoctor(doc)}
                             className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all border ${selectedDoctor?.id === doc.id
-                                ? 'bg-[#4ade80]/10 border-[#4ade80]/20'
+                                ? 'bg-[#10b981]/10 border-[#10b981]/20'
                                 : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent'
                                 }`}
                         >
                             <div className="relative flex-shrink-0">
                                 <img src={doc.avatar} className="w-12 h-12 rounded-full object-cover shadow-sm" alt={doc.name} />
                                 {doc.online && (
-                                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#4ade80] border-2 border-white dark:border-slate-900 rounded-full" />
+                                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#10b981] border-2 border-white dark:border-slate-900 rounded-full" />
                                 )}
                             </div>
                             <div className="flex-1 overflow-hidden">
@@ -171,7 +183,7 @@ export default function PatientChatDoctor() {
                                     <h4 className="font-bold text-sm truncate text-slate-900 dark:text-white">{doc.name}</h4>
                                     <span className="text-[10px] text-slate-400 font-medium">{doc.lastMessageTime || 'mới'}</span>
                                 </div>
-                                <p className={`text-xs truncate ${selectedDoctor?.id === doc.id ? 'text-[#4ade80]' : 'text-slate-500'}`}>
+                                <p className={`text-xs truncate ${selectedDoctor?.id === doc.id ? 'text-[#10b981]' : 'text-slate-500'}`}>
                                     {doc.lastMessage || doc.specialty}
                                 </p>
                             </div>
@@ -190,12 +202,12 @@ export default function PatientChatDoctor() {
                                 <div className="relative">
                                     <img src={selectedDoctor.avatar} className="w-10 h-10 rounded-full object-cover" alt={selectedDoctor.name} />
                                     {selectedDoctor.online && (
-                                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#4ade80] border-2 border-white dark:border-slate-900 rounded-full" />
+                                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#10b981] border-2 border-white dark:border-slate-900 rounded-full" />
                                     )}
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-sm text-slate-900 dark:text-white">{selectedDoctor.name}</h3>
-                                    <p className="text-[10px] text-[#4ade80] font-bold uppercase tracking-wider">
+                                    <p className="text-[10px] text-[#10b981] font-bold uppercase tracking-wider">
                                         {selectedDoctor.online ? 'Đang trực tuyến' : 'Ngoại tuyến'}
                                     </p>
                                 </div>
@@ -238,7 +250,7 @@ export default function PatientChatDoctor() {
                                         )}
                                         <div className={`max-w-[80%] flex flex-col ${msg.senderType === 'PATIENT' ? 'items-end' : 'items-start'} gap-1.5`}>
                                             {(msg.isImage || msg.fileUrl) ? (
-                                                <div className="bg-[#4ade80]/10 border border-[#4ade80]/20 p-2 rounded-2xl rounded-br-none group cursor-pointer relative">
+                                                <div className="bg-[#10b981]/10 border border-[#10b981]/20 p-2 rounded-2xl rounded-br-none group cursor-pointer relative">
                                                     <img src={msg.imageUrl || msg.fileUrl} className="rounded-xl w-64 h-40 object-cover" alt="attachment" />
                                                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center rounded-xl">
                                                         <ZoomIn className="text-white w-6 h-6" />
@@ -247,7 +259,7 @@ export default function PatientChatDoctor() {
                                                 </div>
                                             ) : (
                                                 <div className={`p-4 rounded-3xl text-sm font-medium shadow-sm leading-relaxed ${msg.senderType === 'PATIENT'
-                                                    ? 'bg-[#4ade80] text-slate-900 rounded-br-none shadow-[#4ade80]/20'
+                                                    ? 'bg-[#10b981] text-slate-900 rounded-br-none shadow-[#10b981]/20'
                                                     : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-bl-none border border-slate-100 dark:border-slate-700/50'
                                                     }`}>
                                                     {msg.content}
@@ -260,6 +272,7 @@ export default function PatientChatDoctor() {
                                     </motion.div>
                                 ))}
                             </AnimatePresence>
+                            <div ref={messagesEndRef} />
                         </div>
 
                         {/* Input Area */}
@@ -282,6 +295,7 @@ export default function PatientChatDoctor() {
                                     <Smile className="w-5 h-5" />
                                 </button>
                                 <input
+                                    ref={messageInputRef}
                                     type="text"
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
@@ -292,7 +306,7 @@ export default function PatientChatDoctor() {
                                 <button
                                     onClick={handleSend}
                                     disabled={(!message.trim() && !selectedFile) || isSending || fileMutation.isPending}
-                                    className="bg-[#4ade80] text-slate-900 p-2.5 rounded-xl shadow-lg shadow-[#4ade80]/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                                    className="bg-[#10b981] text-slate-900 p-2.5 rounded-xl shadow-lg shadow-[#10b981]/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                                 >
                                     {(isSending || fileMutation.isPending) ? <Loader2 className="w-5 h-5 animate-spin text-slate-900" /> : <Send className="w-5 h-5" />}
                                 </button>

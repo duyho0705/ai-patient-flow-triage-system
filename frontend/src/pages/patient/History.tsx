@@ -36,7 +36,7 @@ export default function PatientHistory() {
                     <section>
                         {/* Header Row: Title on left, Buttons on right */}
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold flex items-center gap-2 text-[#4ade80]">
+                            <h2 className="text-xl font-bold flex items-center gap-2 text-[#10b981]">
                                 <Pill className="w-6 h-6" />
                                 Đang điều trị
                             </h2>
@@ -48,7 +48,7 @@ export default function PatientHistory() {
                                     Lịch sử
                                 </button>
                                 <button
-                                    className="flex items-center gap-2 px-4 py-2 bg-[#4ade80] text-slate-900 rounded-full font-bold text-sm shadow-sm shadow-[#4ade80]/20"
+                                    className="flex items-center gap-2 px-4 py-2 bg-[#10b981] text-slate-900 rounded-full font-bold text-sm shadow-sm shadow-[#10b981]/20"
                                 >
                                     <ShoppingCart className="w-4 h-4" />
                                     Yêu cầu cấp lại
@@ -129,7 +129,7 @@ export default function PatientHistory() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <Link to={`/patient/history/${item.id}`} className="text-[#4ade80]">
+                                                    <Link to={`/patient/history/${item.id}`} className="text-[#10b981]">
                                                         <Eye className="w-5 h-5" />
                                                     </Link>
                                                 </td>

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
 import { getStoredToken, setStoredToken } from '@/api/client'
 import { AuthService, OpenAPI } from '@/api-client'
-import type { AuthUserDto, LoginRequest, RegisterRequest, LoginResponse, SocialLoginRequest } from '@/api-client'
+import type { AuthUserDto, LoginRequest, LoginResponse } from '@/api-client'
 
 // Configure OpenAPI globally
 OpenAPI.BASE = 'http://localhost:8080'
@@ -12,8 +12,6 @@ type AuthContextValue = {
   isAuthenticated: boolean
   isLoading: boolean
   login: (req: LoginRequest) => Promise<LoginResponse>
-  socialLogin: (req: SocialLoginRequest) => Promise<LoginResponse>
-  register: (req: RegisterRequest) => Promise<LoginResponse>
   logout: () => void
   refreshUser: () => Promise<void>
 }
@@ -93,31 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [setUser]
   )
 
-  const socialLogin = useCallback(
-    async (req: SocialLoginRequest) => {
-      const apiRes = await AuthService.socialLogin(req)
-      const res = apiRes.data!
-      setStoredToken(res.token!)
-      setToken(res.token!)
-      OpenAPI.TOKEN = res.token!
-      setUser(res.user!)
-      return res
-    },
-    [setUser]
-  )
 
-  const register = useCallback(
-    async (req: RegisterRequest) => {
-      const apiRes = await AuthService.register(req)
-      const res = apiRes.data!
-      setStoredToken(res.token!)
-      setToken(res.token!)
-      OpenAPI.TOKEN = res.token!
-      setUser(res.user!)
-      return res
-    },
-    [setUser]
-  )
 
   const logout = useCallback(() => {
     AuthService.logout().catch(() => {})
@@ -133,8 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user && !!token,
     isLoading,
     login,
-    socialLogin,
-    register,
     logout,
     refreshUser,
   }

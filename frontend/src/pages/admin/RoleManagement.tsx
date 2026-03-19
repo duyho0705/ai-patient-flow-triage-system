@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getRoles, getPermissions, createRole, updateRole, deleteRole } from '@/api/admin'
-import { Shield, Plus, Edit2, Trash2, X, Check, Search, Info } from 'lucide-react'
+import { Shield, Plus, Edit2, Trash2, X, Check, Search, Info, Loader2, Save } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RoleDto, PermissionDto } from '@/types/api'
 import { CustomInput } from '../../components/CustomInput'
 import { toastService } from '@/services/toast'
+import { createPortal } from 'react-dom'
 
 export function RoleManagement() {
     const queryClient = useQueryClient()
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [editingRole, setEditingRole] = useState<RoleDto | null>(null)
+    const [roleToDelete, setRoleToDelete] = useState<RoleDto | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [permSearch, setPermSearch] = useState('')
     const [formData, setFormData] = useState<{
@@ -36,7 +39,12 @@ export function RoleManagement() {
     })
 
     const mutation = useMutation({
-        mutationFn: (data: RoleDto) => editingRole ? updateRole(editingRole.id, data) : createRole(data),
+        mutationFn: (data: RoleDto) => {
+            if (editingRole?.id) {
+                return updateRole(editingRole.id, data)
+            }
+            return createRole(data)
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] })
             toastService.success(editingRole ? 'Cập nhật vai trò thành công' : 'Tạo vai trò thành công')
@@ -52,6 +60,11 @@ export function RoleManagement() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] })
             toastService.success('Xóa vai trò thành công')
+            setIsDeleteModalOpen(false)
+            setRoleToDelete(null)
+        },
+        onError: (err: any) => {
+            toastService.error(err.message || 'Lỗi khi xóa vai trò')
         }
     })
 
@@ -102,11 +115,12 @@ export function RoleManagement() {
     )
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Quản lý Vai trò</h1>
-                    <p className="text-slate-500 font-medium text-sm">Định nghĩa các nhóm quyền và gán cho nhân sự hệ thống.</p>
+        <div className="w-full animate-in fade-in duration-700 font-sans space-y-8">
+            {/* Header Section */}
+            <div className="flex justify-between items-end text-left">
+                <div>
+                    <h2 className="text-2xl font-bold text-neutral-900">Quản lý Vai trò</h2>
+                    <p className="text-neutral-500">Phân quyền và kiểm soát truy cập hệ thống của các nhóm người dùng.</p>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="relative">
@@ -116,15 +130,15 @@ export function RoleManagement() {
                             placeholder="Tìm vai trò..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-slate-900 transition-all w-64"
+                            className="pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary-500 transition-all w-64 shadow-sm"
                         />
                     </div>
                     <button
                         onClick={() => openModal()}
-                        className="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+                        className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
                     >
-                        <Plus className="w-4 h-4" />
-                        Thêm vai trò
+                        <Plus className="w-5 h-5" />
+                        Thêm vai trò mới
                     </button>
                 </div>
             </div>
@@ -145,19 +159,33 @@ export function RoleManagement() {
                                 <div className="p-4 bg-slate-50 text-slate-900 rounded-3xl group-hover:bg-slate-900 group-hover:text-white transition-all">
                                     <Shield className="w-6 h-6" />
                                 </div>
-                                <div className="flex gap-2">
-                                    <button onClick={() => openModal(role)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
-                                        <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                        onClick={() => {
-                                            if (confirm('Bạn có chắc chắn muốn xóa vai trò này?')) deleteMutation.mutate(role.id)
-                                        }}
-                                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
+                                    <div className="flex gap-3">
+                                        <motion.button 
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openModal(role);
+                                            }}
+                                            className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100 shadow-sm bg-white"
+                                            title="Chỉnh sửa vai trò"
+                                        >
+                                            <Edit2 className="w-4 h-4" />
+                                        </motion.button>
+                                        <motion.button 
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setRoleToDelete(role);
+                                                setIsDeleteModalOpen(true);
+                                            }}
+                                            className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-100 shadow-sm bg-white"
+                                            title="Xóa vai trò"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </motion.button>
+                                    </div>
                             </div>
                             <div>
                                 <h3 className="text-xl font-black text-slate-900 tracking-tight">{role.nameVi}</h3>
@@ -184,28 +212,39 @@ export function RoleManagement() {
             </div>
 
             <AnimatePresence>
-                {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
+                {isModalOpen && createPortal(
+                    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md"
+                            onClick={closeModal}
+                        />
+
+                        {/* Modal Container */}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="relative bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col z-10"
                         >
-                            <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                                <div className="p-8 border-b border-slate-100 flex items-center justify-between shrink-0">
+                            <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
+                                <div className="p-8 border-b border-primary/10 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shrink-0">
                                     <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                                        <div className="p-3 bg-slate-900 dark:bg-primary/20 text-white dark:text-primary rounded-2xl shadow-lg">
                                             <Shield className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                                                {editingRole ? 'Chỉnh sửa Vai trò' : 'Thêm vai trò mới'}
+                                            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-none">
+                                                {editingRole ? 'Cập nhật Vai trò' : 'Thêm vai trò hệ thống'}
                                             </h3>
-                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Thiết lập quyền hạn truy cập</p>
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1.5">Phân quyền & Kiểm soát truy cập</p>
                                         </div>
                                     </div>
-                                    <button type="button" onClick={closeModal} className="p-3 hover:bg-slate-100 rounded-2xl transition-all">
+                                    <button type="button" onClick={closeModal} className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all shadow-sm">
                                         <X className="w-6 h-6 text-slate-400" />
                                     </button>
                                 </div>
@@ -303,25 +342,79 @@ export function RoleManagement() {
                                     </div>
                                 </div>
 
-                                <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4 shrink-0">
+                                <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end gap-4 shrink-0">
                                     <button
                                         type="button"
                                         onClick={closeModal}
-                                        className="px-8 py-3.5 text-slate-500 font-bold text-xs uppercase tracking-widest hover:text-slate-900 transition-all"
+                                        className="px-8 py-3.5 text-slate-500 font-black text-xs uppercase tracking-[0.2em] hover:text-slate-900 dark:hover:text-white transition-all"
                                     >
-                                        Hủy
+                                        Hủy thao tác
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={mutation.isPending}
-                                        className="px-10 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                                        className="px-10 py-3.5 bg-slate-900 dark:bg-primary text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-primary shadow-xl hover:shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-3"
                                     >
-                                        {mutation.isPending ? 'Đang lưu...' : (editingRole ? 'Cập nhật' : 'Tạo mới')}
+                                        {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                        {mutation.isPending ? 'Đang lưu...' : (editingRole ? 'Cập nhật hệ thống' : 'Tạo vai trò mới')}
                                     </button>
                                 </div>
                             </form>
                         </motion.div>
-                    </div>
+                    </div>,
+                    document.body
+                )}
+            </AnimatePresence>
+
+            {/* Premium Delete Confirmation Modal */}
+            <AnimatePresence>
+                {isDeleteModalOpen && roleToDelete && createPortal(
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md"
+                            onClick={() => !deleteMutation.isPending && setIsDeleteModalOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl p-8 max-w-md w-full z-10 text-center space-y-6"
+                        >
+                            <div className="size-20 bg-rose-50 dark:bg-rose-900/20 rounded-full flex items-center justify-center mx-auto">
+                                <Trash2 className="size-10 text-rose-500" />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Xác nhận xóa?</h3>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium">
+                                    Bạn có chắc chắn muốn xóa vai trò <span className="text-rose-500 font-bold">{roleToDelete.nameVi}</span>? 
+                                    Hành động này <span className="font-bold underline">không thể hoàn tác</span>.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-3 pt-4">
+                                <button
+                                    onClick={() => deleteMutation.mutate(roleToDelete.id)}
+                                    disabled={deleteMutation.isPending}
+                                    className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-rose-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-rose-200 dark:shadow-none"
+                                >
+                                    {deleteMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                                    {deleteMutation.isPending ? 'Đang xóa...' : 'Đồng ý xóa vai trò'}
+                                </button>
+                                <button
+                                    onClick={() => setIsDeleteModalOpen(false)}
+                                    disabled={deleteMutation.isPending}
+                                    className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                                >
+                                    Hủy bỏ
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>,
+                    document.body
                 )}
             </AnimatePresence>
         </div>

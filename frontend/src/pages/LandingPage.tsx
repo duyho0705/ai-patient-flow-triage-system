@@ -22,7 +22,7 @@ export function LandingPage() {
   const location = useLocation()
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [redirectAfterLogin, setRedirectAfterLogin] = useState<{ pathname?: string; search?: string } | undefined>(undefined)
-  const [firebaseToken, setFirebaseToken] = useState<string | undefined>(undefined)
+
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -31,9 +31,7 @@ export function LandingPage() {
       if (location.state?.from) {
         setRedirectAfterLogin(location.state.from)
       }
-      if (location.state?.firebaseToken) {
-        setFirebaseToken(location.state.firebaseToken)
-      }
+
       window.history.replaceState({}, document.title)
     }
   }, [location])
@@ -45,10 +43,8 @@ export function LandingPage() {
         onClose={() => {
           setIsLoginOpen(false)
           setRedirectAfterLogin(undefined)
-          setFirebaseToken(undefined)
         }}
         redirectTo={redirectAfterLogin ?? location.state?.from}
-        initialFirebaseToken={firebaseToken}
       />
 
       {/* Header */}
@@ -266,7 +262,7 @@ export function LandingPage() {
                   onClick={() => setIsLoginOpen(true)}
                   className="rounded-full bg-[#4ade80] px-12 py-5 text-lg font-bold text-slate-900 hover:scale-105 transition-transform shadow-xl shadow-[#4ade80]/20 active:scale-95"
                 >
-                  Đăng ký tư vấn miễn phí
+                  Liên hệ tư vấn ngay
                 </button>
               </div>
             </div>

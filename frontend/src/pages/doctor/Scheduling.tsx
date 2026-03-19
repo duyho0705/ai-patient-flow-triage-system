@@ -96,7 +96,7 @@ export default function Scheduling() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setIsAppointmentModalOpen(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-[#4ade80] text-slate-900 font-bold text-sm rounded-xl hover:bg-[#4ade80]/90 transition-all shadow-lg shadow-[#4ade80]/20">
+                            className="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-slate-900 font-bold text-sm rounded-xl hover:bg-[#10b981]/90 transition-all shadow-lg shadow-[#10b981]/20">
                             <span className="material-symbols-outlined text-lg">add_circle</span>
                             <span>Thêm lịch hẹn mới</span>
                         </button>
@@ -159,8 +159,8 @@ export default function Scheduling() {
                                         const isToday = loopDateStr === todayStr;
 
                                         return (
-                                            <div key={dayCode} className={`${isToday ? 'bg-[#4ade80]/5 dark:bg-[#4ade80]/10 ring-2 ring-inset ring-[#4ade80]' : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700'} min-h-[100px] p-2 relative transition-colors cursor-pointer`}>
-                                                <span className={`text-sm font-medium ${isToday ? 'text-[#4ade80] underline underline-offset-4 decoration-2' : ''}`}>{dayCode}</span>
+                                            <div key={dayCode} className={`${isToday ? 'bg-[#10b981]/5 dark:bg-[#10b981]/10 ring-2 ring-inset ring-[#10b981]' : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700'} min-h-[100px] p-2 relative transition-colors cursor-pointer`}>
+                                                <span className={`text-sm font-medium ${isToday ? 'text-[#10b981] underline underline-offset-4 decoration-2' : ''}`}>{dayCode}</span>
                                                 {hasApts.length > 0 && (
                                                     <div className="mt-2 space-y-1">
                                                         {hasApts.slice(0, 2).map((a, i) => (
@@ -208,7 +208,7 @@ export default function Scheduling() {
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center gap-2">
-                                                            <h4 className="text-sm font-bold group-hover:text-[#4ade80] transition-colors line-clamp-1">
+                                                            <h4 className="text-sm font-bold group-hover:text-[#10b981] transition-colors line-clamp-1">
                                                                 {apt.patientName}
                                                             </h4>
                                                             {apt.status === 'COMPLETED' ? (
@@ -259,7 +259,7 @@ export default function Scheduling() {
                                                                e.stopPropagation();
                                                                updateStatus({ id: apt.id, status: 'COMPLETED' });
                                                            }}
-                                                           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4ade80] text-slate-900 font-bold text-[10px] rounded-lg hover:shadow-lg hover:shadow-[#4ade80]/20 transition-all active:scale-95">
+                                                           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#10b981] text-slate-900 font-bold text-[10px] rounded-lg hover:shadow-lg hover:shadow-[#10b981]/20 transition-all active:scale-95">
                                                             <span className="material-symbols-outlined text-sm">check_circle</span>
                                                             <span>Xác nhận khám</span>
                                                         </button>

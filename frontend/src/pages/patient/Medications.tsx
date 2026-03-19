@@ -5,7 +5,6 @@ import {
     Pill,
     Clock,
     Plus,
-    AlertTriangle,
     Loader2,
     X,
     Bell,
@@ -13,7 +12,8 @@ import {
     CalendarDays,
     Info,
     CheckCircle2,
-    BriefcaseMedical
+    BriefcaseMedical,
+    Search
 } from 'lucide-react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -75,7 +75,7 @@ export default function PatientMedications() {
 
     if (isLoading) return (
         <div className="h-[calc(100vh-200px)] flex items-center justify-center">
-            <Loader2 className="w-10 h-10 text-[#4ade80] animate-spin" />
+            <Loader2 className="w-10 h-10 text-[#10b981] animate-spin" />
         </div>
     )
 
@@ -138,7 +138,7 @@ export default function PatientMedications() {
                                             transition={{ delay: idx * 0.05 }}
                                             className={`bg-white dark:bg-slate-900 p-6 rounded-[2rem] border transition-all relative overflow-hidden group ${
                                                 !isActive ? 'opacity-60 border-slate-100 dark:border-slate-800' : 
-                                                isDone ? 'border-emerald-100 dark:border-emerald-900/30' : 
+                                                isDone ? 'border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/10' : 
                                                 'border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 shadow-sm hover:shadow-lg hover:shadow-emerald-500/5'
                                             }`}
                                         >
@@ -163,13 +163,13 @@ export default function PatientMedications() {
                                                         )}
                                                     </div>
                                                     <div className="flex items-center gap-4">
-                                                        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-bold">
-                                                            <Clock className="w-3.5 h-3.5" />
+                                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
+                                                            <Clock className="w-3.5 h-3.5 text-emerald-500" />
                                                             {med.reminderTime}
                                                         </div>
-                                                        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-bold">
-                                                            <Pill className="w-3.5 h-3.5" />
-                                                            Liều: {med.dosage}
+                                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
+                                                            <Pill className="w-3.5 h-3.5 text-emerald-500" />
+                                                            {med.dosage}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -247,8 +247,8 @@ export default function PatientMedications() {
                                                 <p className="text-sm font-black text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors uppercase tracking-tight">{item.productName}</p>
                                                 <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed italic">"{item.dosageInstruction}"</p>
                                             </div>
-                                            <div className="ml-4 flex flex-col items-end">
-                                                <span className="text-xs font-black text-slate-400 tracking-tighter">x{item.quantity}</span>
+                                            <div className="ml-4 flex flex-col items-end shrink-0">
+                                                <span className="text-xs font-black text-slate-400 tracking-tighter bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">x{item.quantity}</span>
                                             </div>
                                         </div>
                                     ))}
@@ -269,9 +269,12 @@ export default function PatientMedications() {
                                 </button>
                             </div>
                         ) : (
-                            <div className="py-12 text-center">
-                                <AlertTriangle className="w-10 h-10 text-slate-200 mx-auto mb-4" />
-                                <p className="text-slate-400 font-bold text-sm tracking-tight">Chưa có đơn thuốc điện tử mới</p>
+                            <div className="py-12 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-center">
+                                <div className="size-16 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100 dark:border-slate-700">
+                                    <Search className="w-8 h-8 text-slate-300" />
+                                </div>
+                                <h4 className="text-slate-900 dark:text-white font-black mb-1 text-sm tracking-tight">Chưa có đơn thuốc điện tử</h4>
+                                <p className="text-slate-400 font-medium text-xs max-w-[200px] mx-auto">Vui lòng liên hệ bác sĩ để nhận đơn thuốc mới nhất.</p>
                             </div>
                         )}
                     </section>

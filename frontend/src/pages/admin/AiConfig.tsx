@@ -72,8 +72,7 @@ export function AiConfig() {
 
     const providerOptions = [
         { value: 'rule-based', label: 'Rule-Based (Regex / Offline)' },
-        { value: 'http-endpoint', label: 'External HTTP Model (Python/TF)' },
-        { value: 'mock-advanced', label: 'Mock (Advanced RF)' }
+        { value: 'http-endpoint', label: 'External HTTP Model (Python/TF)' }
     ]
 
     const container = {
@@ -179,7 +178,6 @@ export function AiConfig() {
                                         <p className="text-xs text-emerald-700 font-medium leading-relaxed">
                                             {settings.aiProvider === 'rule-based' && "Engine dựa trên tập hợp quy tắc y tế và Regex. Hoạt động ổn định, không yêu cầu internet."}
                                             {settings.aiProvider === 'http-endpoint' && "Kết nối với mô hình AI tùy chỉnh (Python/PyTorch) qua API. Khuyến nghị cho độ chính xác cao nhất."}
-                                            {settings.aiProvider === 'mock-advanced' && "Mô phỏng phản hồi từ mô hình RF nâng cao, phục vụ mục đích kiểm tra giao diện."}
                                         </p>
                                     </div>
                                 </div>

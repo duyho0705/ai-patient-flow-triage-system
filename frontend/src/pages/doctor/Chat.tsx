@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Loader2,
@@ -55,6 +55,8 @@ export default function DoctorChat() {
     const [isAdviceModalOpen, setIsAdviceModalOpen] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const imageInputRef = useRef<HTMLInputElement>(null)
+    const messagesEndRef = useRef<HTMLDivElement>(null)
+    const messageInputRef = useRef<HTMLTextAreaElement>(null)
 
     // Auto-select first conversation when loaded
     if (!selectedPatientId && conversations.length > 0) {
@@ -106,6 +108,10 @@ export default function DoctorChat() {
 
     const chatHistory = firebaseHistory || []
 
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [chatHistory])
+
     const handleSend = async () => {
         if (!message.trim() || isSending || !selectedPatientId || !doctorId) return
 
@@ -113,6 +119,9 @@ export default function DoctorChat() {
         try {
             await sendMessage(message, doctorId, 'DOCTOR')
             setMessage('')
+            setTimeout(() => {
+                messageInputRef.current?.focus()
+            }, 50)
         } catch (error) {
             toastService.error('Không thể gửi tin nhắn.')
         } finally {
@@ -362,6 +371,7 @@ export default function DoctorChat() {
                                     );
                                 })}
                             </AnimatePresence>
+                            <div ref={messagesEndRef} />
                         </div>
 
                         {/* Message Input Area */}
@@ -420,6 +430,7 @@ export default function DoctorChat() {
                                 </div>
                                 <div className="flex-1 relative">
                                     <textarea
+                                        ref={messageInputRef}
                                         value={message}
                                         onChange={(e) => setMessage(e.target.value)}
                                         onKeyDown={(e) => {

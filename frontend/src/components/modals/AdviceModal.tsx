@@ -139,7 +139,7 @@ export function AdviceModal({
                 </div>
 
                 {/* Content */}
-                <div className="overflow-y-auto p-6 space-y-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4ade8040 transparent' }}>
+                <div className="overflow-y-auto p-6 space-y-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#10b98140 transparent' }}>
                     {/* Patient Info Section */}
                     {/* Patient Search Section */}
                     <div className="bg-primary/5 rounded-lg p-4 space-y-3 border border-primary/10">

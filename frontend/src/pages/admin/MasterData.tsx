@@ -7,11 +7,12 @@ import { toastService } from '@/services/toast'
 import {
     Activity, Pill, Plus, Search, Pencil, X,
     Stethoscope, Beaker, Scissors, Tag,
-    Settings2, DollarSign, Info, Package
+    DollarSign, Info, Package
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { MedicalServiceDto } from '@/api-client'
 import type { PharmacyProductDto } from '@/types/api'
+import { createPortal } from 'react-dom'
 
 type Tab = 'SERVICES' | 'PHARMACY'
 
@@ -87,29 +88,24 @@ export function MasterData() {
     )
 
     return (
-        <div className="space-y-10 animate-in fade-in duration-700 pb-20">
+        <div className="w-full animate-in fade-in duration-700 font-sans space-y-8">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-100">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-200">
-                            <Settings2 className="w-6 h-6" />
-                        </div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">Quản lý Danh mục</h1>
-                    </div>
-                    <p className="text-slate-500 font-medium ml-1">Thiết lập đơn giá dịch vụ và danh mục thuốc toàn hệ thống.</p>
+            <div className="flex justify-between items-end text-left">
+                <div>
+                    <h2 className="text-2xl font-bold text-neutral-900">Quản lý Danh mục</h2>
+                    <p className="text-neutral-500">Thiết lập đơn giá dịch vụ và danh mục thuốc toàn hệ thống.</p>
                 </div>
 
-                <div className="flex bg-slate-100 p-1.5 rounded-[1.5rem] gap-1 shadow-inner">
+                <div className="flex bg-slate-100 p-1.5 rounded-xl gap-1 shadow-inner">
                     <button
                         onClick={() => setActiveTab('SERVICES')}
-                        className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${activeTab === 'SERVICES' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`px-8 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'SERVICES' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         Dịch vụ Y tế
                     </button>
                     <button
                         onClick={() => setActiveTab('PHARMACY')}
-                        className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${activeTab === 'PHARMACY' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`px-8 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'PHARMACY' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         Danh mục Thuốc
                     </button>
@@ -246,23 +242,40 @@ export function MasterData() {
 
             {/* Service edit modal */}
             <AnimatePresence>
-                {isServiceModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsServiceModalOpen(false)} />
-                        <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-[#f8fafc] rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                            <div className="flex items-center justify-between px-10 py-8 bg-white border-b border-slate-50">
+                {isServiceModalOpen && createPortal(
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            onClick={() => setIsServiceModalOpen(false)}
+                        />
+
+                        {/* Modal Container */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="relative bg-[#f8fafc] dark:bg-slate-900 rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-10"
+                        >
+                            <div className="flex items-center justify-between px-10 py-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-primary/10">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-slate-900 rounded-2xl flex items-center justify-center text-white">
+                                    <div className="w-10 h-10 bg-slate-900 dark:bg-primary/20 rounded-2xl flex items-center justify-center text-white dark:text-primary">
                                         <Activity className="w-5 h-5" />
                                     </div>
-                                    <h2 className="text-xl font-black text-slate-900 tracking-tight">{editingService ? 'Chỉnh sửa Dịch vụ' : 'Thêm Dịch vụ mới'}</h2>
+                                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-none">
+                                        {editingService ? 'Chỉnh sửa Dịch vụ' : 'Thêm Dịch vụ mới'}
+                                    </h2>
                                 </div>
-                                <button onClick={() => setIsServiceModalOpen(false)} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all">
+                                <button onClick={() => setIsServiceModalOpen(false)} className="p-3 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 rounded-2xl transition-all shadow-sm">
                                     <X className="h-5 w-5 text-slate-400" />
                                 </button>
                             </div>
 
-                            <div className="overflow-y-auto">
+                            <div className="overflow-y-auto scrollbar-hide">
                                 <ServiceForm
                                     initialData={editingService}
                                     isPending={serviceMutation.isPending}
@@ -271,29 +284,47 @@ export function MasterData() {
                                 />
                             </div>
                         </motion.div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
             </AnimatePresence>
 
             {/* Product edit modal */}
             <AnimatePresence>
-                {isProductModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsProductModalOpen(false)} />
-                        <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-[#f8fafc] rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                            <div className="flex items-center justify-between px-10 py-8 bg-white border-b border-slate-50">
+                {isProductModalOpen && createPortal(
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            onClick={() => setIsProductModalOpen(false)}
+                        />
+
+                        {/* Modal Container */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="relative bg-[#f8fafc] dark:bg-slate-900 rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-10"
+                        >
+                            <div className="flex items-center justify-between px-10 py-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-primary/10">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-slate-900 rounded-2xl flex items-center justify-center text-white">
+                                    <div className="w-10 h-10 bg-slate-900 dark:bg-primary/20 rounded-2xl flex items-center justify-center text-white dark:text-primary">
                                         <Pill className="w-5 h-5" />
                                     </div>
-                                    <h2 className="text-xl font-black text-slate-900 tracking-tight">{editingProduct ? 'Cập nhật Thuốc' : 'Khai báo Thuốc mới'}</h2>
+                                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-none">
+                                        {editingProduct ? 'Cập nhật Thuốc' : 'Khai báo Thuốc mới'}
+                                    </h2>
                                 </div>
-                                <button onClick={() => setIsProductModalOpen(false)} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all">
+                                <button onClick={() => setIsProductModalOpen(false)} className="p-3 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 rounded-2xl transition-all shadow-sm">
                                     <X className="h-5 w-5 text-slate-400" />
                                 </button>
                             </div>
 
-                            <div className="overflow-y-auto">
+                            <div className="overflow-y-auto scrollbar-hide">
                                 <ProductForm
                                     initialData={editingProduct}
                                     isPending={productMutation.isPending}
@@ -302,7 +333,8 @@ export function MasterData() {
                                 />
                             </div>
                         </motion.div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
             </AnimatePresence>
         </div>

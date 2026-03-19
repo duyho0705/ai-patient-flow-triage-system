@@ -12,11 +12,15 @@ import { get, post, patch, put, del } from './client'
 
 export async function getAuditLogs(params: {
   tenantId?: string | null
+  action?: string | null
+  startDate?: string | null
   page?: number
   size?: number
 }): Promise<PagedResponse<AuditLogDto>> {
   const sp = new URLSearchParams()
   if (params.tenantId) sp.set('tenantId', params.tenantId)
+  if (params.action) sp.set('action', params.action)
+  if (params.startDate) sp.set('startDate', params.startDate)
   if (params.page != null) sp.set('page', String(params.page))
   if (params.size != null) sp.set('size', String(params.size))
   const q = sp.toString()
@@ -72,9 +76,7 @@ export async function getPermissions(): Promise<PermissionDto[]> {
   return get<PermissionDto[]>('/admin/permissions')
 }
 
-export async function getRevenueReport(branchId: string, from: string, to: string): Promise<any> {
-    return get<any>(`/admin/revenue-report?branchId=${branchId}&from=${from}&to=${to}`)
-}
+
 
 export interface SystemSettingDto {
     id: string
@@ -90,4 +92,21 @@ export async function getSystemSettings(): Promise<SystemSettingDto[]> {
 
 export async function updateSystemSetting(key: string, value: string): Promise<SystemSettingDto> {
     return patch<SystemSettingDto>(`/admin/settings/${key}?value=${encodeURIComponent(value)}`)
+}
+
+export interface AdminDashboardDto {
+    totalUsers: number
+    activeUsers: number
+    totalPatients: number
+    totalDoctors: number
+    totalRoles: number
+    totalTenants: number
+    totalBranches: number
+    todayAuditLogs: number
+    failedAuditLogs: number
+    highRiskPatients: number
+}
+
+export async function getAdminDashboard(): Promise<AdminDashboardDto> {
+    return get<AdminDashboardDto>('/admin/dashboard')
 }

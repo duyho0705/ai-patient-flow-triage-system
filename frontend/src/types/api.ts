@@ -30,19 +30,7 @@ export interface LoginResponse {
   user: AuthUserDto
 }
 
-export interface RegisterRequest {
-  email: string
-  password: string
-  fullNameVi: string
-  tenantId: string
-  branchId?: string | null
-}
 
-export interface SocialLoginRequest {
-  idToken: string
-  tenantId?: string
-  branchId?: string | null
-}
 
 export interface UserRoleAssignmentDto {
   tenantId: string
@@ -408,24 +396,7 @@ export interface AiEffectivenessDto {
   overrideRate: number | null
 }
 
-export interface RevenueByDayDto {
-  date: string
-  amount: number
-}
 
-export interface RevenueReportDto {
-  branchId: string
-  branchName: string
-  fromDate: string
-  toDate: string
-  totalRevenue: number
-  dailyRevenue: RevenueByDayDto[]
-  topServices?: {
-    serviceName: string
-    amount: number
-    count: number
-  }[]
-}
 
 export interface AppointmentDto {
   id: string
@@ -456,7 +427,7 @@ export interface PatientDashboardDto {
   lastVitals?: TriageVitalDto[]
   vitalHistory?: TriageVitalDto[]
   latestPrescription?: PrescriptionDto
-  pendingInvoice?: InvoiceDto
+
   medicationReminders?: MedicationReminderDto[]
   healthAlerts?: string[]
   bloodType?: string
@@ -505,50 +476,13 @@ export interface PatientInsuranceDto {
 export interface ConsultationDetailDto {
   consultation: ConsultationDto
   prescription?: PrescriptionDto
-  invoice?: InvoiceDto
+
   vitals: TriageVitalDto[]
   labResults?: LabResultDto[]
   diagnosticImages?: DiagnosticImageDto[]
 }
 
-export interface InvoiceItemDto {
-  id: string
-  itemCode?: string
-  itemName: string
-  quantity: number
-  unitPrice: number
-  lineTotal: number
-}
 
-export interface InvoiceDto {
-  id: string
-  invoiceNumber: string
-  patientId: string
-  patientName: string
-  consultationId?: string
-  totalAmount: number
-  discountAmount: number
-  finalAmount: number
-  status: string // PENDING, PAID, CANCELLED
-  paymentMethod?: string
-  paidAt?: string
-  createdAt: string
-  items: InvoiceItemDto[]
-}
-
-export interface CreateInvoiceRequest {
-  patientId: string
-  branchId?: string
-  consultationId?: string
-  discountAmount?: number
-  notes?: string
-  items: {
-    itemCode?: string
-    itemName: string
-    quantity: number
-    unitPrice: number
-  }[]
-}
 
 export interface PharmacyProductDto {
   id: string
@@ -618,27 +552,7 @@ export interface CreatePrescriptionRequest {
   }[]
 }
 
-export interface DisplayEntryDto {
-  patientName: string
-  queueName: string
-  status: string
-  acuityLevel?: string
-}
 
-export interface PublicDisplayDto {
-  branchName: string
-  calling: DisplayEntryDto[]
-  waiting: DisplayEntryDto[]
-}
-
-export interface KioskRegistrationRequest {
-  fullName: string
-  phone: string
-  dateOfBirth: string
-  branchId: string
-  queueDefinitionId: string
-  appointmentId?: string
-}
 
 export interface TriageVitalDto {
   id: string
@@ -650,7 +564,7 @@ export interface TriageVitalDto {
 
 export interface TimelineItemDto {
   id: string
-  type: 'TRIAGE' | 'CONSULTATION' | 'INVOICE' | 'PRESCRIPTION'
+  type: 'TRIAGE' | 'CONSULTATION' | 'PRESCRIPTION'
   timestamp: string
   title: string
   subtitle: string

@@ -32,7 +32,7 @@ export type { ApiResponseFollowUpSuggestionDto } from './models/ApiResponseFollo
 export type { ApiResponseHealthMetric } from './models/ApiResponseHealthMetric';
 export type { ApiResponseHealthThresholdDto } from './models/ApiResponseHealthThresholdDto';
 export type { ApiResponseIcd10CodeDto } from './models/ApiResponseIcd10CodeDto';
-export type { ApiResponseInvoiceDto } from './models/ApiResponseInvoiceDto';
+
 export type { ApiResponseListAppointmentDto } from './models/ApiResponseListAppointmentDto';
 export type { ApiResponseListConsultationDto } from './models/ApiResponseListConsultationDto';
 export type { ApiResponseListDailyVolumeDto } from './models/ApiResponseListDailyVolumeDto';
@@ -41,7 +41,7 @@ export type { ApiResponseListDoctorInfoDto } from './models/ApiResponseListDocto
 export type { ApiResponseListHealthMetric } from './models/ApiResponseListHealthMetric';
 export type { ApiResponseListHealthMetricDto } from './models/ApiResponseListHealthMetricDto';
 export type { ApiResponseListHealthThresholdDto } from './models/ApiResponseListHealthThresholdDto';
-export type { ApiResponseListInvoiceDto } from './models/ApiResponseListInvoiceDto';
+
 export type { ApiResponseListLabResultDto } from './models/ApiResponseListLabResultDto';
 export type { ApiResponseListMedicalServiceDto } from './models/ApiResponseListMedicalServiceDto';
 export type { ApiResponseListMedicationReminderDto } from './models/ApiResponseListMedicationReminderDto';
@@ -132,8 +132,8 @@ export type { Icd10CodeDto } from './models/Icd10CodeDto';
 export type { IdentityRole } from './models/IdentityRole';
 export type { IdentityUser } from './models/IdentityUser';
 export type { IdentityUserRole } from './models/IdentityUserRole';
-export type { InvoiceDto } from './models/InvoiceDto';
-export type { InvoiceItemDto } from './models/InvoiceItemDto';
+
+
 export type { ItemRequest } from './models/ItemRequest';
 export type { LabResultDto } from './models/LabResultDto';
 export type { LocalTime } from './models/LocalTime';
@@ -170,7 +170,7 @@ export type { PrescriptionItemDto } from './models/PrescriptionItemDto';
 export type { PrescriptionVerificationDto } from './models/PrescriptionVerificationDto';
 export type { RegisterDeviceTokenRequest } from './models/RegisterDeviceTokenRequest';
 export type { RegisterFcmTokenRequest } from './models/RegisterFcmTokenRequest';
-export type { RegisterRequest } from './models/RegisterRequest';
+
 export type { RiskFactor } from './models/RiskFactor';
 export type { RiskPatientDto } from './models/RiskPatientDto';
 export type { SchedulingAppointment } from './models/SchedulingAppointment';
@@ -179,7 +179,7 @@ export type { SendChatMessageRequest } from './models/SendChatMessageRequest';
 export type { SendChatNotificationRequest } from './models/SendChatNotificationRequest';
 export type { SlotAvailabilityDto } from './models/SlotAvailabilityDto';
 export type { SlotTemplateDto } from './models/SlotTemplateDto';
-export type { SocialLoginRequest } from './models/SocialLoginRequest';
+
 export type { StandardizedClinicalNoteDto } from './models/StandardizedClinicalNoteDto';
 export type { Tenant } from './models/Tenant';
 export type { TenantBranch } from './models/TenantBranch';
@@ -224,7 +224,7 @@ export { MedicationManagementService } from './services/MedicationManagementServ
 export { PatientService } from './services/PatientService';
 export { PatientAiService } from './services/PatientAiService';
 export { PatientAppointmentsService } from './services/PatientAppointmentsService';
-export { PatientBillingService } from './services/PatientBillingService';
+
 export { PatientBranchesService } from './services/PatientBranchesService';
 export { PatientClinicalService } from './services/PatientClinicalService';
 export { PatientMedicationService } from './services/PatientMedicationService';

@@ -10,6 +10,7 @@ import {
     Stethoscope,
     ChevronRight,
     Loader2,
+    X,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useMemo } from 'react'
@@ -18,6 +19,7 @@ import { getManagerDoctors, createManagerDoctor, deleteManagerDoctor } from '@/a
 import { useTenant } from '@/context/TenantContext'
 import { CustomInput } from '@/components/CustomInput'
 import { toastService } from '@/services/toast'
+import { createPortal } from 'react-dom'
 
 export function ManageDoctor() {
     const { headers } = useTenant()
@@ -129,31 +131,42 @@ export function ManageDoctor() {
 
             {/* Add Modal */}
             <AnimatePresence>
-                {isAddModalOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                {isAddModalOpen && createPortal(
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+                        {/* Backdrop */}
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            onClick={() => setIsAddModalOpen(false)}
+                        />
+
+                        {/* Modal Container */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800"
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800 z-10"
                         >
                             <form onSubmit={handleCreate} className="flex flex-col h-full max-h-[90vh]">
-                                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50">
+                                <div className="p-8 border-b border-primary/10 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
                                     <div className="flex items-center gap-4">
                                         <div className="p-2.5 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-600/20">
                                             <UserPlus className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Thêm bác sĩ mới</h2>
-                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Thiết lập tài khoản & chuyên môn</p>
+                                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">THÊM BÁC SĨ MỚI</h2>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">Thiết lập tài khoản & chuyên môn</p>
                                         </div>
                                     </div>
                                     <button 
                                         type="button"
                                         onClick={() => setIsAddModalOpen(false)}
-                                        className="text-slate-400 hover:text-slate-600 transition-colors"
+                                        className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all"
                                     >
-                                        <Users className="w-6 h-6 rotate-45" />
+                                        <X className="w-6 h-6 text-slate-400" />
                                     </button>
                                 </div>
 
@@ -163,38 +176,38 @@ export function ManageDoctor() {
                                             label="Họ và tên"
                                             required
                                             value={formData.fullName}
-                                            onChange={val => setFormData({ ...formData, fullName: val })}
+                                            onChange={(val: string) => setFormData({ ...formData, fullName: val })}
                                         />
                                         <CustomInput
                                             label="Email (Username)"
                                             required
                                             type="email"
                                             value={formData.email}
-                                            onChange={val => setFormData({ ...formData, email: val })}
+                                            onChange={(val: string) => setFormData({ ...formData, email: val })}
                                         />
                                         <CustomInput
                                             label="Mật khẩu ban đầu"
                                             required
                                             type="password"
                                             value={formData.password}
-                                            onChange={val => setFormData({ ...formData, password: val })}
+                                            onChange={(val: string) => setFormData({ ...formData, password: val })}
                                         />
                                         <CustomInput
                                             label="Số điện thoại"
                                             value={formData.phone}
-                                            onChange={val => setFormData({ ...formData, phone: val })}
+                                            onChange={(val: string) => setFormData({ ...formData, phone: val })}
                                         />
                                         <CustomInput
                                             label="Chuyên khoa"
                                             required
                                             placeholder="VD: Tim mạch, Nội tiết..."
                                             value={formData.specialty}
-                                            onChange={val => setFormData({ ...formData, specialty: val })}
+                                            onChange={(val: string) => setFormData({ ...formData, specialty: val })}
                                         />
                                         <CustomInput
                                             label="Mã CCHN"
                                             value={formData.licenseNumber}
-                                            onChange={val => setFormData({ ...formData, licenseNumber: val })}
+                                            onChange={(val: string) => setFormData({ ...formData, licenseNumber: val })}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -222,12 +235,13 @@ export function ManageDoctor() {
                                         className="px-10 py-3 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all active:scale-95 flex items-center gap-3"
                                     >
                                         {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                                        Lưu hồ sơ
+                                        Lưu hồ sơ đội ngũ
                                     </button>
                                 </div>
                             </form>
                         </motion.div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
             </AnimatePresence>
 

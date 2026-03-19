@@ -206,7 +206,7 @@ export default function PatientProfile() {
 
     if (isLoading) return (
         <div className="h-[calc(100vh-200px)] flex items-center justify-center">
-            <Loader2 className="w-10 h-10 text-[#4ade80] animate-spin" />
+            <Loader2 className="w-10 h-10 text-[#10b981] animate-spin" />
         </div>
     )
 
@@ -216,15 +216,15 @@ export default function PatientProfile() {
         <div className="space-y-8 pb-20 py-8">
             {/* 1. Header Card */}
             <header className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#4ade80]/5 rounded-full -mr-32 -mt-32 blur-3xl" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#10b981]/5 rounded-full -mr-32 -mt-32 blur-3xl" />
 
                 <div className="relative flex flex-col md:flex-row gap-8 items-center">
                     <div className="relative group">
-                        <div className="w-32 h-32 bg-emerald-100 dark:bg-emerald-900/30 rounded-full border-4 border-[#4ade80]/20 p-1 overflow-hidden shadow-lg">
+                        <div className="w-32 h-32 bg-emerald-100 dark:bg-emerald-900/30 rounded-full border-4 border-[#10b981]/20 p-1 overflow-hidden shadow-lg">
                             {profile?.avatarUrl ? (
                                 <img src={profile.avatarUrl} alt="Profile" className="w-full h-full object-cover rounded-full" />
                             ) : (
-                                <div className="w-full h-full bg-[#4ade80] text-slate-900 flex items-center justify-center text-3xl font-bold">
+                                <div className="w-full h-full bg-[#10b981] text-slate-900 flex items-center justify-center text-3xl font-bold">
                                     {profile?.fullNameVi?.charAt(0)}
                                 </div>
                             )}
@@ -238,7 +238,7 @@ export default function PatientProfile() {
                         />
                         <label
                             htmlFor="avatar-upload-header"
-                            className={`absolute bottom-1 right-1 bg-[#4ade80] text-slate-900 p-2.5 rounded-full border-4 border-white dark:border-slate-900 cursor-pointer shadow-lg transition-transform ${uploadMutation.isPending ? 'opacity-50 pointer-events-none' : ''}`}
+                            className={`absolute bottom-1 right-1 bg-[#10b981] text-slate-900 p-2.5 rounded-full border-4 border-white dark:border-slate-900 cursor-pointer shadow-lg transition-transform ${uploadMutation.isPending ? 'opacity-50 pointer-events-none' : ''}`}
                         >
                             {uploadMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                         </label>
@@ -249,7 +249,7 @@ export default function PatientProfile() {
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">
                                 {isEditing ? formData.fullNameVi : profile?.fullNameVi}
                             </h2>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-[#4ade80]/20 text-[#4ade80] border border-[#4ade80]/30 w-fit mx-auto md:mx-0">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30 w-fit mx-auto md:mx-0">
                                 Đang theo dõi sức khỏe
                             </span>
                         </div>
@@ -269,7 +269,7 @@ export default function PatientProfile() {
                             </div>
                             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                                 <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl">
-                                    <Ruler className="w-4 h-4 text-[#4ade80]" />
+                                    <Ruler className="w-4 h-4 text-[#10b981]" />
                                 </div>
                                 <span>Chiều cao: {profileData?.height ? `${profileData.height} cm` : '—'}</span>
                             </div>
@@ -285,7 +285,7 @@ export default function PatientProfile() {
                     <div className="flex flex-col gap-3 w-full md:w-auto">
                         <button
                             onClick={() => setIsEditing(!isEditing)}
-                            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#4ade80] text-slate-900 font-bold text-sm rounded-lg hover:bg-[#4ade80]/90 transition-colors"
+                            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10b981] text-slate-900 font-bold text-sm rounded-lg hover:bg-[#10b981]/90 transition-colors"
                         >
                             <Edit3 className="w-4 h-4" />
                             {isEditing ? 'Hủy Chỉnh Sửa' : 'Chỉnh Sửa Hồ Sơ'}
@@ -308,14 +308,14 @@ export default function PatientProfile() {
                     <section className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
                         <div className="flex items-center justify-between mb-10">
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <User className="w-5 h-5 text-[#4ade80]" />
+                                <User className="w-5 h-5 text-[#10b981]" />
                                 Thông tin cá nhân
                             </h3>
                             {isEditing && (
                                 <button
                                     onClick={handleSave}
                                     disabled={updateMutation.isPending}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#4ade80] text-slate-900 rounded-lg font-bold text-sm hover:bg-[#4ade80]/90 active:scale-95 transition-all"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-slate-900 rounded-lg font-bold text-sm hover:bg-[#10b981]/90 active:scale-95 transition-all"
                                 >
                                     {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                     Lưu Thay Đổi
@@ -332,7 +332,7 @@ export default function PatientProfile() {
                                         type="text"
                                         value={formData.fullNameVi}
                                         onChange={e => setFormData({ ...formData, fullNameVi: e.target.value })}
-                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all placeholder:text-slate-300"
+                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all placeholder:text-slate-300"
                                         placeholder="Nhập họ tên đầy đủ..."
                                     />
                                 ) : (
@@ -350,7 +350,7 @@ export default function PatientProfile() {
                                         type="text"
                                         value={formData.cccd}
                                         onChange={e => setFormData({ ...formData, cccd: e.target.value })}
-                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all placeholder:text-slate-300"
+                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all placeholder:text-slate-300"
                                         placeholder="Nhập số CCCD..."
                                     />
                                 ) : (
@@ -387,7 +387,7 @@ export default function PatientProfile() {
                                                 key={value}
                                                 type="button"
                                                 onClick={() => setFormData({ ...formData, gender: value })}
-                                                className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-all ${formData.gender === value ? 'bg-white dark:bg-slate-700 text-[#4ade80] shadow-sm' : 'text-slate-400'}`}
+                                                className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-all ${formData.gender === value ? 'bg-white dark:bg-slate-700 text-[#10b981] shadow-sm' : 'text-slate-400'}`}
                                             >
                                                 {label}
                                             </button>
@@ -408,7 +408,7 @@ export default function PatientProfile() {
                                         type="text"
                                         value={formData.height}
                                         onChange={e => setFormData({ ...formData, height: e.target.value })}
-                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all placeholder:text-slate-300"
+                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all placeholder:text-slate-300"
                                         placeholder="172 cm..."
                                     />
                                 ) : (
@@ -426,7 +426,7 @@ export default function PatientProfile() {
                                         type="text"
                                         value={formData.weight}
                                         onChange={e => setFormData({ ...formData, weight: e.target.value })}
-                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all placeholder:text-slate-300"
+                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all placeholder:text-slate-300"
                                         placeholder="68 kg..."
                                     />
                                 ) : (
@@ -444,7 +444,7 @@ export default function PatientProfile() {
                             {/* Section: Liên hệ */}
                             <div className="sm:col-span-2 pb-2">
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <Contact className="w-5 h-5 text-[#4ade80]" />
+                                    <Contact className="w-5 h-5 text-[#10b981]" />
                                     Thông tin liên lạc
                                 </h3>
                             </div>
@@ -457,7 +457,7 @@ export default function PatientProfile() {
                                         type="tel"
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all placeholder:text-slate-300"
+                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all placeholder:text-slate-300"
                                         placeholder="0912345678..."
                                     />
                                 ) : (
@@ -475,7 +475,7 @@ export default function PatientProfile() {
                                         type="email"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all placeholder:text-slate-300"
+                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all placeholder:text-slate-300"
                                         placeholder="example@gmail.com..."
                                     />
                                 ) : (
@@ -492,7 +492,7 @@ export default function PatientProfile() {
                                         type="text"
                                         value={formData.addressLine}
                                         onChange={e => setFormData({ ...formData, addressLine: e.target.value })}
-                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all placeholder:text-slate-300"
+                                        className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all placeholder:text-slate-300"
                                         placeholder="123 Đường ABC..."
                                     />
                                 ) : null}
@@ -506,7 +506,7 @@ export default function PatientProfile() {
                                             type="text"
                                             value={formData.ward}
                                             onChange={e => setFormData({ ...formData, ward: e.target.value })}
-                                            className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 font-medium text-sm text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all"
+                                            className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 font-medium text-sm text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all"
                                             placeholder="Phường..."
                                         />
                                     </div>
@@ -516,7 +516,7 @@ export default function PatientProfile() {
                                             type="text"
                                             value={formData.district}
                                             onChange={e => setFormData({ ...formData, district: e.target.value })}
-                                            className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 font-medium text-sm text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all"
+                                            className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 font-medium text-sm text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all"
                                             placeholder="Quận..."
                                         />
                                     </div>
@@ -526,7 +526,7 @@ export default function PatientProfile() {
                                             type="text"
                                             value={formData.city}
                                             onChange={e => setFormData({ ...formData, city: e.target.value })}
-                                            className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 font-medium text-sm text-slate-700 dark:text-slate-200 focus:border-[#4ade80] outline-none transition-all"
+                                            className="w-full px-1 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-600 font-medium text-sm text-slate-700 dark:text-slate-200 focus:border-[#10b981] outline-none transition-all"
                                             placeholder="Thành phố..."
                                         />
                                     </div>
@@ -548,7 +548,7 @@ export default function PatientProfile() {
                     {/* Medical Quick Summary */}
                     <section className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-                            <History className="w-5 h-5 text-[#4ade80]" />
+                            <History className="w-5 h-5 text-[#10b981]" />
                             Tóm Tắt Y Tế
                         </h3>
 
@@ -586,7 +586,7 @@ export default function PatientProfile() {
                                 <ul className="space-y-3">
                                     {(profileData?.ongoingMedications || []).map((med: string, i: number) => (
                                         <li key={i} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 italic">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
                                             {med}
                                         </li>
                                     ))}
@@ -599,9 +599,9 @@ export default function PatientProfile() {
                     </section>
 
                     {/* Emergency Contact */}
-                    <section className="bg-[#4ade80]/10 dark:bg-[#4ade80]/5 rounded-xl p-6 border-2 border-dashed border-[#4ade80]/30 relative">
+                    <section className="bg-[#10b981]/10 dark:bg-[#10b981]/5 rounded-xl p-6 border-2 border-dashed border-[#10b981]/30 relative">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-                            <AlertCircle className="w-5 h-5 text-[#4ade80]" />
+                            <AlertCircle className="w-5 h-5 text-[#10b981]" />
                             Liên Hệ Khẩn Cấp
                         </h3>
 
@@ -613,7 +613,7 @@ export default function PatientProfile() {
                                 Quan hệ: {profileData?.emergencyContact?.relationship || '—'}
                             </p>
 
-                            <div className="flex items-center gap-2 text-[#4ade80]">
+                            <div className="flex items-center gap-2 text-[#10b981]">
                                 <Phone className="w-4 h-4" />
                                 <span className="text-sm font-bold">{profileData?.emergencyContact?.phone || '—'}</span>
                             </div>
@@ -621,7 +621,7 @@ export default function PatientProfile() {
 
                         <button
                             onClick={() => setIsPassModalOpen(true)}
-                            className="mt-4 w-full text-xs font-bold text-slate-400 hover:text-[#4ade80] transition-colors uppercase tracking-widest text-center py-3 flex items-center justify-center gap-2"
+                            className="mt-4 w-full text-xs font-bold text-slate-400 hover:text-[#10b981] transition-colors uppercase tracking-widest text-center py-3 flex items-center justify-center gap-2"
                         >
                             <Lock className="w-4 h-4" />
                             Đổi Mật Khẩu Bảo Mật
@@ -672,7 +672,7 @@ export default function PatientProfile() {
                                                     setPassData({ ...passData, oldPassword: e.target.value })
                                                     if (passErrors.oldPassword) setPassErrors({ ...passErrors, oldPassword: '' })
                                                 }}
-                                                className={`w-full px-1 py-2 bg-transparent border-b-2 transition-all pr-12 font-medium text-sm ${passErrors.oldPassword ? 'border-rose-300' : 'border-slate-200 dark:border-slate-800 focus:border-[#4ade80]'}`}
+                                                className={`w-full px-1 py-2 bg-transparent border-b-2 transition-all pr-12 font-medium text-sm ${passErrors.oldPassword ? 'border-rose-300' : 'border-slate-200 dark:border-slate-800 focus:border-[#10b981]'}`}
                                             />
                                             <button
                                                 type="button"
@@ -695,7 +695,7 @@ export default function PatientProfile() {
                                                     setPassData({ ...passData, newPassword: e.target.value })
                                                     if (passErrors.newPassword) setPassErrors({ ...passErrors, newPassword: '' })
                                                 }}
-                                                className={`w-full px-1 py-2 bg-transparent border-b-2 transition-all pr-12 font-medium text-sm ${passErrors.newPassword ? 'border-rose-300' : 'border-slate-200 dark:border-slate-800 focus:border-[#4ade80]'}`}
+                                                className={`w-full px-1 py-2 bg-transparent border-b-2 transition-all pr-12 font-medium text-sm ${passErrors.newPassword ? 'border-rose-300' : 'border-slate-200 dark:border-slate-800 focus:border-[#10b981]'}`}
                                             />
                                             <button
                                                 type="button"
@@ -711,7 +711,7 @@ export default function PatientProfile() {
                                 <button
                                     type="submit"
                                     disabled={passwordMutation.isPending}
-                                    className="w-full py-3 bg-[#4ade80] text-slate-900 rounded-lg font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 hover:bg-[#4ade80]/90"
+                                    className="w-full py-3 bg-[#10b981] text-slate-900 rounded-lg font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 hover:bg-[#10b981]/90"
                                 >
                                     {passwordMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                                     Cập Nhật Mật Khẩu Ngay

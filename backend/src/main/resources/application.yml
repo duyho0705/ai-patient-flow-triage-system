@@ -1,4 +1,4 @@
-﻿# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Patient Flow & Triage â€“ Main configuration
 # Profiles: dev (default), prod
 # ---------------------------------------------------------------------------
@@ -105,13 +105,7 @@ langchain4j:
       temperature: 0.2
       max-output-tokens: 1000
 
-# Payment (VNPAY)
-vnpay:
-  url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-  tmn-code: ${VNP_TMN_CODE:TMNCODE_DEMO}
-  hash-secret: ${VNP_HASH_SECRET:SECRET_KEY_DEMO}
-  version: "2.1.0"
-  command: pay
+
 
 # Firebase
 firebase:

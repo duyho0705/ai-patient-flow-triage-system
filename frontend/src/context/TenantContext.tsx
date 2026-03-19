@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 import type { TenantHeaders } from '@/api/client'
 
 type TenantContextValue = {

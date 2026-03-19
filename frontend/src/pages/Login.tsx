@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useTenant } from '@/context/TenantContext'
 import { listTenants } from '@/api/tenants'
@@ -8,28 +7,9 @@ import {
   X, AlertCircle, Loader2, ShieldCheck, CheckCircle2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { RegisterRequest } from '@/api-client'
-import { GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth'
-import { auth } from '@/firebase'
 import { ERROR_CODES } from '@/constants'
 import { useAppNavigation } from '@/hooks/useAppNavigation'
 import { EnterpriseErrorUtils } from '@/utils/errors'
-
-/* ─────────── helper ─────────── */
-
-function getPasswordStrength(pw: string) {
-  if (!pw) return { level: 0, label: '', color: 'transparent' }
-  let score = 0
-  if (pw.length >= 8) score++
-  if (/[A-Z]/.test(pw)) score++
-  if (/[a-z]/.test(pw)) score++
-  if (/[0-9]/.test(pw)) score++
-  if (/[^A-Za-z0-9]/.test(pw)) score++
-  if (score <= 2) return { level: 1, label: 'Yếu', color: '#ef4444' }
-  if (score <= 3) return { level: 2, label: 'Trung bình', color: '#f59e0b' }
-  if (score <= 4) return { level: 3, label: 'Mạnh', color: '#22c55e' }
-  return { level: 4, label: 'Rất mạnh', color: '#059669' }
-}
 
 /* ─────────── Components ─────────── */
 
@@ -72,19 +52,6 @@ function FormField({ label, icon, error, touched, children, className = "" }: Fo
   )
 }
 
-function SocialButton({ icon, label, onClick }: any) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center justify-center gap-3 h-12 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors bg-white dark:bg-slate-800 shadow-sm"
-    >
-      {icon}
-      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{label}</span>
-    </button>
-  )
-}
-
 /* ═══════════════════════════════════════
    LoginForm — core logic for both page/modal
    ═══════════════════════════════════════ */
@@ -92,24 +59,18 @@ function SocialButton({ icon, label, onClick }: any) {
 interface LoginFormProps {
   onSuccess?: () => void
   redirectTo?: { pathname?: string; search?: string }
-  initialFirebaseToken?: string
-  mode: 'login' | 'register'
-  setMode: (m: 'login' | 'register') => void
   onStepChange?: (step: number) => void
 }
 
-function LoginForm({ onSuccess, redirectTo, initialFirebaseToken, mode, setMode, onStepChange }: LoginFormProps) {
-  const [step, setStep] = useState(initialFirebaseToken ? 2 : 1)
-  const { login, register, socialLogin } = useAuth()
+function LoginForm({ onSuccess, redirectTo, onStepChange }: LoginFormProps) {
+  const [step, setStep] = useState(1)
+  const { login } = useAuth()
   const { setTenant } = useTenant()
   const navigation = useAppNavigation()
 
   // Form states
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [fullNameVi, setFullNameVi] = useState('')
-  const [phoneNumber, setPhoneNumber] = useState('')
   const [tenantId, setTenantId] = useState('')
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -117,22 +78,12 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken, mode, setMode,
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [firebaseIdToken, setFirebaseIdToken] = useState<string | null>(initialFirebaseToken || null)
 
   const { data: tenants = [] } = useQuery({ queryKey: ['tenants'], queryFn: listTenants })
 
   useEffect(() => {
-    if (initialFirebaseToken) {
-      setFirebaseIdToken(initialFirebaseToken)
-      setStep(2)
-    }
-  }, [initialFirebaseToken])
-
-  useEffect(() => {
     onStepChange?.(step)
   }, [step, onStepChange])
-
-  const pwStrength = useMemo(() => getPasswordStrength(password), [password])
 
   const validate = () => {
     const newErrors: Record<string, string> = {}
@@ -143,17 +94,6 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken, mode, setMode,
 
     // Password
     if (!password) newErrors.password = 'Vui lòng nhập mật khẩu'
-    else if (mode === 'register' && password.length < 8) newErrors.password = 'Mật khẩu phải ít nhất 8 ký tự'
-
-    if (mode === 'register') {
-      if (!fullNameVi.trim()) newErrors.fullName = 'Vui lòng nhập họ tên'
-      else if (fullNameVi.trim().split(' ').length < 2) newErrors.fullName = 'Vui lòng nhập đầy đủ họ tên'
-
-      if (!phoneNumber) newErrors.phone = 'Vui lòng nhập số điện thoại'
-      else if (!/^\d{10,11}$/.test(phoneNumber.replace(/\s/g, ''))) newErrors.phone = 'Số điện thoại không hợp lệ'
-
-      if (password !== confirmPassword) newErrors.confirmPassword = 'Mật khẩu không khớp'
-    }
 
     setFieldErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -170,34 +110,13 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken, mode, setMode,
 
     // Mark all as touched
     const allTouched: Record<string, boolean> = { email: true, password: true }
-    if (mode === 'register') {
-      allTouched.fullName = true
-      allTouched.phone = true
-      allTouched.confirmPassword = true
-    }
     setTouched(allTouched)
 
-    if (!firebaseIdToken && !validate()) return
-
-    if (step === 1 && mode === 'register' && !firebaseIdToken) {
-      setStep(2)
-      return
-    }
+    if (!validate()) return
 
     setSubmitting(true)
     try {
-      let res;
-      if (firebaseIdToken) {
-        res = await socialLogin({ idToken: firebaseIdToken, tenantId: tenantId || undefined, branchId: undefined })
-      } else {
-        if (mode === 'register') {
-          if (!tenantId) { setError('Vui lòng chọn một cơ sở y tế.'); return }
-          const req: RegisterRequest = { email: email.trim(), password, fullNameVi: fullNameVi.trim(), tenantId, branchId: undefined }
-          res = await register(req)
-        } else {
-          res = await login({ email: email.trim(), password, tenantId: tenantId || undefined, branchId: undefined })
-        }
-      }
+      const res = await login({ email: email.trim(), password, tenantId: tenantId || undefined, branchId: undefined })
 
       if (!res?.user) {
         throw new Error("Không lấy được thông tin người dùng")
@@ -215,31 +134,6 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken, mode, setMode,
     }
   }
 
-  const handleSocialLogin = async (providerName: 'google' | 'facebook') => {
-    setError('')
-    try {
-      const provider = providerName === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider()
-      const result = await signInWithPopup(auth, provider)
-      if (result.user) {
-        const token = await result.user.getIdToken()
-        setFirebaseIdToken(token)
-        setStep(2)
-      }
-    } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') return
-      setError(`Lỗi đăng nhập ${providerName}: ${err.message}`)
-    }
-  }
-
-  const switchMode = () => {
-    setMode(mode === 'login' ? 'register' : 'login')
-    setStep(1)
-    setError('')
-    setFieldErrors({})
-    setTouched({})
-    setFirebaseIdToken(null)
-  }
-
   return (
     <div className="w-full">
       <AnimatePresence mode="wait">
@@ -251,214 +145,78 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken, mode, setMode,
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex flex-col gap-2 mb-8 text-center md:text-left">
-              <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-tight text-slate-900 dark:text-white">
-                {mode === 'login' ? 'Chào mừng trở lại' : 'Tạo tài khoản'}
+            <div className="flex flex-col gap-3 mb-10 text-center">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                Đăng nhập hệ thống
               </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-base font-medium">
-                {mode === 'login'
-                  ? 'Đăng nhập vào tài khoản Sống Khỏe của bạn'
-                  : 'Tham gia cộng đồng Sống Khỏe để quản lý sức khỏe tốt hơn mỗi ngày'}
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-widest">
+                Truy cập cổng thông tin y tế chuyên sâu
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               {error && (
-                <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600 animate-in fade-in slide-in-from-top-1">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl text-xs font-bold text-red-600 animate-in fade-in slide-in-from-top-1">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                   <p>{error}</p>
                 </div>
               )}
 
-              {mode === 'register' ? (
-                /* Compact Register Layout */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
-                  <FormField label="Họ và tên" icon="person" error={fieldErrors.fullName} touched={touched.fullName}>
-                    <input
-                      type="text"
-                      value={fullNameVi}
-                      onBlur={() => handleBlur('fullName')}
-                      onChange={e => { setFullNameVi(e.target.value); if (touched.fullName) validate() }}
-                      className={`form-input flex w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 h-12 pl-12 pr-4 text-sm focus:border-primary focus:ring-primary/20 dark:text-white placeholder:text-slate-400 transition-all outline-none ${fieldErrors.fullName && touched.fullName ? 'border-red-300 ring-red-100 ring-4' : ''}`}
-                      placeholder="Nguyễn Văn A"
-                    />
-                  </FormField>
+              <div className="flex flex-col gap-5">
+                <FormField label="Tài khoản email" icon="alternate_email" error={fieldErrors.email} touched={touched.email}>
+                  <input
+                    type="email"
+                    value={email}
+                    onBlur={() => handleBlur('email')}
+                    onChange={e => { setEmail(e.target.value); if (touched.email) validate() }}
+                    className={`form-input flex w-full rounded-2xl border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 h-14 pl-12 pr-4 text-base focus:border-primary focus:ring-4 focus:ring-primary/5 dark:text-white placeholder:text-slate-400 transition-all outline-none font-bold ${fieldErrors.email && touched.email ? 'border-red-300 ring-red-100' : ''}`}
+                    placeholder="Nhập email của bạn..."
+                    required
+                  />
+                </FormField>
 
-                  <FormField label="Số điện thoại" icon="call" error={fieldErrors.phone} touched={touched.phone}>
+                <FormField label="Mật khẩu truy cập" icon="lock_open" error={fieldErrors.password} touched={touched.password}>
+                  <div className="w-full relative">
                     <input
-                      type="tel"
-                      value={phoneNumber}
-                      onBlur={() => handleBlur('phone')}
-                      onChange={e => { setPhoneNumber(e.target.value); if (touched.phone) validate() }}
-                      className={`form-input flex w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 h-12 pl-12 pr-4 text-sm focus:border-primary focus:ring-primary/20 dark:text-white placeholder:text-slate-400 transition-all outline-none ${fieldErrors.phone && touched.phone ? 'border-red-300 ring-red-100 ring-4' : ''}`}
-                      placeholder="090 123 4567"
-                    />
-                  </FormField>
-
-                  <FormField label="Email" icon="mail" error={fieldErrors.email} touched={touched.email} className="md:col-span-2">
-                    <input
-                      type="email"
-                      value={email}
-                      onBlur={() => handleBlur('email')}
-                      onChange={e => { setEmail(e.target.value); if (touched.email) validate() }}
-                      className={`form-input flex w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 h-12 pl-12 pr-4 text-sm focus:border-primary focus:ring-primary/20 dark:text-white placeholder:text-slate-400 transition-all outline-none ${fieldErrors.email && touched.email ? 'border-red-300 ring-red-100 ring-4' : ''}`}
-                      placeholder="example@gmail.com"
-                      required
-                    />
-                  </FormField>
-
-                  <FormField label="Mật khẩu" icon="lock" error={fieldErrors.password} touched={touched.password}>
-                    <>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onBlur={() => handleBlur('password')}
-                        onChange={e => { setPassword(e.target.value); if (touched.password) validate() }}
-                        className={`form-input flex w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 h-12 pl-12 pr-12 text-sm focus:border-primary focus:ring-primary/20 dark:text-white placeholder:text-slate-400 transition-all outline-none ${fieldErrors.password && touched.password ? 'border-red-300 ring-red-100 ring-4' : ''}`}
-                        placeholder="••••••••"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
-                      </button>
-                      {password && mode === 'register' && (
-                        <div className="absolute -bottom-1.5 left-0 w-full px-1">
-                          <div className="flex gap-1 h-0.5 w-full">
-                            {[1, 2, 3, 4].map(s => (
-                              <div key={s} className={`flex-1 rounded-full transition-colors ${s <= pwStrength.level ? '' : 'bg-slate-200 dark:bg-slate-700'}`} style={{ backgroundColor: s <= pwStrength.level ? pwStrength.color : undefined }} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  </FormField>
-
-                  <FormField label="Xác nhận" icon="lock_reset" error={fieldErrors.confirmPassword} touched={touched.confirmPassword}>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onBlur={() => handleBlur('confirmPassword')}
-                      onChange={e => { setConfirmPassword(e.target.value); if (touched.confirmPassword) validate() }}
-                      className={`form-input flex w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 h-12 pl-12 pr-4 text-sm focus:border-primary focus:ring-primary/20 dark:text-white placeholder:text-slate-400 transition-all outline-none ${fieldErrors.confirmPassword && touched.confirmPassword ? 'border-red-300 ring-red-100 ring-4' : ''}`}
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onBlur={() => handleBlur('password')}
+                      onChange={e => { setPassword(e.target.value); if (touched.password) validate() }}
+                      className={`form-input flex w-full rounded-2xl border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 h-14 pl-12 pr-12 text-base focus:border-primary focus:ring-4 focus:ring-primary/5 dark:text-white placeholder:text-slate-400 transition-all outline-none font-bold ${fieldErrors.password && touched.password ? 'border-red-300 ring-red-100' : ''}`}
                       placeholder="••••••••"
                       required
                     />
-                  </FormField>
-                </div>
-              ) : (
-                /* Login Layout remains clean but with validation support */
-                <div className="flex flex-col gap-4">
-                  <FormField label="Email" icon="mail" error={fieldErrors.email} touched={touched.email}>
-                    <input
-                      type="email"
-                      value={email}
-                      onBlur={() => handleBlur('email')}
-                      onChange={e => { setEmail(e.target.value); if (touched.email) validate() }}
-                      className={`form-input flex w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 h-14 pl-12 pr-4 text-base focus:border-primary focus:ring-primary/20 dark:text-white placeholder:text-slate-400 transition-all outline-none ${fieldErrors.email && touched.email ? 'border-red-300 ring-red-100 ring-4' : ''}`}
-                      placeholder="example@gmail.com"
-                      required
-                    />
-                  </FormField>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-xl">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                    </button>
+                  </div>
+                </FormField>
+              </div>
 
-                  <FormField label="Mật khẩu" icon="lock" error={fieldErrors.password} touched={touched.password}>
-                    <div className="w-full relative">
-                      <div className="absolute -top-[30px] right-1">
-                        <button type="button" className="text-primary text-xs font-bold hover:underline">Quên mật khẩu?</button>
-                      </div>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onBlur={() => handleBlur('password')}
-                        onChange={e => { setPassword(e.target.value); if (touched.password) validate() }}
-                        className={`form-input flex w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 h-14 pl-12 pr-12 text-base focus:border-primary focus:ring-primary/20 dark:text-white placeholder:text-slate-400 transition-all outline-none ${fieldErrors.password && touched.password ? 'border-red-300 ring-red-100 ring-4' : ''}`}
-                        placeholder="••••••••"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                      >
-                        <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
-                      </button>
-                    </div>
-                  </FormField>
-                </div>
-              )}
-
-              {mode === 'login' && (
-                <div className="flex items-center gap-2 px-1">
+              <div className="flex items-center justify-between px-1">
+                <label className="flex items-center gap-2 cursor-pointer group">
                   <input
                     type="checkbox"
                     id="remember"
-                    className="rounded text-primary focus:ring-primary border-primary/30 size-4 cursor-pointer"
+                    className="rounded-md text-primary focus:ring-primary border-slate-300 size-4 cursor-pointer"
                   />
-                  <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none">Duy trì đăng nhập</label>
-                </div>
-              )}
-
-              {mode === 'register' && (
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" id="terms" className="mt-1 rounded text-primary focus:ring-primary bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer" required />
-                  <label htmlFor="terms" className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight cursor-pointer select-none">
-                    Tôi đồng ý với <Link to="#" className="text-primary hover:underline font-semibold">Điều khoản dịch vụ</Link> và <Link to="#" className="text-primary hover:underline font-semibold">Chính sách bảo mật</Link>.
-                  </label>
-                </div>
-              )}
+                  <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors uppercase tracking-wider">Duy trì đăng nhập</span>
+                </label>
+                <button type="button" className="text-primary text-xs font-black uppercase tracking-widest hover:underline">Quên mật khẩu?</button>
+              </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className={`w-full bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 ${mode === 'register' ? 'h-12 text-base shadow-md shadow-primary/10' : 'h-14 text-lg shadow-lg shadow-primary/20'}`}
+                className="w-full bg-slate-900 dark:bg-primary hover:bg-slate-800 dark:hover:bg-primary/90 text-white rounded-2xl font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 h-14 text-sm shadow-xl shadow-slate-900/10 dark:shadow-primary/20 mt-2"
               >
-                {submitting ? <Loader2 className="size-5 animate-spin" /> : <span>{mode === 'login' ? 'Đăng nhập' : 'Đăng ký ngay'}</span>}
-                {mode === 'register' && !submitting && <span className="material-symbols-outlined">arrow_forward</span>}
+                {submitting ? <Loader2 className="size-5 animate-spin" /> : <span>Xác nhận đăng nhập</span>}
               </button>
             </form>
-
-            <div className={`relative ${mode === 'register' ? 'my-4' : 'my-8'}`}>
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-800"></div></div>
-              <div className="relative flex justify-center text-[11px] font-bold uppercase tracking-widest"><span className="bg-white dark:bg-slate-900 px-4 text-slate-400 font-bold uppercase">Hoặc</span></div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <SocialButton
-                icon={
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path d="M12 5.04c1.9 0 3.51.64 4.85 1.91l3.62-3.62C18.23 1.33 15.35 0 12 0 7.31 0 3.32 2.68 1.41 6.59l4.23 3.29C6.64 7.08 9.09 5.04 12 5.04z" fill="#EA4335"></path>
-                    <path d="M23.49 12.27c0-.85-.07-1.68-.21-2.48H12v4.69h6.44c-.28 1.51-1.13 2.79-2.41 3.65l3.86 2.99c2.26-2.09 3.6-5.17 3.6-8.85z" fill="#4285F4"></path>
-                    <path d="M5.64 14.86c-.24-.72-.37-1.49-.37-2.3s.13-1.58.37-2.3L1.41 6.59C.51 8.24 0 10.06 0 12s.51 3.76 1.41 5.41l4.23-3.29z" fill="#FBBC05"></path>
-                    <path d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.86-2.99c-1.1.74-2.51 1.18-4.09 1.18-2.91 0-5.36-2.04-6.25-4.81l-4.23 3.29C3.32 21.32 7.31 24 12 24z" fill="#34A853"></path>
-                  </svg>
-                }
-                label="Google"
-                onClick={() => handleSocialLogin('google')}
-              />
-              <SocialButton
-                icon={
-                  <svg className="w-4 h-4" fill="#1877F2" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
-                  </svg>
-                }
-                label="Facebook"
-                onClick={() => handleSocialLogin('facebook')}
-              />
-            </div>
-
-            <p className={`mt-6 text-center text-slate-500 dark:text-slate-400 text-sm ${mode === 'register' ? 'mt-4' : 'mt-8'}`}>
-              {mode === 'login' ? 'Chưa có tài khoản?' : 'Bạn đã tham gia Sống Khỏe?'}
-              <button
-                type="button"
-                onClick={switchMode}
-                className="text-primary font-bold hover:underline ml-1"
-              >
-                {mode === 'login' ? 'Đăng ký ngay' : 'Đăng nhập ngay'}
-              </button>
-            </p>
           </motion.div>
         ) : (
           <motion.div
@@ -466,31 +224,31 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken, mode, setMode,
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.05 }}
-            className="space-y-6"
+            className="space-y-8"
           >
-            <div className="flex flex-col gap-2 mb-8 text-center md:text-left">
-              <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Chọn cơ sở y tế</h1>
-              <p className="text-slate-500 font-medium text-sm">Vui lòng chọn phòng khám bạn muốn tham gia</p>
+            <div className="flex flex-col gap-3 mb-10 text-center">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Chọn cơ sở làm việc</h1>
+              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Xác thực quyền truy cập đơn vị y tế</p>
             </div>
 
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-3 max-h-[360px] overflow-y-auto pr-2 custom-scrollbar">
               {tenants.map((t: any) => (
                 <button
                   key={t.id}
                   type="button"
                   onClick={() => setTenantId(t.id)}
-                  className={`w-full p-5 rounded-2xl border-2 transition-all flex items-center gap-4 text-left ${tenantId === t.id
+                  className={`w-full p-5 rounded-[1.5rem] border-2 transition-all flex items-center gap-4 text-left ${tenantId === t.id
                     ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5'
                     : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-white dark:border-slate-800 dark:bg-slate-800/30'
                     }`}
                 >
-                  <div className={`size-12 rounded-xl flex items-center justify-center transition-colors ${tenantId === t.id ? 'bg-primary text-white' : 'bg-white dark:bg-slate-700 text-slate-400'
+                  <div className={`size-12 rounded-2xl flex items-center justify-center transition-colors ${tenantId === t.id ? 'bg-primary text-white' : 'bg-white dark:bg-slate-700 text-slate-400'
                     }`}>
-                    <span className="material-symbols-outlined">health_and_safety</span>
+                    <span className="material-symbols-outlined">apartment</span>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">{t.nameVi}</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{t.code}</p>
+                    <h4 className="font-black text-slate-900 dark:text-white text-sm tracking-tight">{t.nameVi}</h4>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{t.code}</p>
                   </div>
                   {tenantId === t.id && (
                     <CheckCircle2 className="size-6 text-primary" />
@@ -499,22 +257,22 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken, mode, setMode,
               ))}
             </div>
 
-            <div className="pt-6 flex flex-col gap-3">
+            <div className="pt-6 flex flex-col gap-4">
               <button
                 onClick={handleSubmit}
                 disabled={!tenantId || submitting}
-                className="w-full bg-primary hover:bg-primary/90 text-white h-14 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                className="w-full bg-slate-900 dark:bg-primary hover:bg-slate-800 text-white h-14 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all flex items-center justify-center gap-3"
               >
                 {submitting ? <Loader2 className="size-5 animate-spin" /> : <ShieldCheck className="size-5" />}
-                Xác nhận & Vào hệ thống
+                Vào hệ thống quản trị
               </button>
 
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="w-full py-2 text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors"
+                className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
               >
-                Quay lại
+                Quay lại bước trước
               </button>
             </div>
           </motion.div>
@@ -529,77 +287,94 @@ function LoginForm({ onSuccess, redirectTo, initialFirebaseToken, mode, setMode,
    ═══════════════════════════════════════ */
 
 export function Login() {
-  const [mode, setMode] = useState<'login' | 'register'>('login')
-
   return (
-    <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
-      <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+    <div className="bg-[#f0f9f6] dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col relative overflow-hidden transition-colors duration-300">
+      {/* Decorative background elements */}
+      <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="relative flex h-full grow flex-col z-10">
         <div className="layout-container flex h-full grow flex-col">
           {/* Header */}
-          <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 px-6 md:px-10 py-4 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
-            <div className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-              <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
-                <span className="material-symbols-outlined">health_and_safety</span>
+          <header className="flex items-center justify-between px-6 md:px-12 py-6">
+            <div className="flex items-center gap-3">
+              <div className="size-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-primary shadow-sm border border-primary/10">
+                <span className="material-symbols-outlined font-bold">health_and_safety</span>
               </div>
-              <h2 className="text-lg font-bold leading-tight tracking-tight">Sống Khỏe</h2>
+              <div>
+                <h2 className="text-xl font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white">Sống Khỏe</h2>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Healthcare Portal</p>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="hidden md:block text-sm text-slate-500 dark:text-slate-400">
-                {mode === 'login' ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
-              </span>
-              <button
-                onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-                className="flex items-center justify-center rounded-xl h-10 bg-primary/10 dark:bg-primary/20 text-primary px-4 text-sm font-bold hover:bg-primary/20 transition-all"
-              >
-                {mode === 'login' ? 'Đăng ký' : 'Đăng nhập'}
+            <div className="hidden md:flex items-center gap-8">
+              <nav className="flex items-center gap-6">
+                <a href="#" className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Trang chủ</a>
+                <a href="#" className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Dịch vụ</a>
+                <a href="#" className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Hỗ trợ</a>
+              </nav>
+              <button className="px-5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black uppercase tracking-widest hover:border-primary transition-all">
+                Hotline: 1900 6868
               </button>
             </div>
           </header>
 
-          <main className={`flex-1 flex items-center justify-center p-4 md:p-10 ${mode === 'login' ? '' : 'py-10'}`}>
-            {mode === 'login' ? (
-              /* Split Screen for Login */
-              <div className="w-full max-w-[960px] grid md:grid-cols-2 gap-8 items-center">
-                <div className="hidden md:flex flex-col gap-6 pr-8">
-                  <div className="rounded-xl overflow-hidden shadow-2xl shadow-primary/10 border border-primary/20 aspect-video relative">
-                    <img
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuDietfcqf2oN-h9pyuFOYs1Egf0xNBMdNvkFVWgxUpVyyFpbUAPUrU6mEAf4GQSYIUsKRYeNVNcA4ouMYK9Bds1i5PAmUqsU88BwlSGNaiUWguIsMghVA09kqdDdqSlBwcdXAuZWERk3JUsREK2uqlYyp0Gh5Vgd34zWwT4ABYZLyvlDsSowxpd6sHFCBZ8xGiVyMxNueS-ScvE6qmT_29FueigTNvGVBwEpi6iyv0CzfSDfbLSXBkbDVpevIZVZOGkClOr1YaiKJ4"
-                      alt="Healthcare"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
-                      <h3 className="text-white text-2xl font-bold mb-2">Chăm sóc sức khỏe toàn diện</h3>
-                      <p className="text-slate-200 text-sm">Kết nối với bác sĩ hàng đầu chỉ trong vài phút.</p>
-                    </div>
+          <main className="flex-1 flex items-center justify-center p-6 md:p-12">
+            <div className="w-full max-w-[1100px] flex flex-col md:flex-row items-center gap-16">
+              {/* Left Side: Professional Content */}
+              <div className="hidden md:flex flex-col flex-1 gap-8 text-left">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest">
+                    <span className="size-1.5 bg-primary rounded-full animate-pulse" />
+                    Hệ thống quản lý y tế thông minh
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-primary/10 p-4 rounded-xl border border-primary/20">
-                      <span className="material-symbols-outlined text-primary mb-2">verified_user</span>
-                      <h4 className="font-bold text-sm">Bảo mật 100%</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Dữ liệu y tế của bạn được mã hóa an toàn.</p>
-                    </div>
-                    <div className="bg-primary/10 p-4 rounded-xl border border-primary/20">
-                      <span className="material-symbols-outlined text-primary mb-2">support_agent</span>
-                      <h4 className="font-bold text-sm">Hỗ trợ 24/7</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Đội ngũ chuyên gia luôn sẵn sàng giúp đỡ.</p>
-                    </div>
-                  </div>
+                  <h1 className="text-5xl font-extrabold text-slate-900 dark:text-white leading-[1.1] tracking-tight">
+                    Nâng cao chất lượng <br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-600">chăm sóc sức khỏe</span>
+                  </h1>
+                  <p className="text-lg text-slate-500 dark:text-slate-400 font-medium max-w-md leading-relaxed">
+                    Nền tảng quản lý bệnh mãn tính hiện đại, giúp kết nối bác sĩ và bệnh nhân một cách liền mạch, an toàn và hiệu quả.
+                  </p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900/50 p-6 md:p-10 rounded-2xl shadow-xl border border-primary/10 backdrop-blur-sm">
-                  <LoginForm mode={mode} setMode={setMode} />
+                <div className="grid grid-cols-2 gap-8 pt-4">
+                  <div className="space-y-2">
+                    <h4 className="text-3xl font-black text-slate-900 dark:text-white">50k+</h4>
+                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Bệnh nhân tin dùng</p>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-3xl font-black text-slate-900 dark:text-white">200+</h4>
+                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Phòng khám đối tác</p>
+                  </div>
                 </div>
               </div>
-            ) : (
-              /* Centered Card for Register */
-              <div className="layout-content-container flex flex-col max-w-[520px] flex-1 bg-white dark:bg-slate-900/50 p-6 md:p-10 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-                <LoginForm mode={mode} setMode={setMode} />
+
+              {/* Right Side: Login Form */}
+              <div className="w-full max-w-[460px]">
+                <div className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-[2.5rem] shadow-[0_20px_50px_-20px_rgba(16,185,129,0.15)] border border-slate-100 dark:border-slate-800 relative z-20">
+                  <LoginForm />
+                </div>
+                
+                <div className="mt-8 flex justify-center items-center gap-6 text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span className="text-[11px] font-bold uppercase tracking-widest">Bảo mật SSL</span>
+                  </div>
+                  <div className="w-1 h-1 bg-slate-200 rounded-full" />
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-[11px] font-bold uppercase tracking-widest">Tiêu chuẩn HL7</span>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </main>
 
-          <footer className="py-6 px-10 border-t border-slate-100 dark:border-slate-800 text-center">
-            <p className="text-xs text-slate-400">© 2024 Sồng Khỏe Healthcare. Tất cả quyền lợi được bảo lưu.</p>
+          <footer className="py-8 px-12 border-t border-slate-100/50 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">© 2024 Sồng Khỏe Healthcare Provider</p>
+            <div className="flex items-center gap-6">
+              <a href="#" className="text-[10px] font-black text-slate-400 hover:text-primary uppercase tracking-widest transition-colors">Điều khoản</a>
+              <a href="#" className="text-[10px] font-black text-slate-400 hover:text-primary uppercase tracking-widest transition-colors">Quyền riêng tư</a>
+            </div>
           </footer>
         </div>
       </div>
@@ -615,15 +390,11 @@ export function LoginModal({
   isOpen,
   onClose,
   redirectTo,
-  initialFirebaseToken,
 }: {
   isOpen: boolean
   onClose: () => void
   redirectTo?: { pathname?: string; search?: string }
-  initialFirebaseToken?: string
 }) {
-  const [mode, setMode] = useState<'login' | 'register'>('login')
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -640,7 +411,7 @@ export function LoginModal({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className={`relative w-full ${mode === 'login' ? 'max-w-[480px]' : 'max-w-[540px]'} bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800`}
+            className="relative w-full max-w-[480px] bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800"
           >
             <button
               onClick={onClose}
@@ -650,7 +421,7 @@ export function LoginModal({
             </button>
 
             <div className="p-8 md:p-10 max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <LoginForm mode={mode} setMode={setMode} onSuccess={onClose} redirectTo={redirectTo} initialFirebaseToken={initialFirebaseToken} />
+              <LoginForm onSuccess={onClose} redirectTo={redirectTo} />
             </div>
           </motion.div>
         </div>
