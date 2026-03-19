@@ -14,6 +14,7 @@ import vn.clinic.cdm.repository.patient.PatientDeviceTokenRepository;
 import vn.clinic.cdm.repository.patient.PatientRepository;
 import vn.clinic.cdm.entity.tenant.Tenant;
 import vn.clinic.cdm.repository.tenant.TenantRepository;
+import vn.clinic.cdm.mapper.PatientMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import java.time.Instant;
@@ -21,7 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Patient and insurance â€“ tenant-scoped. Uses TenantContext.
+ * Patient and insurance – tenant-scoped. Uses TenantContext.
  */
 @Service("patientService")
 @RequiredArgsConstructor
@@ -31,6 +32,7 @@ public class PatientServiceImpl implements vn.clinic.cdm.service.patient.Patient
     private final PatientRepository patientRepository;
     private final TenantRepository tenantRepository;
     private final PatientDeviceTokenRepository deviceTokenRepository;
+    private final PatientMapper patientMapper;
 
     @Transactional(readOnly = true)
     public Patient getById(UUID id) {
@@ -119,38 +121,9 @@ public class PatientServiceImpl implements vn.clinic.cdm.service.patient.Patient
     }
 
     @Transactional
-    public Patient update(UUID id, Patient updates) {
+    public Patient update(UUID id, vn.clinic.cdm.dto.patient.UpdatePatientRequest updates) {
         Patient existing = getById(id);
-        if (updates.getFullNameVi() != null)
-            existing.setFullNameVi(updates.getFullNameVi());
-        if (updates.getDateOfBirth() != null)
-            existing.setDateOfBirth(updates.getDateOfBirth());
-        if (updates.getGender() != null)
-            existing.setGender(updates.getGender());
-        if (updates.getPhone() != null)
-            existing.setPhone(updates.getPhone());
-        if (updates.getEmail() != null)
-            existing.setEmail(updates.getEmail());
-        if (updates.getAddressLine() != null)
-            existing.setAddressLine(updates.getAddressLine());
-        if (updates.getCity() != null)
-            existing.setCity(updates.getCity());
-        if (updates.getDistrict() != null)
-            existing.setDistrict(updates.getDistrict());
-        if (updates.getWard() != null)
-            existing.setWard(updates.getWard());
-        if (updates.getNationality() != null)
-            existing.setNationality(updates.getNationality());
-        if (updates.getEthnicity() != null)
-            existing.setEthnicity(updates.getEthnicity());
-        if (updates.getExternalId() != null)
-            existing.setExternalId(updates.getExternalId());
-        if (updates.getCccd() != null)
-            existing.setCccd(updates.getCccd());
-        if (updates.getIsActive() != null)
-            existing.setIsActive(updates.getIsActive());
-        if (updates.getAvatarUrl() != null)
-            existing.setAvatarUrl(updates.getAvatarUrl());
+        patientMapper.updateEntity(existing, updates);
         return patientRepository.save(existing);
     }
 

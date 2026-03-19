@@ -7,6 +7,8 @@ import vn.clinic.cdm.entity.patient.Patient;
 import java.util.Optional;
 import java.util.UUID;
 
+import vn.clinic.cdm.dto.patient.UpdatePatientRequest;
+
 public interface PatientService {
     Patient getById(UUID id);
     Page<Patient> listByTenant(Pageable pageable);
@@ -17,7 +19,7 @@ public interface PatientService {
     Optional<Patient> findByEmail(String email, UUID tenantId);
     Patient save(Patient patient);
     Patient create(Patient patient);
-    Patient update(UUID id, Patient updates);
+    Patient update(UUID id, UpdatePatientRequest updates);
     Patient getByUserId(UUID userId);
     Optional<Patient> getByIdentityUserId(UUID identityUserId);
     void registerDeviceToken(Patient patient, String fcmToken, String deviceType);

@@ -16,13 +16,10 @@ import vn.clinic.cdm.repository.clinical.DoctorRepository;
 import vn.clinic.cdm.exception.*;
 import vn.clinic.cdm.common.constant.ManagementConstants;
 import vn.clinic.cdm.common.util.DateTimeUtils;
-import vn.clinic.cdm.common.util.VNStringUtils;
 import vn.clinic.cdm.service.common.PdfService;
 import vn.clinic.cdm.repository.patient.PatientRepository;
 import vn.clinic.cdm.service.patient.PatientChatService;
-import vn.clinic.cdm.repository.clinical.PrescriptionRepository;
 import vn.clinic.cdm.service.scheduling.SchedulingService;
-import vn.clinic.cdm.entity.patient.Patient;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
@@ -39,7 +36,6 @@ public class DoctorReportingServiceImpl implements DoctorReportingService {
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
     private final PatientChatService chatService;
-    private final PrescriptionRepository prescriptionRepository;
     private final vn.clinic.cdm.repository.clinical.HealthMetricRepository healthMetricRepository;
     private final PdfService pdfService;
 

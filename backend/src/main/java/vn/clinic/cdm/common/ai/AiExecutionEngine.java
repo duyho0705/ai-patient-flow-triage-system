@@ -65,7 +65,6 @@ public class AiExecutionEngine {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private <T> T parseResponse(String raw, Class<T> type) throws Exception {
         if (type == String.class) return type.cast(raw);
         return JsonUtils.fromJson(JsonUtils.extractJson(raw), type);
