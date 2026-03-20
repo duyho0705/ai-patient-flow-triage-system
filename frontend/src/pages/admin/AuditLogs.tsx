@@ -271,85 +271,87 @@ export function AuditLogs() {
             </div>
 
             {/* Modal */}
-            <AnimatePresence>
-                {selectedLog && createPortal(
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-md-on-surface/40 backdrop-blur-sm"
-                            onClick={() => setSelectedLog(null)}
-                        />
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
-                            className="relative bg-white dark:bg-slate-900 rounded-[3rem] shadow-elevation-5 w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col z-10"
-                        >
-                            <div className="p-8 border-b border-md-outline/10 flex items-center justify-between bg-white/80 backdrop-blur-md text-left">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-14 bg-md-primary/10 text-md-primary rounded-2xl flex items-center justify-center shadow-lg">
-                                        <Info size={24} />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-md-on-surface tracking-tight leading-none">Chi tiết Bản ghi Vận hành</h3>
-                                        <p className="text-[10px] font-black text-md-outline uppercase tracking-[0.2em] mt-1.5 opacity-60">ID: {selectedLog.id?.substring(0, 16)}...</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => setSelectedLog(null)} className="p-4 bg-md-surface-container border border-md-outline/10 hover:text-md-primary rounded-2xl transition-all">
-                                    <X size={24} />
-                                </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-10 space-y-12 CustomScrollbar text-left">
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                                    <DetailField label="Timestamp" value={new Date(selectedLog.timestamp).toLocaleString('vi-VN')} icon={History} />
-                                    <DetailField label="Audit Status" value={selectedLog.status} icon={Activity} isStatus />
-                                    <DetailField label="Network IP" value={selectedLog.ipAddress || 'Internal'} icon={Globe} isMono />
-                                    <DetailField label="System Agent" value="Auth-Service-01" icon={Laptop} />
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Chủ thể thực thi</h5>
-                                    <div className="p-6 bg-md-surface-container-low rounded-3xl border border-md-outline/10 flex items-center gap-6">
-                                         <div className="size-16 rounded-2xl bg-md-primary/10 text-md-primary flex items-center justify-center text-xl font-black italic">
-                                            {selectedLog.userEmail?.charAt(0).toUpperCase() || 'S'}
-                                         </div>
-                                         <div className="flex flex-col">
-                                            <span className="text-lg font-bold text-md-on-surface">{selectedLog.userEmail || 'System Core'}</span>
-                                            <span className="text-[11px] font-medium text-md-on-surface-variant opacity-60 italic">Định danh xác thực đa lớp từ API Gateway</span>
-                                         </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Payload Chi tiết</h5>
-                                    <div className="p-8 bg-md-on-surface text-white rounded-[2.5rem] border border-white/10 italic text-sm leading-relaxed shadow-lg">
-                                        "{selectedLog.details || 'Không có mô tả chi tiết cho hành động này.'}"
-                                    </div>
-                                </div>
-
-                                {(selectedLog.oldValue || selectedLog.newValue) && (
-                                    <div className="space-y-6">
-                                        <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Biến động Dữ liệu (State Diff)</h5>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <JsonBlock label="Trước (Source State)" data={selectedLog.oldValue} color="error" />
-                                            <JsonBlock label="Sau (Target State)" data={selectedLog.newValue} color="success" />
+            {createPortal(
+                <AnimatePresence>
+                    {selectedLog && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                className="fixed inset-0 bg-md-on-surface/40 backdrop-blur-sm"
+                                onClick={() => setSelectedLog(null)}
+                            />
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                                className="relative bg-white dark:bg-slate-900 rounded-[3rem] shadow-elevation-5 w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col z-10"
+                            >
+                                <div className="p-8 border-b border-md-outline/10 flex items-center justify-between bg-white/80 backdrop-blur-md text-left">
+                                    <div className="flex items-center gap-4">
+                                        <div className="size-14 bg-md-primary/10 text-md-primary rounded-2xl flex items-center justify-center shadow-lg">
+                                            <Info size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-md-on-surface tracking-tight leading-none">Chi tiết Bản ghi Vận hành</h3>
+                                            <p className="text-[10px] font-black text-md-outline uppercase tracking-[0.2em] mt-1.5 opacity-60">ID: {selectedLog.id?.substring(0, 16)}...</p>
                                         </div>
                                     </div>
-                                )}
+                                    <button onClick={() => setSelectedLog(null)} className="p-4 bg-md-surface-container border border-md-outline/10 hover:text-md-primary rounded-2xl transition-all">
+                                        <X size={24} />
+                                    </button>
+                                </div>
 
-                                <div className="space-y-3">
-                                    <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Tri xuất dấu vết Laptop/Browser</h5>
-                                    <div className="p-5 bg-md-surface-container border border-md-outline/10 rounded-2xl text-[10px] font-mono text-md-on-surface-variant break-all opacity-60">
-                                        {selectedLog.userAgent || 'X-API-Client-SongKhoe-Mobile/1.0.0 (Internal-Request)'}
+                                <div className="flex-1 overflow-y-auto p-10 space-y-12 CustomScrollbar text-left">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                                        <DetailField label="Timestamp" value={new Date(selectedLog.timestamp).toLocaleString('vi-VN')} icon={History} />
+                                        <DetailField label="Audit Status" value={selectedLog.status} icon={Activity} isStatus />
+                                        <DetailField label="Network IP" value={selectedLog.ipAddress || 'Internal'} icon={Globe} isMono />
+                                        <DetailField label="System Agent" value="Auth-Service-01" icon={Laptop} />
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Chủ thể thực thi</h5>
+                                        <div className="p-6 bg-md-surface-container-low rounded-3xl border border-md-outline/10 flex items-center gap-6">
+                                            <div className="size-16 rounded-2xl bg-md-primary/10 text-md-primary flex items-center justify-center text-xl font-black italic">
+                                                {selectedLog.userEmail?.charAt(0).toUpperCase() || 'S'}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-lg font-bold text-md-on-surface">{selectedLog.userEmail || 'System Core'}</span>
+                                                <span className="text-[11px] font-medium text-md-on-surface-variant opacity-60 italic">Định danh xác thực đa lớp từ API Gateway</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Payload Chi tiết</h5>
+                                        <div className="p-8 bg-md-on-surface text-white rounded-[2.5rem] border border-white/10 italic text-sm leading-relaxed shadow-lg">
+                                            "{selectedLog.details || 'Không có mô tả chi tiết cho hành động này.'}"
+                                        </div>
+                                    </div>
+
+                                    {(selectedLog.oldValue || selectedLog.newValue) && (
+                                        <div className="space-y-6">
+                                            <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Biến động Dữ liệu (State Diff)</h5>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <JsonBlock label="Trước (Source State)" data={selectedLog.oldValue} color="error" />
+                                                <JsonBlock label="Sau (Target State)" data={selectedLog.newValue} color="success" />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-3">
+                                        <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Tri xuất dấu vết Laptop/Browser</h5>
+                                        <div className="p-5 bg-md-surface-container border border-md-outline/10 rounded-2xl text-[10px] font-mono text-md-on-surface-variant break-all opacity-60">
+                                            {selectedLog.userAgent || 'X-API-Client-SongKhoe-Mobile/1.0.0 (Internal-Request)'}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </motion.div>
-                    </div>,
-                    document.body
-                )}
-            </AnimatePresence>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     )
 }
