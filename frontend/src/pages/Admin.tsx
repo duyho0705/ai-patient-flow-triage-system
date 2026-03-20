@@ -1,14 +1,13 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useMemo } from 'react'
 import { UserManagement } from './admin/UserManagement'
-import { RoleManagement } from './admin/RoleManagement'
 import { AuditLogs } from './admin/AuditLogs'
 import { SystemSettings } from './admin/SystemSettings'
 import { BranchManagement } from './admin/BranchManagement'
 import { SystemOverview } from './admin/SystemOverview'
 import { AiConfig } from './admin/AiConfig'
 
-type AdminAction = 'overview' | 'users' | 'roles' | 'audit' | 'system' | 'tenants' | 'diseases' | 'reports' | 'ai-config' | null
+type AdminAction = 'overview' | 'users' | 'audit' | 'system' | 'tenants' | 'diseases' | 'reports' | 'ai-config' | null
 
 export function Admin() {
    const navigate = useNavigate()
@@ -19,7 +18,6 @@ export function Admin() {
    const activeAction = useMemo((): AdminAction => {
       if (path.includes('/dashboard')) return 'overview'
       if (path.includes('/admin/users')) return 'users'
-      if (path.includes('/admin/roles')) return 'roles'
       if (path.includes('/admin/audit-logs')) return 'audit'
       if (path.includes('/admin/settings')) return 'system'
       if (path.includes('/admin/tenants')) return 'tenants'
@@ -36,11 +34,10 @@ export function Admin() {
 
    if (activeAction) {
       return (
-         <div className="flex-1 p-8 animate-in fade-in duration-700 bg-background-light dark:bg-background-dark font-display min-h-[calc(100vh-80px)]">
-            <div className="min-h-[600px] w-full">
+         <div className="flex-1 p-10 animate-in fade-in duration-700 bg-md-background font-sans min-h-[calc(100vh-80px)]">
+            <div className="min-h-[600px] w-full max-w-7xl mx-auto">
                {activeAction === 'overview' && <SystemOverview />}
                {activeAction === 'users' && <UserManagement />}
-               {activeAction === 'roles' && <RoleManagement />}
                {activeAction === 'audit' && <AuditLogs />}
                {activeAction === 'system' && <SystemSettings />}
                {activeAction === 'tenants' && <BranchManagement />}

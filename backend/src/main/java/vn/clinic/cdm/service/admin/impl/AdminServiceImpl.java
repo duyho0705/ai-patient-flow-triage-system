@@ -124,11 +124,13 @@ public class AdminServiceImpl implements AdminService {
                         throw new ApiException(ErrorCode.USER_ALREADY_EXISTS, HttpStatus.BAD_REQUEST, "Email đã tồn tại trên hệ thống");
                 }
                 IdentityUser user = IdentityUser.builder()
+                                .username(request.getEmail().trim().toLowerCase()) // Set username to email
                                 .email(request.getEmail().trim().toLowerCase())
                                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                                 .fullNameVi(request.getFullNameVi().trim())
                                 .phone(request.getPhone() != null ? request.getPhone().trim() : null)
                                 .isActive(true)
+                                .tenant(request.getTenantId() != null ? tenantService.getById(request.getTenantId()) : null)
                                 .build();
                 user = identityUserRepository.save(user);
 
@@ -180,6 +182,24 @@ public class AdminServiceImpl implements AdminService {
                 identityUserRepository.save(user);
                 auditLogService.log("SET_PASSWORD", "USER", userId.toString(),
                                 "Đặt lại mật khẩu cho người dùng: " + user.getEmail());
+        }
+
+        @Transactional
+        public void deleteUser(UUID userId) {
+                IdentityUser user = identityUserRepository.findById(userId)
+                                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
+                
+                // Remove all role assignments first
+                List<IdentityUserRole> roles = identityUserRoleRepository.findByUserId(userId);
+                identityUserRoleRepository.deleteAll(roles);
+                identityUserRoleRepository.flush();
+
+                
+                String email = user.getEmail();
+                identityUserRepository.delete(user);
+                
+                auditLogService.log("DELETE", "USER", userId.toString(),
+                                "Xóa người dùng: " + email);
         }
 
         @Transactional(readOnly = true)
@@ -271,8 +291,18 @@ public class AdminServiceImpl implements AdminService {
                 org.springframework.data.domain.Page<AuditLog> page = auditLogRepository
                                 .findWithFilters(tenantId, action, startDate, pageable);
 
+                List<UUID> userIds = page.getContent().stream()
+                        .map(AuditLog::getUserId)
+                        .filter(id -> id != null)
+                        .distinct()
+                        .collect(Collectors.toList());
+                
+                java.util.Map<UUID, String> userNameMap = identityUserRepository.findAllById(userIds)
+                        .stream()
+                        .collect(Collectors.toMap(IdentityUser::getId, IdentityUser::getFullNameVi));
+
                 List<AuditLogDto> content = page.getContent().stream()
-                                .map(AuditLogDto::fromEntity)
+                                .map(log -> AuditLogDto.fromEntity(log, log.getUserId() != null ? userNameMap.getOrDefault(log.getUserId(), log.getEmail()) : log.getEmail()))
                                 .collect(Collectors.toList());
 
                 return PagedResponse.of(page, content);

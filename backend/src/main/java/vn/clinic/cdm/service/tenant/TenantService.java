@@ -25,9 +25,7 @@ public class TenantService {
 
     @Transactional(readOnly = true)
     public List<Tenant> listAllActive() {
-        return tenantRepository.findAll().stream()
-                .filter(Tenant::getIsActive)
-                .toList();
+        return tenantRepository.findAll();
     }
 
     @Transactional(readOnly = true)
@@ -44,7 +42,7 @@ public class TenantService {
 
     @Transactional(readOnly = true)
     public List<TenantBranch> getBranchesByTenantId(UUID tenantId) {
-        return tenantBranchRepository.findByTenantIdAndIsActiveTrueOrderByCode(tenantId);
+        return tenantBranchRepository.findByTenantIdOrderByCode(tenantId);
     }
 
     @Transactional(readOnly = true)
@@ -86,8 +84,15 @@ public class TenantService {
         branch.setDistrict(details.getDistrict());
         branch.setWard(details.getWard());
         branch.setPhone(details.getPhone());
+        branch.setEmail(details.getEmail());
         branch.setIsActive(details.getIsActive());
         return tenantBranchRepository.save(branch);
+    }
+
+    @Transactional
+    public void deleteBranch(UUID branchId) {
+        TenantBranch branch = getBranchById(branchId);
+        tenantBranchRepository.delete(branch);
     }
 
     @Transactional

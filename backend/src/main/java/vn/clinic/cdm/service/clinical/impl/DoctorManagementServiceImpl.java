@@ -19,6 +19,7 @@ import vn.clinic.cdm.repository.identity.IdentityUserRepository;
 import vn.clinic.cdm.repository.identity.IdentityUserRoleRepository;
 import vn.clinic.cdm.entity.tenant.Tenant;
 import vn.clinic.cdm.repository.tenant.TenantRepository;
+import vn.clinic.cdm.service.clinical.DoctorManagementService;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class DoctorManagementServiceImpl {
+public class DoctorManagementServiceImpl implements DoctorManagementService {
 
     private final DoctorRepository doctorRepository;
     private final IdentityUserRepository identityUserRepository;
@@ -36,12 +37,14 @@ public class DoctorManagementServiceImpl {
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
 
+    @Override
     public List<DoctorDto> getAllDoctors() {
         return doctorRepository.findAll().stream()
                 .map(DoctorDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
+    @Override
     public DoctorDto getDoctorById(UUID id) {
         return doctorRepository.findById(id)
                 .map(DoctorDto::fromEntity)
@@ -49,6 +52,7 @@ public class DoctorManagementServiceImpl {
     }
 
     @Transactional
+    @Override
     public DoctorDto createDoctor(CreateDoctorRequest request) {
         UUID tenantId = TenantContext.getTenantIdOrThrow();
 
@@ -98,6 +102,7 @@ public class DoctorManagementServiceImpl {
     }
 
     @Transactional
+    @Override
     public void deleteDoctor(UUID id) {
         if (!doctorRepository.existsById(id)) {
             throw new ResourceNotFoundException("Doctor not found");

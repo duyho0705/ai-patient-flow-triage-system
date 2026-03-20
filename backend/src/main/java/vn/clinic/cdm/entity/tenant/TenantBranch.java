@@ -43,6 +43,9 @@ public class TenantBranch extends BaseAuditableEntity {
     @Column(name = "phone", length = 20)
     private String phone;
 
+    @Column(name = "email", length = 255)
+    private String email;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Minimalist Monochrome</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Source+Serif+4:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Source Serif 4", Georgia, serif;
+            background: #ffffff;
+            color: #000;
+            line-height: 1.6;
+        }
+
+        /* container */
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 0 40px;
+        }
+
+        /* typography */
+
+        h1,
+        h2,
+        h3 {
+            font-family: "Playfair Display", serif;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-title {
+            font-size: 8rem;
+            line-height: 0.9;
+            font-weight: 700;
+        }
+
+        .hero-sub {
+            font-size: 1.25rem;
+            margin-top: 20px;
+            max-width: 600px;
+        }
+
+        /* sections */
+
+        section {
+            padding: 120px 0;
+            border-top: 4px solid #000;
+        }
+
+        /* button */
+
+        .btn {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 18px 40px;
+            background: #000;
+            color: #fff;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 0.8rem;
+            border: 2px solid #000;
+        }
+
+        .btn:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        /* grid */
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        /* card */
+
+        .card {
+            border: 1px solid #000;
+            padding: 30px;
+            transition: 0.1s;
+        }
+
+        .card:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        /* stats inverted */
+
+        .stats {
+            background: #000;
+            color: #fff;
+            text-align: center;
+        }
+
+        .stats h2 {
+            font-size: 4rem;
+        }
+
+        /* footer */
+
+        footer {
+            padding: 80px 0;
+            border-top: 4px solid #000;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+    </style>
+
+</head>
+
+<body>
+
+
+    <!-- HERO -->
+
+    <section style="border:none">
+
+        <div class="container">
+
+            <h1 class="hero-title">
+                DESIGN
+            </h1>
+
+            <p class="hero-sub">
+                Reduction to essence. A design language built entirely from typography,
+                contrast, and negative space.
+            </p>
+
+            <a href="#" class="btn">Explore →</a>
+
+        </div>
+
+    </section>
+
+
+    <!-- FEATURES -->
+
+    <section>
+
+        <div class="container">
+
+            <h2 style="font-size:3rem;">Principles</h2>
+
+            <div class="grid">
+
+                <div class="card">
+                    <h3>Typography</h3>
+                    <p>
+                        Serif typography dominates the visual hierarchy.
+                        Words become graphic elements.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3>Contrast</h3>
+                    <p>
+                        Pure black and white create dramatic tension
+                        without relying on color.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3>Discipline</h3>
+                    <p>
+                        Every element must justify its existence.
+                        No decoration without meaning.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- STATS -->
+
+    <section class="stats">
+
+        <div class="container">
+
+            <h2>10×</h2>
+            <p>Stronger visual hierarchy</p>
+
+        </div>
+
+    </section>
+
+
+    <!-- CTA -->
+
+    <section>
+
+        <div class="container">
+
+            <h2 style="font-size:4rem;">
+                Create with restraint.
+            </h2>
+
+            <a href="#" class="btn">Start Project →</a>
+
+        </div>
+
+    </section>
+
+
+    <footer>
+
+        © 2026 Minimalist Monochrome
+
+    </footer>
+
+</body>
+
+</html>

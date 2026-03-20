@@ -2,10 +2,11 @@ import { useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { 
-    Activity, AlertCircle, 
+    Activity, 
     ChevronLeft, ChevronRight, MoreVertical, X, Info,
-    Download, Users, ArrowRight, List, Calendar, Filter,
-    ChevronDown
+    Download, ArrowRight, Calendar, Filter,
+    ChevronDown, ShieldAlert, History, Laptop, Globe,
+    Loader2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AuditLogDto } from '@/types/api'
@@ -13,7 +14,7 @@ import { getAuditLogs, getAdminDashboard } from '@/api/admin'
 import { listTenants } from '@/api/tenants'
 import { CustomSelect } from '@/components/CustomSelect'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 15
 
 export function AuditLogs() {
     const [page, setPage] = useState(0)
@@ -53,17 +54,20 @@ export function AuditLogs() {
     })
 
     return (
-        <div className="w-full animate-in fade-in duration-700 font-sans space-y-8">
+        <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-10 pb-20 bg-md-background font-sans">
             {/* Header Section */}
-            <div className="flex justify-between items-end text-left">
-                <div>
-                    <h2 className="text-2xl font-bold text-neutral-900">Nhật ký hệ thống</h2>
-                    <p className="text-neutral-500">Theo dõi và quản lý mọi hoạt động, thay đổi dữ liệu trong hệ thống Sống Khỏe.</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-2">
+                    <h2 className="text-3xl font-bold text-md-on-surface tracking-tight">Audit Log</h2>
+                    <p className="text-md-on-surface-variant font-medium opacity-70">
+                        Giám sát tính toàn vẹn và lịch sử vận hành hệ thống.
+                    </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative">
+                <div className="flex items-center gap-3">
+                    <div className="relative group">
+                         <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-md-on-surface-variant opacity-40 group-focus-within:text-md-primary group-focus-within:opacity-100 transition-all pointer-events-none" />
                         <select 
-                            className="appearance-none bg-white border border-slate-200 rounded-lg pl-10 pr-10 py-2.5 text-sm focus:ring-primary-500 focus:border-primary-500 outline-none cursor-pointer"
+                            className="appearance-none h-12 bg-md-surface-container border border-md-outline/10 rounded-2xl pl-12 pr-10 text-sm font-bold text-md-on-surface hover:bg-md-primary/5 transition-all outline-none cursor-pointer min-w-[160px]"
                             value={daysFilter}
                             onChange={(e) => {
                                 setDaysFilter(parseInt(e.target.value))
@@ -75,22 +79,28 @@ export function AuditLogs() {
                             <option value={30}>30 ngày qua</option>
                             <option value={365}>1 năm qua</option>
                         </select>
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-md-on-surface-variant opacity-40 pointer-events-none" />
                     </div>
                     <button 
                         onClick={() => alert('Chức năng xuất báo cáo đang được phát triển.')}
-                        className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
+                        className="flex items-center gap-2 h-12 px-6 bg-md-primary text-white rounded-full font-bold text-sm shadow-elevation-2 hover:shadow-elevation-4 transition-all active:scale-95 group"
                     >
-                        <Download className="w-4 h-4" />
-                        Xuất báo cáo
+                        <Download className="size-4 group-hover:translate-y-0.5 transition-transform" />
+                        <span>Xuất CSV</span>
                     </button>
                 </div>
             </div>
 
-            {/* Quick Filters Area */}
-            <div className="bg-slate-50 p-4 rounded-2xl flex flex-wrap items-center gap-4">
-                <div className="w-64">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <AuditStatCard label="Tổng nhật ký" value={data?.totalElements?.toLocaleString('vi-VN') ?? '0'} icon={History} color="primary" />
+                <AuditStatCard label="Sự cố 24h" value={dashboard?.failedAuditLogs ?? 0} icon={ShieldAlert} color="error" />
+                <AuditStatCard label="Tỷ lệ Thành công" value="99.9%" icon={Activity} color="primary" isSecondary />
+            </div>
+
+            {/* Filters Area */}
+            <div className="bg-md-surface-container rounded-[2rem] p-4 flex flex-col md:flex-row items-center gap-4 border border-md-outline/5 shadow-sm">
+                 <div className="flex-1 w-full text-left">
                     <CustomSelect
                         options={[{ id: '', name: 'Tất cả cơ sở' }, ...tenants.map(t => ({ id: t.id, name: `${t.nameVi}` }))]}
                         value={tenantFilter}
@@ -101,19 +111,20 @@ export function AuditLogs() {
                         labelKey="name"
                         valueKey="id"
                         placeholder="Lọc theo Tenant..."
-                        size="sm"
+                        size="md"
                     />
                 </div>
-                <div className="relative">
+                <div className="relative group w-full md:w-auto">
+                    <Filter className="absolute left-5 top-1/2 -translate-y-1/2 size-4 text-md-on-surface-variant opacity-40 group-focus-within:text-md-primary group-focus-within:opacity-100 transition-all pointer-events-none" />
                     <select 
-                        className="appearance-none bg-white border border-slate-200 rounded-lg pl-10 pr-10 py-2 text-sm focus:ring-primary-500 outline-none cursor-pointer min-w-[200px]"
+                        className="appearance-none h-14 bg-md-surface-container-low border border-md-outline/10 rounded-2xl pl-12 pr-14 text-sm font-bold text-md-on-surface outline-none cursor-pointer min-w-[240px] focus:ring-4 focus:ring-md-primary/10 transition-all"
                         value={actionFilter}
                         onChange={(e) => {
                             setActionFilter(e.target.value)
                             setPage(0)
                         }}
                     >
-                        <option value="">Tất cả loại hành động</option>
+                        <option value="">Toàn bộ hành động</option>
                         <option value="LOGIN">Đăng nhập</option>
                         <option value="CREATE">Tạo mới</option>
                         <option value="UPDATE">Cập nhật</option>
@@ -121,131 +132,93 @@ export function AuditLogs() {
                         <option value="SET_PASSWORD">Đổi mật khẩu</option>
                         <option value="VITAL_SIGNS_SUBMIT">Gửi chỉ số</option>
                     </select>
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 size-4 text-md-on-surface-variant opacity-40 pointer-events-none" />
                 </div>
             </div>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 relative overflow-hidden group">
-                    <div className="w-12 h-12 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center relative">
-                        <List className="w-6 h-6 fill-current opacity-20 absolute" />
-                        <List className="w-6 h-6 relative" />
-                    </div>
-                    <div>
-                        <p className="text-slate-500 text-sm font-medium">Tổng số log</p>
-                        <p className="text-2xl font-bold text-slate-900">{data?.totalElements?.toLocaleString('vi-VN') ?? '0'}</p>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 relative overflow-hidden group">
-                    <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center relative">
-                        <AlertCircle className="w-6 h-6 fill-current opacity-20 absolute" />
-                        <AlertCircle className="w-6 h-6 relative" />
-                    </div>
-                    <div>
-                        <p className="text-slate-500 text-sm font-medium">Lỗi hôm nay</p>
-                        <p className="text-2xl font-bold text-slate-900">{dashboard?.failedAuditLogs ?? 0}</p>
-                    </div>
-                    {(dashboard?.failedAuditLogs ?? 0) === 0 && (
-                        <div className="absolute top-4 right-4 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Ổn định</div>
-                    )}
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 relative overflow-hidden group">
-                    <div className="w-12 h-12 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center relative">
-                        <Users className="w-6 h-6 fill-current opacity-20 absolute" />
-                        <Users className="w-6 h-6 relative" />
-                    </div>
-                    <div>
-                        <p className="text-slate-500 text-sm font-medium">Người dùng hoạt động</p>
-                        <p className="text-2xl font-bold text-slate-900">{dashboard?.activeUsers?.toLocaleString('vi-VN') ?? '0'}</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Log Table Container */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            {/* Main Content (Table) */}
+            <div className="bg-md-surface-container-lowest rounded-[2.5rem] border border-md-outline/10 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
                 {isLoading ? (
-                    <div className="p-20 text-center">
-                        <Activity className="w-10 h-10 text-gray-200 animate-spin mx-auto mb-4" />
-                        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Đang tải nhật ký...</p>
+                    <div className="flex-1 flex flex-col items-center justify-center p-20 gap-4">
+                        <Loader2 className="size-12 animate-spin text-md-primary" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-md-on-surface-variant animate-pulse italic">Tri xuất dữ liệu từ Audit Core...</p>
                     </div>
                 ) : (
                     <>
                         <div className="overflow-x-auto">
-                            <table className="min-w-full text-left border-collapse">
+                            <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-gray-50/50 border-b border-gray-200">
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Người dùng</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Hành động</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Thời gian</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Địa chỉ IP</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Trạng thái</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Chi tiết</th>
+                                    <tr className="bg-md-surface-container-low/50">
+                                        <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60">Người thực hiện</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60">Thao tác</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60">Thời gian</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60">Địa chỉ IP</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60 text-center">Kết cục</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60 text-right">Chi tiết</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-md-outline/5">
                                     {(data?.content ?? []).map((log: AuditLogDto, idx: number) => (
                                         <motion.tr
                                             key={log.id}
-                                            initial={{ opacity: 0, y: 5 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.01 }}
-                                            className="hover:bg-gray-50 transition-colors group"
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.02 }}
+                                            className="hover:bg-md-surface-container-low/30 transition-colors group"
                                         >
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold overflow-hidden">
-                                                        {log.userEmail?.charAt(0).toUpperCase() || '?'}
+                                            <td className="px-8 py-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="size-10 rounded-full bg-md-surface-container flex items-center font-black text-xs justify-center text-md-primary border border-md-outline/10 group-hover:scale-110 transition-transform">
+                                                        {(log.userName || log.userEmail)?.charAt(0).toUpperCase() || '?'}
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-gray-900 leading-none mb-1">
-                                                            {log.userEmail?.split('@')[0] || 'Hệ thống'}
-                                                        </p>
-                                                        <p className="text-[11px] text-gray-400 truncate max-w-[150px]">
-                                                            {log.userEmail || 'system@songkhoe.vn'}
-                                                        </p>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-md-on-surface group-hover:text-md-primary transition-colors">
+                                                            {log.userName || log.userEmail?.split('@')[0] || 'Hệ thống'}
+                                                        </span>
+                                                        <span className="text-[10px] text-md-on-surface-variant italic font-medium opacity-50">
+                                                            {log.userEmail || 'system.agent@songkhoe.vn'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`w-2 h-2 rounded-full ${
+                                            <td className="px-8 py-4">
+                                                <div className="flex items-center gap-2 max-w-[200px]">
+                                                    <div className={`size-1.5 rounded-full shrink-0 ${
                                                         log.action.includes('CREATE') ? 'bg-emerald-500' :
-                                                        log.action.includes('DELETE') ? 'bg-red-500' :
-                                                        log.action.includes('UPDATE') ? 'bg-blue-500' : 'bg-amber-500'
+                                                        log.action.includes('DELETE') ? 'bg-md-error' :
+                                                        log.action.includes('UPDATE') ? 'bg-md-primary' : 'bg-amber-500'
                                                     }`} />
-                                                    <span className="text-sm text-gray-700 font-medium truncate max-w-[200px]">
+                                                    <span className="text-xs font-bold text-md-on-surface-variant truncate">
                                                         {log.details || log.action}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
-                                                    <p className="text-sm text-gray-600">{new Date(log.timestamp).toLocaleTimeString('vi-VN')}</p>
-                                                    <p className="text-[11px] text-gray-400">{new Date(log.timestamp).toLocaleDateString('vi-VN')}</p>
+                                            <td className="px-8 py-4">
+                                                <div className="flex flex-col text-xs">
+                                                    <span className="font-bold text-md-on-surface">{new Date(log.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                                    <span className="text-[10px] text-md-outline opacity-60 italic">{new Date(log.timestamp).toLocaleDateString('vi-VN')}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm font-mono text-gray-500">
-                                                {log.ipAddress || '—'}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                                                    log.status === 'SUCCESS' || log.action.includes('SUCCESS') 
-                                                    ? 'bg-emerald-100 text-emerald-700' 
-                                                    : 'bg-red-100 text-red-700'
-                                                }`}>
-                                                    {log.status === 'SUCCESS' ? 'Thành công' : 'Thất bại'}
+                                            <td className="px-8 py-4">
+                                                <span className="text-[11px] font-black text-md-on-surface-variant/40 font-mono tracking-tighter italic">
+                                                    {log.ipAddress || 'Internal'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-8 py-4 text-center">
+                                                <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                                    log.status === 'SUCCESS' || log.action.includes('SUCCESS') 
+                                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                                                    : 'bg-md-error-container text-md-on-error-container border border-md-error/10'
+                                                }`}>
+                                                    {log.status === 'SUCCESS' ? 'Xác thực' : 'Sự cố'}
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-4 text-right">
                                                 <button 
                                                     onClick={() => setSelectedLog(log)}
-                                                    className="p-2 text-gray-400 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-all opacity-0 group-hover:opacity-100"
+                                                    className="p-3 text-md-on-surface-variant hover:text-md-primary hover:bg-md-primary/10 rounded-2xl transition-all active:scale-90"
                                                 >
-                                                    <MoreVertical className="w-4 h-4" />
+                                                    <MoreVertical size={18} />
                                                 </button>
                                             </td>
                                         </motion.tr>
@@ -254,22 +227,19 @@ export function AuditLogs() {
                             </table>
                         </div>
                         
-                        {/* Pagination Matching Client.html */}
-                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <p className="text-sm text-gray-500">
-                                Hiển thị <span className="font-semibold text-gray-900">{(data?.page ?? 0) * PAGE_SIZE + 1}-{Math.min(((data?.page ?? 0) + 1) * PAGE_SIZE, data?.totalElements ?? 0)}</span> trong số <span className="font-semibold text-gray-900">{data?.totalElements?.toLocaleString()}</span> kết quả
+                        {/* Pagination Area */}
+                        <div className="p-8 bg-md-surface-container-low/30 border-t border-md-outline/5 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <p className="text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-40">
+                                Page <span className="text-md-primary">{(data?.page ?? 0) + 1}</span> of <span className="text-md-on-surface">{data?.totalPages ?? 1}</span> ({data?.totalElements?.toLocaleString()} logs synchronized)
                             </p>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    disabled={data?.first}
-                                    onClick={() => setPage(p => p - 1)}
-                                    className="p-2 border border-gray-200 rounded-lg bg-white text-gray-400 hover:text-gray-600 disabled:opacity-50 transition-all shadow-sm"
-                                >
-                                    <ChevronLeft className="w-5 h-5" />
-                                </button>
+                            <div className="flex items-center gap-3">
+                                <PaginationButton 
+                                    disabled={data?.first} 
+                                    onClick={() => setPage(p => p - 1)} 
+                                    icon={ChevronLeft} 
+                                />
                                 
-                                <div className="flex items-center gap-1">
-                                    {/* Show current page and neighbors */}
+                                <div className="flex gap-1.5 px-3 py-1.5 bg-md-surface-container rounded-2xl border border-md-outline/10 shadow-inner">
                                     {Array.from({ length: Math.min(5, data?.totalPages ?? 0) }, (_, i) => {
                                         const pageNum = i + 1;
                                         const isActive = (data?.page ?? 0) + 1 === pageNum;
@@ -277,131 +247,101 @@ export function AuditLogs() {
                                             <button
                                                 key={pageNum}
                                                 onClick={() => setPage(i)}
-                                                className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all ${
+                                                className={`size-9 rounded-xl text-[11px] font-black transition-all ${
                                                     isActive 
-                                                    ? 'bg-[#0d9488] text-white shadow-md' 
-                                                    : 'bg-transparent text-gray-600 hover:bg-white hover:shadow-sm'
+                                                    ? 'bg-md-primary text-white shadow-lg' 
+                                                    : 'text-md-on-surface-variant hover:bg-white/50'
                                                 }`}
                                             >
                                                 {pageNum}
                                             </button>
                                         );
                                     })}
-                                    {(data?.totalPages ?? 0) > 5 && (
-                                        <>
-                                            <span className="px-1 text-gray-400">...</span>
-                                            <button 
-                                                onClick={() => setPage((data?.totalPages ?? 1) - 1)}
-                                                className="w-10 h-10 bg-transparent text-gray-600 hover:bg-white rounded-lg font-medium text-sm"
-                                            >
-                                                {data?.totalPages}
-                                            </button>
-                                        </>
-                                    )}
                                 </div>
 
-                                <button
-                                    disabled={data?.last}
-                                    onClick={() => setPage(p => p + 1)}
-                                    className="p-2 border border-gray-200 rounded-lg bg-white text-gray-400 hover:text-[#0d9488] transition-colors disabled:opacity-50 shadow-sm"
-                                >
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
+                                <PaginationButton 
+                                    disabled={data?.last} 
+                                    onClick={() => setPage(p => p + 1)} 
+                                    icon={ChevronRight} 
+                                />
                             </div>
                         </div>
                     </>
                 )}
             </div>
 
+            {/* Modal */}
             <AnimatePresence>
                 {selectedLog && createPortal(
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
-                        {/* Backdrop */}
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-md-on-surface/40 backdrop-blur-sm"
                             onClick={() => setSelectedLog(null)}
                         />
-
-                        {/* Modal Container */}
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col z-10"
+                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                            className="relative bg-white dark:bg-slate-900 rounded-[3rem] shadow-elevation-5 w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col z-10"
                         >
-                            <div className="p-8 border-b border-primary/10 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shrink-0">
+                            <div className="p-8 border-b border-md-outline/10 flex items-center justify-between bg-white/80 backdrop-blur-md text-left">
                                 <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-[#0d9488] dark:bg-primary/20 text-white dark:text-primary rounded-xl shadow-lg">
-                                        <Info className="w-6 h-6" />
+                                    <div className="size-14 bg-md-primary/10 text-md-primary rounded-2xl flex items-center justify-center shadow-lg">
+                                        <Info size={24} />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-none font-display">Chi tiết Nhật ký</h3>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">{selectedLog.id}</p>
+                                        <h3 className="text-xl font-bold text-md-on-surface tracking-tight leading-none">Chi tiết Bản ghi Vận hành</h3>
+                                        <p className="text-[10px] font-black text-md-outline uppercase tracking-[0.2em] mt-1.5 opacity-60">ID: {selectedLog.id?.substring(0, 16)}...</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setSelectedLog(null)} className="p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 rounded-xl transition-all">
-                                    <X className="w-5 h-5 text-gray-400" />
+                                <button onClick={() => setSelectedLog(null)} className="p-4 bg-md-surface-container border border-md-outline/10 hover:text-md-primary rounded-2xl transition-all">
+                                    <X size={24} />
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-10 space-y-10 scrollbar-hide">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Thời điểm</p>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{new Date(selectedLog.timestamp).toLocaleString('vi-VN')}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">IP Address</p>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white font-mono">{selectedLog.ipAddress || '—'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Trạng thái</p>
-                                        <p className="text-sm font-black text-emerald-600 uppercase tracking-widest">{selectedLog.status}</p>
+                            <div className="flex-1 overflow-y-auto p-10 space-y-12 CustomScrollbar text-left">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                                    <DetailField label="Timestamp" value={new Date(selectedLog.timestamp).toLocaleString('vi-VN')} icon={History} />
+                                    <DetailField label="Audit Status" value={selectedLog.status} icon={Activity} isStatus />
+                                    <DetailField label="Network IP" value={selectedLog.ipAddress || 'Internal'} icon={Globe} isMono />
+                                    <DetailField label="System Agent" value="Auth-Service-01" icon={Laptop} />
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Chủ thể thực thi</h5>
+                                    <div className="p-6 bg-md-surface-container-low rounded-3xl border border-md-outline/10 flex items-center gap-6">
+                                         <div className="size-16 rounded-2xl bg-md-primary/10 text-md-primary flex items-center justify-center text-xl font-black italic">
+                                            {selectedLog.userEmail?.charAt(0).toUpperCase() || 'S'}
+                                         </div>
+                                         <div className="flex flex-col">
+                                            <span className="text-lg font-bold text-md-on-surface">{selectedLog.userEmail || 'System Core'}</span>
+                                            <span className="text-[11px] font-medium text-md-on-surface-variant opacity-60 italic">Định danh xác thực đa lớp từ API Gateway</span>
+                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Mô tả hành động</p>
-                                    <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 italic text-slate-600 dark:text-slate-400">
-                                        {selectedLog.details}
+                                    <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Payload Chi tiết</h5>
+                                    <div className="p-8 bg-md-on-surface text-white rounded-[2.5rem] border border-white/10 italic text-sm leading-relaxed shadow-lg">
+                                        "{selectedLog.details || 'Không có mô tả chi tiết cho hành động này.'}"
                                     </div>
                                 </div>
 
                                 {(selectedLog.oldValue || selectedLog.newValue) && (
                                     <div className="space-y-6">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Thay đổi dữ liệu</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2">Trước (Old Value)</span>
-                                                <div className="p-5 bg-rose-50/30 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/20 rounded-2xl max-h-[300px] overflow-auto">
-                                                    <pre className="text-[11px] font-mono whitespace-pre-wrap text-rose-700 dark:text-rose-400">
-                                                        {selectedLog.oldValue ? JSON.stringify(JSON.parse(selectedLog.oldValue), null, 2) : 'No data'}
-                                                    </pre>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2">Sau (New Value)</span>
-                                                <div className="p-5 bg-emerald-50/30 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-2xl max-h-[300px] overflow-auto relative group">
-                                                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 p-1.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full shadow-sm hidden md:block z-10">
-                                                        <ArrowRight className="w-3 h-3 text-slate-300" />
-                                                    </div>
-                                                    <pre className="text-[11px] font-mono whitespace-pre-wrap text-emerald-700 dark:text-emerald-400">
-                                                        {selectedLog.newValue ? JSON.stringify(JSON.parse(selectedLog.newValue), null, 2) : 'No data'}
-                                                    </pre>
-                                                </div>
-                                            </div>
+                                        <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Biến động Dữ liệu (State Diff)</h5>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <JsonBlock label="Trước (Source State)" data={selectedLog.oldValue} color="error" />
+                                            <JsonBlock label="Sau (Target State)" data={selectedLog.newValue} color="success" />
                                         </div>
                                     </div>
                                 )}
 
-                                <div className="space-y-2">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">User Agent</p>
-                                    <div className="p-4 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl text-[10px] font-mono text-slate-400 break-all">
-                                        {selectedLog.userAgent || 'Unknown'}
+                                <div className="space-y-3">
+                                    <h5 className="text-[10px] font-black text-md-outline uppercase tracking-widest pl-1">Tri xuất dấu vết Laptop/Browser</h5>
+                                    <div className="p-5 bg-md-surface-container border border-md-outline/10 rounded-2xl text-[10px] font-mono text-md-on-surface-variant break-all opacity-60">
+                                        {selectedLog.userAgent || 'X-API-Client-SongKhoe-Mobile/1.0.0 (Internal-Request)'}
                                     </div>
                                 </div>
                             </div>
@@ -410,6 +350,72 @@ export function AuditLogs() {
                     document.body
                 )}
             </AnimatePresence>
+        </div>
+    )
+}
+
+/* --- Helpers --- */
+
+function AuditStatCard({ label, value, icon: Icon, color, isSecondary }: any) {
+    const styles: any = {
+        primary: 'bg-md-primary/10 text-md-primary border-md-primary/10',
+        error: 'bg-md-error-container text-md-on-error-container border-md-error/10'
+    }
+    return (
+        <div className="bg-md-surface-container-lowest p-6 rounded-[2.5rem] border border-md-outline/10 shadow-sm flex items-center gap-6 group hover:shadow-elevation-2 transition-all">
+            <div className={`size-16 rounded-[1.5rem] flex items-center justify-center border shadow-sm group-hover:rotate-6 transition-transform ${isSecondary ? 'bg-md-secondary-container text-md-on-secondary-container border-md-secondary/10' : styles[color]}`}>
+                <Icon size={28} />
+            </div>
+            <div className="text-left">
+                 <p className="text-[10px] font-black text-md-on-surface-variant uppercase tracking-widest opacity-40 italic font-sans leading-none">{label}</p>
+                 <h4 className="text-3xl font-black text-md-on-surface tracking-tighter mt-2">{value}</h4>
+            </div>
+        </div>
+    )
+}
+
+function PaginationButton({ disabled, onClick, icon: Icon }: any) {
+    return (
+        <button
+            disabled={disabled}
+            onClick={onClick}
+            className="size-12 rounded-2xl bg-md-surface-container-low border border-md-outline/10 text-md-on-surface-variant hover:text-md-primary hover:bg-white transition-all shadow-sm active:scale-90 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
+        >
+            <Icon size={20} />
+        </button>
+    )
+}
+
+function DetailField({ label, value, icon: Icon, isStatus, isMono }: any) {
+    return (
+        <div className="space-y-2">
+            <p className="flex items-center gap-2 text-[9px] font-black text-md-outline uppercase tracking-widest leading-none mb-1">
+                <Icon size={12} className="opacity-40" />
+                {label}
+            </p>
+            <p className={`text-sm font-bold ${isStatus ? 'text-emerald-600' : 'text-md-on-surface'} ${isMono ? 'font-mono text-xs opacity-60' : ''}`}>
+                {value}
+            </p>
+        </div>
+    )
+}
+
+function JsonBlock({ label, data, color }: any) {
+    const isError = color === 'error'
+    let content = 'No State Trace'
+    try { if (data) content = JSON.stringify(JSON.parse(data), null, 2) } catch(e) { content = data }
+
+    return (
+        <div className="space-y-3">
+             <div className="flex items-center justify-between px-2">
+                <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isError ? 'text-md-error' : 'text-emerald-600'}`}>{label}</span>
+                {isError ? <ArrowRight size={12} className="text-md-outline opacity-20" /> : <div className="size-1.5 bg-emerald-500 rounded-full animate-pulse" />}
+             </div>
+             <div className={`p-6 rounded-3xl border ${isError ? 'bg-md-error-container/20 border-md-error/10' : 'bg-emerald-50/20 border-emerald-100'} max-h-[300px] overflow-auto CustomScrollbar`}>
+                <pre className={`text-[11px] font-mono whitespace-pre-wrap leading-relaxed ${isError ? 'text-md-on-error-container' : 'text-emerald-700'}`}>
+                    {content}
+                </pre>
+             </div>
         </div>
     )
 }

@@ -1,22 +1,26 @@
 package vn.clinic.cdm.controller.patient;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
 import vn.clinic.cdm.dto.common.ApiResponse;
-import vn.clinic.cdm.dto.medication.MedicationReminderDto;
 import vn.clinic.cdm.dto.medication.MedicationDosageLogDto;
-import vn.clinic.cdm.service.clinical.MedicationService;
+import vn.clinic.cdm.dto.medication.MedicationReminderDto;
 import vn.clinic.cdm.entity.patient.Patient;
-import vn.clinic.cdm.service.patient.PatientPortalService;
 import vn.clinic.cdm.mapper.MedicationMapper;
-
-import java.util.List;
-
-import java.util.stream.Collectors;
+import vn.clinic.cdm.service.clinical.MedicationService;
+import vn.clinic.cdm.service.patient.PatientPortalService;
 
 @RestController
 @RequestMapping("/api/portal/medication-reminders")

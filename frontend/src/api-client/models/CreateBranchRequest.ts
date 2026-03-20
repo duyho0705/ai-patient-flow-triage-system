@@ -11,5 +11,7 @@ export type CreateBranchRequest = {
     district?: string;
     ward?: string;
     phone?: string;
+    email?: string;
+    isActive?: boolean;
 };
 

@@ -23,6 +23,7 @@ import vn.clinic.cdm.service.identity.IdentityService;
 import vn.clinic.cdm.service.common.AuditService;
 import vn.clinic.cdm.dto.common.AuditRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
     private final AuditService auditService;
+    private final HttpServletRequest httpServletRequest;
 
     @Override
     @Transactional
@@ -67,7 +69,9 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtUtil.generateToken(user.getId(), user.getEmail(), tenantId, branchId, roles, permissions, user.getTokenVersion());
         String refreshToken = createRefreshToken(user);
 
-        auditService.logSuccess(new AuditRequest(user.getId(), user.getEmail(), "LOGIN", "Logged in via Email/Password", "SUCCESS", null, null));
+        String clientIp = getClientIpAddress(httpServletRequest);
+        String userAgent = httpServletRequest.getHeader("User-Agent");
+        auditService.logSuccess(new AuditRequest(user.getId(), user.getEmail(), "LOGIN", "Logged in via Email/Password", "SUCCESS", clientIp, userAgent));
 
         AuthUserDto userDto = AuthUserDto.builder()
                 .id(user.getId())
@@ -156,5 +160,22 @@ public class AuthServiceImpl implements AuthService {
         user.setTokenVersion(user.getTokenVersion() + 1);
         identityService.saveUser(user);
         refreshTokenRepository.deleteByUser(user);
+    }
+
+    private String getClientIpAddress(HttpServletRequest request) {
+        String[] headerNames = {
+            "X-Forwarded-For",
+            "X-Real-IP",
+            "Proxy-Client-IP",
+            "WL-Proxy-Client-IP"
+        };
+        for (String header : headerNames) {
+            String ip = request.getHeader(header);
+            if (ip != null && !ip.isBlank() && !"unknown".equalsIgnoreCase(ip)) {
+                // X-Forwarded-For can contain multiple IPs, take the first one
+                return ip.split(",")[0].trim();
+            }
+        }
+        return request.getRemoteAddr();
     }
 }

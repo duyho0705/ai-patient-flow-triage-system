@@ -15,6 +15,7 @@ public class AuditLogDto {
     private UUID id;
     private UUID userId;
     private String userEmail;
+    private String userName;
     private String action;
     private String entityName;
     private UUID entityId;
@@ -26,11 +27,12 @@ public class AuditLogDto {
     private Instant timestamp;
     private String status;
 
-    public static AuditLogDto fromEntity(vn.clinic.cdm.entity.common.AuditLog l) {
+    public static AuditLogDto fromEntity(vn.clinic.cdm.entity.common.AuditLog l, String userName) {
         return AuditLogDto.builder()
                 .id(l.getId())
                 .userId(l.getUserId())
                 .userEmail(l.getEmail())
+                .userName(userName)
                 .action(l.getAction())
                 .entityName(l.getEntityName())
                 .entityId(l.getEntityId())

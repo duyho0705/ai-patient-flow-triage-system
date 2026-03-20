@@ -41,5 +41,11 @@ public class CreateBranchRequest {
 
     @Size(max = 20)
     private String phone;
+
+    @jakarta.validation.constraints.Email
+    @Size(max = 255)
+    private String email;
+
+    private Boolean isActive;
 }
 

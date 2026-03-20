@@ -41,7 +41,7 @@ public class SystemAdminController {
             @RequestParam(required = false) UUID tenantId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
         return ResponseEntity.ok(ApiResponse.success(adminService.listUsers(tenantId, pageable)));
     }
 
@@ -71,6 +71,14 @@ public class SystemAdminController {
             @PathVariable UUID id,
             @RequestBody SetPasswordRequest request) {
         adminService.setPassword(id, request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @DeleteMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Xóa tài khoản người dùng")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
+        adminService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

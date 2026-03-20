@@ -95,6 +95,8 @@ public class TenantController {
                                 .district(request.getDistrict())
                                 .ward(request.getWard())
                                 .phone(request.getPhone())
+                                .email(request.getEmail())
+                                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                                 .build();
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(ApiResponse.success(
@@ -120,11 +122,19 @@ public class TenantController {
                                 .district(dto.getDistrict())
                                 .ward(dto.getWard())
                                 .phone(dto.getPhone())
+                                .email(dto.getEmail())
                                 .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
                                 .build();
                 return ResponseEntity
                                 .ok(ApiResponse.success(TenantBranchDto
                                                 .fromEntity(tenantService.updateBranch(branchId, details))));
+        }
+
+        @DeleteMapping("/branches/{branchId}")
+        @Operation(summary = "Xóa chi nhánh")
+        public ResponseEntity<ApiResponse<Void>> deleteBranch(@PathVariable UUID branchId) {
+                tenantService.deleteBranch(branchId);
+                return ResponseEntity.ok(ApiResponse.success(null));
         }
 
         @PutMapping("/{tenantId}/settings")

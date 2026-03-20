@@ -24,6 +24,7 @@ public class TenantBranchDto {
     private String district;
     private String ward;
     private String phone;
+    private String email;
     private Boolean isActive;
     private Instant createdAt;
     private Instant updatedAt;
@@ -40,6 +41,7 @@ public class TenantBranchDto {
                 .district(e.getDistrict())
                 .ward(e.getWard())
                 .phone(e.getPhone())
+                .email(e.getEmail())
                 .isActive(e.getIsActive())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())

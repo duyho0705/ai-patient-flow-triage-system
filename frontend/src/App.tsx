@@ -24,7 +24,7 @@ import PatientVitals from '@/pages/patient/Vitals'
 import PatientMedications from '@/pages/patient/Medications'
 import PatientChatDoctor from '@/pages/patient/ChatDoctor'
 import DoctorChat from '@/pages/doctor/Chat'
-import { PatientList } from '@/pages/doctor/PatientList'
+import PatientList from '@/pages/doctor/PatientList'
 import { ManageDoctor } from '@/pages/admin/ManageDoctor'
 import { PatientAllocation } from '@/pages/admin/PatientAllocation'
 

@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listBranches, createBranch, updateBranch } from '@/api/tenants'
+import { listBranches, createBranch, updateBranch, deleteBranch } from '@/api/tenants'
 import { useTenant } from '@/context/TenantContext'
 import { toastService } from '@/services/toast'
 import {
     Plus, Search, Pencil, Save, X, Phone, MapPin, Loader2,
-    CheckCircle2, Lock, ChevronDown,
+    CheckCircle2, Lock, ChevronDown, Trash2, Mail,
     Hospital, ShieldCheck, LockKeyholeOpen, LockKeyhole,
-    Stethoscope
+    Stethoscope, Building2, MapPinned,
+    Building
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { TenantBranchDto, CreateBranchRequest } from '@/api-client'
@@ -18,6 +19,7 @@ export function BranchManagement() {
     const queryClient = useQueryClient()
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingBranch, setEditingBranch] = useState<TenantBranchDto | null>(null)
+    const [deletingBranch, setDeletingBranch] = useState<TenantBranchDto | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('ALL')
     const [form, setForm] = useState<any>({
@@ -28,6 +30,7 @@ export function BranchManagement() {
         district: '',
         ward: '',
         phone: '',
+        email: '',
         isActive: true
     })
 
@@ -40,7 +43,7 @@ export function BranchManagement() {
     const createMutation = useMutation({
         mutationFn: (data: CreateBranchRequest) => createBranch(data),
         onSuccess: () => {
-            toastService.success('Đã tạo chi nhánh mới thành công')
+            toastService.success('✨ Tạo chi nhánh mới thành công!')
             setIsModalOpen(false)
             resetForm()
             queryClient.invalidateQueries({ queryKey: ['branches'] })
@@ -60,6 +63,16 @@ export function BranchManagement() {
         onError: (e: Error) => toastService.error(e.message)
     })
 
+    const removeMutation = useMutation({
+        mutationFn: (id: string) => deleteBranch(id),
+        onSuccess: () => {
+            toastService.success('🗑️ Đã xóa chi nhánh thành công')
+            setDeletingBranch(null)
+            queryClient.invalidateQueries({ queryKey: ['branches'] })
+        },
+        onError: (e: Error) => toastService.error(e.message)
+    })
+
     const resetForm = () => {
         setForm({
             code: '',
@@ -69,6 +82,7 @@ export function BranchManagement() {
             district: '',
             ward: '',
             phone: '',
+            email: '',
             isActive: true
         })
         setEditingBranch(null)
@@ -84,6 +98,7 @@ export function BranchManagement() {
             district: b.district,
             ward: b.ward,
             phone: b.phone,
+            email: b.email,
             isActive: b.isActive !== false
         })
         setIsModalOpen(true)
@@ -114,347 +129,372 @@ export function BranchManagement() {
     }
 
     return (
-        <div className="w-full animate-in fade-in duration-700 font-sans space-y-8">
+        <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-10 pb-20 bg-md-background">
             {/* Header Section */}
-            <div className="flex justify-between items-end text-left">
-                <div>
-                    <h2 className="text-2xl font-bold text-neutral-900">Quản lý Phòng khám</h2>
-                    <p className="text-neutral-500">Danh sách và thông tin chi tiết các cơ sở y tế trong hệ thống Sống Khỏe.</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-2">
+                    <h2 className="text-3xl font-bold text-md-on-surface tracking-tight">Quản lý Phòng khám</h2>
+                    <p className="text-md-on-surface-variant font-medium opacity-70">
+                        Danh sách và chi tiết mạng lưới cơ sở y tế Sống Khỏe.
+                    </p>
                 </div>
                 <button
                     onClick={() => { resetForm(); setIsModalOpen(true); }}
-                    className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
+                    className="flex items-center gap-2 px-8 py-3.5 bg-md-primary text-white rounded-full font-bold text-sm shadow-elevation-2 hover:shadow-elevation-4 transition-all active:scale-95 group"
                 >
-                    <Plus className="w-5 h-5" />
-                    Thêm phòng khám mới
+                    <Plus className="size-5 group-hover:rotate-90 transition-transform" />
+                    <span>Thêm phòng khám mới</span>
                 </button>
             </div>
 
-            {/* Stats Overview */}
+            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center relative">
-                        <Hospital className="w-6 h-6 fill-current opacity-20 absolute" />
-                        <Hospital className="w-6 h-6 relative" />
-                    </div>
-                    <div>
-                        <p className="text-slate-500 text-sm font-medium">Tổng phòng khám</p>
-                        <p className="text-2xl font-bold">{stats.total}</p>
-                    </div>
+                <BranchStatCard 
+                    label="Tổng phòng khám" 
+                    value={stats.total} 
+                    icon={Hospital} 
+                    color="primary" 
+                />
+                <BranchStatCard 
+                    label="Đang hoạt động" 
+                    value={stats.active} 
+                    icon={CheckCircle2} 
+                    color="primary" 
+                    isSecondary
+                />
+                <BranchStatCard 
+                    label="Đã tạm khóa" 
+                    value={stats.locked} 
+                    icon={Lock} 
+                    color="error" 
+                />
+            </div>
+
+            {/* Filter & Table Area */}
+            <div className="bg-md-surface-container rounded-[2rem] p-4 flex flex-col md:flex-row items-center gap-4 border border-md-outline/5">
+                <div className="relative flex-1 group w-full">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-md-on-surface-variant opacity-40 group-focus-within:opacity-100 group-focus-within:text-md-primary transition-all" size={20} />
+                    <input 
+                        type="text"
+                        placeholder="Tìm kiếm theo tên phòng khám hoặc mã..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full h-14 pl-14 pr-6 bg-md-surface-container-low border border-md-outline/10 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-md-primary/10 focus:border-md-primary outline-none transition-all"
+                    />
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center relative">
-                        <CheckCircle2 className="w-6 h-6 fill-current opacity-20 absolute" />
-                        <CheckCircle2 className="w-6 h-6 relative" />
-                    </div>
-                    <div>
-                        <p className="text-slate-500 text-sm font-medium">Đang hoạt động</p>
-                        <p className="text-2xl font-bold">{stats.active}</p>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center relative">
-                        <Lock className="w-6 h-6 fill-current opacity-20 absolute" />
-                        <Lock className="w-6 h-6 relative" />
-                    </div>
-                    <div>
-                        <p className="text-slate-500 text-sm font-medium">Đã tạm khóa</p>
-                        <p className="text-2xl font-bold">{stats.locked}</p>
-                    </div>
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="h-14 px-6 bg-md-surface-container-low border border-md-outline/10 rounded-2xl text-sm font-bold text-md-on-surface outline-none focus:ring-4 focus:ring-md-primary/10 transition-all appearance-none cursor-pointer pr-12 min-w-[200px]"
+                    >
+                        <option value="ALL">Tất cả trạng thái</option>
+                        <option value="ACTIVE">Đang hoạt động</option>
+                        <option value="LOCKED">Đã khóa</option>
+                    </select>
                 </div>
             </div>
 
-            {/* Table Section */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                {/* Filters */}
-                <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="relative group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Tìm kiếm phòng khám..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-64"
-                            />
-                        </div>
-                        <div className="relative">
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="appearance-none bg-slate-50 border-slate-200 rounded-lg pl-4 pr-10 py-2 text-sm focus:ring-primary-500 focus:border-primary-500 outline-none cursor-pointer"
-                            >
-                                <option value="ALL">Tất cả trạng thái</option>
-                                <option value="ACTIVE">Đang hoạt động</option>
-                                <option value="LOCKED">Đã khóa</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                        </div>
+            {/* Main Table */}
+            <div className="bg-md-surface-container-lowest rounded-[2.5rem] border border-md-outline/10 shadow-sm overflow-hidden min-h-[400px]">
+                {isLoading ? (
+                    <div className="p-20 flex flex-col items-center justify-center gap-4">
+                        <Loader2 className="size-12 animate-spin text-md-primary" />
+                        <p className="font-bold text-md-on-surface-variant animate-pulse italic opacity-60">Đang tải danh sách mạng lưới...</p>
                     </div>
-                    <div className="text-sm text-slate-500">
-                        Hiển thị {filteredBranches?.length || 0} của {stats.total} phòng khám
-                    </div>
-                </div>
-
-                {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/50">
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 tracking-wider">Tên Phòng Khám</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 tracking-wider">Địa Chỉ</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 tracking-wider">Liên Hệ</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 tracking-wider text-center">Trạng Thái</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 tracking-wider text-right">Thao Tác</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {isLoading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i}>
-                                        <td colSpan={5} className="px-6 py-8">
-                                            <div className="h-10 bg-slate-50 rounded-lg animate-pulse" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : filteredBranches?.map((b) => (
-                                <tr key={b.id} className="hover:bg-slate-50/80 transition-colors group">
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center text-teal-700">
-                                                <ShieldCheck className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-slate-900">{b.nameVi}</p>
-                                                <p className="text-xs text-slate-500">Mã: {b.code}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <p className="text-sm text-slate-600 max-w-xs">{b.addressLine}, {b.district}, {b.city}</p>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="text-sm">
-                                            <p className="text-slate-700 font-medium">{b.phone || '—'}</p>
-                                            <p className="text-slate-400 text-xs">contact@{b.code.toLowerCase()}.vn</p>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5 text-center">
-                                        {b.isActive !== false ? (
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
-                                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5"></span>
-                                                Hoạt động
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">
-                                                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full mr-1.5"></span>
-                                                Đã khóa
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button
-                                                onClick={() => openEdit(b)}
-                                                className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                                                title="Chỉnh sửa"
-                                            >
-                                                <Pencil className="w-5 h-5" />
-                                            </button>
-                                            <button className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title={b.isActive !== false ? "Khóa" : "Mở khóa"}>
-                                                {b.isActive !== false ? <LockKeyholeOpen className="w-5 h-5" /> : <LockKeyhole className="w-5 h-5 text-rose-500" />}
-                                            </button>
-                                        </div>
-                                    </td>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-md-surface-container-low/50">
+                                    <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60">Phòng khám</th>
+                                    <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60">Địa chỉ</th>
+                                    <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60">Liên hệ</th>
+                                    <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60 text-center">Trạng thái</th>
+                                    <th className="px-8 py-5 text-[10px] font-black text-md-on-surface-variant uppercase tracking-[0.2em] opacity-60 text-right">Thao tác</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div className="p-6 border-t border-slate-100 flex items-center justify-between">
-                    <div className="text-sm font-bold text-slate-400">
-                        Tổng cộng: <span className="text-slate-900">{filteredBranches?.length || 0}</span> cơ sở
+                            </thead>
+                            <tbody className="divide-y divide-md-outline/5 font-sans">
+                                {filteredBranches?.map((b, idx) => (
+                                    <motion.tr 
+                                        key={b.id}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: idx * 0.03 }}
+                                        className="hover:bg-md-surface-container-low/30 transition-colors group cursor-default"
+                                    >
+                                        <td className="px-8 py-5">
+                                            <div className="flex items-center gap-4">
+                                                <div className="size-12 rounded-2xl bg-md-primary/10 flex items-center justify-center border border-md-primary/10 overflow-hidden group-hover:scale-105 transition-transform">
+                                                    <Building2 className="text-md-primary" size={24} />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-bold text-md-on-surface group-hover:text-md-primary transition-colors">
+                                                        {b.nameVi}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-md-on-surface-variant uppercase tracking-tighter opacity-40 italic">Mã: {b.code}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5 max-w-xs">
+                                            <p className="text-xs font-medium text-md-on-surface-variant leading-relaxed">
+                                                {[b.addressLine, b.district, b.city].filter(v => v && v.trim() !== '' && v !== 'null').join(', ')}
+                                            </p>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <div className="text-xs space-y-0.5">
+                                                <p className="text-md-on-surface font-bold">{b.phone || '—'}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5 text-center">
+                                            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${b.isActive !== false ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                                                <div className={`size-1.5 rounded-full ${b.isActive !== false ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                                                {b.isActive !== false ? 'Hoạt động' : 'Tạm khóa'}
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5 text-right">
+                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => openEdit(b)}
+                                                    className="p-3 text-md-on-surface-variant hover:text-md-primary hover:bg-md-primary/10 rounded-2xl transition-all active:scale-90"
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => updateMutation.mutate({ id: b.id || '', data: { ...b, isActive: b.isActive === false } })}
+                                                    className="p-3 text-md-on-surface-variant hover:text-amber-500 hover:bg-amber-500/10 rounded-2xl transition-all active:scale-90"
+                                                >
+                                                    {b.isActive !== false ? <LockKeyholeOpen size={18} /> : <LockKeyhole size={18} className="text-amber-500" />}
+                                                </button>
+                                                <button 
+                                                    onClick={() => {
+                                                        setDeletingBranch(b)
+                                                    }}
+                                                    className="p-3 text-md-on-surface-variant hover:text-md-error hover:bg-md-error/10 rounded-2xl transition-all active:scale-90"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
+                )}
             </div>
 
-            {/* Dashboard Insights */}
+            {/* Dashboard Visualizations */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-bold text-slate-900">Bản đồ mạng lưới</h3>
-                        <button className="text-primary-600 text-sm font-medium hover:underline">Xem toàn bản đồ</button>
+                <div className="bg-md-surface-container-lowest p-8 rounded-[2.5rem] border border-md-outline/10 shadow-sm space-y-6">
+                    <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                            <div className="p-2 bg-md-primary/10 text-md-primary rounded-xl">
+                                <MapPinned size={20} />
+                            </div>
+                            <h3 className="text-lg font-bold text-md-on-surface">Mạng lưới Vận hành</h3>
+                        </div>
+                        <button className="text-xs font-black text-md-primary hover:underline uppercase tracking-tight">Toàn màn hình</button>
                     </div>
-                    <div className="h-64 bg-slate-100 rounded-xl overflow-hidden relative">
+                    <div className="h-64 bg-md-surface-container-low rounded-[2rem] overflow-hidden relative border border-md-outline/5">
                         <img
-                            alt="Clinic Network Map"
-                            className="w-full h-full object-cover grayscale opacity-60"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuABy0KABcWXOYS6DOgTNpI351-iJWuWm3h3Q9HgjXyaJviA1SWaHOghvfqRXSbaIbyrRIfW8PhaqbXlSHyhG0mzHSDuhdbJbTTCM12j-kisMUSlTyXRs0cU_uLMW0hixrqX_Q5549ywLxixXMr3WHt1bflECJ-gT-ruAoA0u6gOo5t6-9EzmCQbmK46qsG70_Vhq79xfPzEx3rzDvwunO4Lo3Us3825lvrCSy17KJ7jrxJ5gNCoqoXKDHGO7o5NnRsIpECoEUpIjlw"
+                            alt="Map visualization"
+                            className="w-full h-full object-cover opacity-20 grayscale brightness-75"
+                            src="https://api.dicebear.com/7.x/shapes/svg?seed=map&backgroundColor=f1f5f9"
                         />
-                        <div className="absolute top-[40%] left-[30%] w-3 h-3 bg-primary-500 rounded-full ring-4 ring-primary-100 animate-pulse"></div>
-                        <div className="absolute top-[30%] left-[35%] w-3 h-3 bg-primary-500 rounded-full ring-4 ring-primary-100"></div>
-                        <div className="absolute bottom-[25%] left-[50%] w-3 h-3 bg-primary-500 rounded-full ring-4 ring-primary-100"></div>
+                        <div className="absolute top-[40%] left-[30%] size-4 bg-md-primary rounded-full ring-8 ring-md-primary/10 animate-pulse shadow-lg" />
+                        <div className="absolute top-[30%] left-[55%] size-4 bg-md-primary rounded-full ring-8 ring-md-primary/10 animate-pulse shadow-lg delay-75" />
+                        <div className="absolute bottom-[25%] left-[45%] size-4 bg-md-primary rounded-full ring-8 ring-md-primary/10 animate-pulse shadow-lg delay-150" />
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-primary-600 to-teal-700 p-8 rounded-2xl text-white shadow-lg relative overflow-hidden group">
-                    <div className="relative z-10 h-full flex flex-col justify-between">
-                        <div>
-                            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-semibold mb-4 inline-block">Mẹo Quản Trị</span>
-                            <h3 className="text-2xl font-bold mb-2">Tối ưu quy trình vận hành</h3>
-                            <p className="text-primary-50/80 text-sm leading-relaxed">Sử dụng hệ thống báo cáo tự động để theo dõi hiệu suất của từng phòng khám theo thời gian thực. Đảm bảo chất lượng dịch vụ đồng nhất trên toàn hệ thống Sống Khỏe.</p>
+                <div className="bg-md-on-surface text-white p-10 rounded-[3rem] shadow-elevation-3 flex flex-col justify-between relative overflow-hidden group">
+                     <div className="absolute -top-10 -right-10 size-48 bg-md-primary/20 blur-3xl group-hover:scale-150 transition-transform duration-1000 rounded-full" />
+                     <div className="relative z-10 space-y-6">
+                        <div className="size-14 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 shadow-sm group-hover:rotate-12 transition-transform">
+                            <Building size={28} />
                         </div>
-                        <button className="mt-8 bg-white text-primary-700 px-6 py-3 rounded-xl font-bold text-sm w-fit shadow-sm hover:bg-primary-50 transition-all">
-                            Xem báo cáo chi tiết
-                        </button>
+                        <div className="space-y-2">
+                            <h3 className="text-3xl font-bold tracking-tight">Kinh nghiệm Quản trị</h3>
+                            <p className="text-white/60 text-sm font-medium leading-relaxed max-w-sm">
+                                Sử dụng hệ thống báo cáo tự động để theo dõi hiệu suất của từng phòng khám theo thời gian thực. Đảm bảo chất lượng dịch vụ đồng nhất trên toàn hệ thống.
+                            </p>
+                        </div>
                     </div>
-                    <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:rotate-12 transition-transform duration-700">
-                        <Stethoscope className="w-48 h-48" />
-                    </div>
+                    <button className="mt-10 relative z-10 py-5 px-10 bg-white text-md-on-surface rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-md-primary hover:text-white transition-all shadow-xl active:scale-95">
+                        Khám phá Báo cáo Chuyên sâu
+                    </button>
                 </div>
             </div>
 
-            {/* Branch Modal */}
-            <AnimatePresence>
-                {isModalOpen && createPortal(
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
-                        {/* Backdrop */}
+            {/* Modal */}
+            {createPortal(
+                <AnimatePresence>
+                    {isModalOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div 
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-md-on-surface/40 backdrop-blur-sm"
+                            />
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
-                            onClick={() => setIsModalOpen(false)}
-                        />
-
-                        {/* Modal Container */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="relative bg-white dark:bg-slate-900 rounded-[3.5rem] w-full max-w-3xl shadow-2xl overflow-hidden z-10 border border-white/10"
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative bg-white dark:bg-slate-900 rounded-[3rem] w-full max-w-2xl shadow-elevation-5 h-auto max-h-[90vh] overflow-hidden flex flex-col"
                         >
-                            <div className="flex items-center justify-between px-10 py-8 border-b border-primary/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-slate-900 dark:bg-primary/20 rounded-2xl flex items-center justify-center text-white dark:text-primary shadow-xl">
-                                        <Plus className="w-6 h-6" />
+                            <div className="p-8 border-b border-md-outline/5 flex items-center justify-between bg-white/80 backdrop-blur-md">
+                                <div className="flex items-center gap-4">
+                                    <div className="size-14 rounded-2xl bg-md-primary/10 text-md-primary flex items-center justify-center">
+                                        {editingBranch ? <Pencil size={24} /> : <Plus size={24} />}
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
+                                        <h3 className="text-xl font-bold text-md-on-surface tracking-tight">
                                             {editingBranch ? 'Cập nhật Chi nhánh' : 'Thiết lập cơ sở mới'}
-                                        </h2>
-                                        <p className="text-[10px] font-black text-slate-400 mt-1 tracking-widest">Hệ thống Sống Khỏe CDM</p>
+                                        </h3>
+                                        <p className="text-[10px] font-black text-md-on-surface-variant uppercase tracking-widest opacity-60 italic">Hệ thống Sống Khỏe CMD</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setIsModalOpen(false)} className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 rounded-2xl transition-all shadow-sm">
-                                    <X className="h-6 w-6 text-slate-400" />
+                                <button onClick={() => setIsModalOpen(false)} className="p-4 bg-md-surface-container border border-md-outline/10 text-md-on-surface-variant hover:text-md-primary rounded-2xl transition-all">
+                                    <X size={24} />
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="p-10 space-y-10 overflow-y-auto max-h-[75vh] scrollbar-hide">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 tracking-tight pl-1">Mã định danh (CODE) *</label>
-                                        <input
-                                            required
-                                            disabled={!!editingBranch}
-                                            placeholder="VD: CN-01..."
-                                            value={form.code}
-                                            onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })}
-                                            className="w-full px-8 py-5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-black focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-slate-300 disabled:opacity-50 text-slate-900 dark:text-white"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 tracking-tight pl-1">Tên hiển thị *</label>
-                                        <input
-                                            required
-                                            placeholder="Tên chi nhánh/phòng khám..."
-                                            value={form.nameVi}
-                                            onChange={e => setForm({ ...form, nameVi: e.target.value })}
-                                            className="w-full px-8 py-5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-black focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-slate-300 text-slate-900 dark:text-white"
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2 space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 tracking-tight pl-1">Địa chỉ chi tiết (Số nhà, Tên đường) *</label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
-                                            <input
-                                                required
-                                                placeholder="Nhập địa chỉ chi tiết để bệnh nhân dễ tìm..."
-                                                value={form.addressLine}
-                                                onChange={e => setForm({ ...form, addressLine: e.target.value })}
-                                                className="w-full pl-14 pr-8 py-5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-slate-300 text-slate-900 dark:text-white"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 tracking-tight pl-1">Thành phố / Tỉnh *</label>
-                                        <input
-                                            required
-                                            placeholder="VD: TP. Hồ Chí Minh"
-                                            value={form.city}
-                                            onChange={e => setForm({ ...form, city: e.target.value })}
-                                            className="w-full px-8 py-5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-slate-900 dark:text-white"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 tracking-tight pl-1">Số hotline liên hệ</label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
-                                            <input
-                                                placeholder="0123 456 789"
-                                                value={form.phone}
-                                                onChange={e => setForm({ ...form, phone: e.target.value })}
-                                                className="w-full pl-14 pr-8 py-5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-black text-xl text-primary focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="md:col-span-2 pt-4">
-                                        <label className="flex items-center gap-6 p-6 rounded-[2rem] border-2 border-slate-50 dark:border-slate-800 hover:border-primary/20 transition-all group cursor-pointer">
-                                            <div className="relative inline-flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    className="sr-only peer"
-                                                    checked={form.isActive}
-                                                    onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                                                />
-                                                <div className="w-16 h-8 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-[24px] after:w-[36px] after:transition-all peer-checked:bg-primary shadow-inner"></div>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">Trạng thái vận hành</p>
-                                                <p className="text-xs font-bold text-slate-400 mt-1 tracking-tighter">
-                                                    Cơ sở này đang {form.isActive ? 'HOẠT ĐỘNG BÌNH THƯỜNG' : 'TẠM THỜI NGỪNG TRUY CẬP'}
-                                                </p>
-                                            </div>
-                                        </label>
-                                    </div>
+                            <form id="branch-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 space-y-8 CustomScrollbar">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                     <MD3Input label="Mã định danh (CODE) *" icon={Hospital} required value={form.code} onChange={(v: string) => setForm({...form, code: v.toUpperCase()})} placeholder="VD: CN-01..." disabled={!!editingBranch} />
+                                     <MD3Input label="Tên hiển thị chi nhánh *" icon={Building2} required value={form.nameVi} onChange={(v: string) => setForm({...form, nameVi: v})} placeholder="Phòng khám Sống Khỏe A..." />
+                                     <div className="md:col-span-2">
+                                        <MD3Input label="Địa chỉ chi tiết *" icon={MapPin} value={form.addressLine} onChange={(v: string) => setForm({...form, addressLine: v})} placeholder="Số nhà, Tên đường..." />
+                                     </div>
+                                     <MD3Input label="Thành phố / Tỉnh" icon={MapPinned} value={form.city} onChange={(v: string) => setForm({...form, city: v})} placeholder="TP. Hồ Chí Minh..." />
+                                     <MD3Input label="Số hotline liên hệ" icon={Phone} value={form.phone} onChange={(v: string) => setForm({...form, phone: v})} placeholder="0123 456 789..." />
+                                     <MD3Input label="Địa chỉ Email" icon={Mail} value={form.email} onChange={(v: string) => setForm({...form, email: v})} placeholder="contact@cdm.vn..." />
                                 </div>
 
-                                <div className="flex gap-6 pt-6 border-t border-slate-50 dark:border-slate-800">
-                                    <button
-                                        type="submit"
-                                        disabled={createMutation.isPending || updateMutation.isPending}
-                                        className="flex-1 bg-slate-900 dark:bg-primary text-white dark:text-slate-900 py-6 rounded-[2rem] font-black tracking-widest hover:bg-primary hover:shadow-2xl hover:shadow-primary/40 transition-all active:scale-[0.98] disabled:opacity-50 group flex items-center justify-center gap-3"
-                                    >
-                                        {(createMutation.isPending || updateMutation.isPending) ? (
-                                            <Loader2 className="w-6 h-6 animate-spin" />
-                                        ) : (
-                                            <>
-                                                <Save className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                                                Lưu thông tin cơ sở
-                                            </>
-                                        )}
-                                    </button>
+                                <div className="pt-6 border-t border-md-outline/5">
+                                    <label className="flex items-center gap-5 p-6 rounded-[2.5rem] bg-md-surface-container-low border border-md-outline/5 hover:border-md-primary/20 transition-all cursor-pointer">
+                                        <div className="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" className="sr-only peer" checked={form.isActive} onChange={e => setForm({...form, isActive: e.target.checked})} />
+                                            <div className="w-14 h-8 bg-md-outline/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-md-primary shadow-sm" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-md-on-surface">Trạng thái vận hành</p>
+                                            <p className="text-[10px] text-md-on-surface-variant font-medium opacity-60">
+                                                 {form.isActive ? 'Cho phép truy cập và hoạt động công khai' : 'Tạm thời đóng cửa trên hệ thống'}
+                                            </p>
+                                        </div>
+                                    </label>
                                 </div>
                             </form>
+
+                            <div className="p-8 border-t border-md-outline/5 bg-white/50 backdrop-blur-md">
+                                <button
+                                    form="branch-form"
+                                    type="submit" 
+                                    disabled={createMutation.isPending || updateMutation.isPending}
+                                    className="w-full h-16 bg-md-primary text-white rounded-[1.5rem] font-bold tracking-tight shadow-elevation-2 hover:shadow-elevation-4 hover:shadow-md-primary/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                                >
+                                    {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+                                    Xác nhận và Lưu thông tin
+                                </button>
+                            </div>
                         </motion.div>
-                    </div>,
-                    document.body
-                )}
-            </AnimatePresence>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {createPortal(
+                <AnimatePresence>
+                    {deletingBranch && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setDeletingBranch(null)}
+                                className="absolute inset-0 bg-md-on-surface/40 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-sm shadow-elevation-5 overflow-hidden flex flex-col p-8 items-center text-center"
+                            >
+                                <div className="size-20 bg-md-error/10 text-md-error rounded-full flex items-center justify-center mb-6">
+                                    <Trash2 size={40} />
+                                </div>
+                                <h3 className="text-xl font-bold text-md-on-surface mb-2">Xóa nhánh phòng khám?</h3>
+                                <p className="text-sm font-medium text-md-on-surface-variant mb-8 px-4 opacity-80 leading-relaxed">
+                                    Bạn có chắc chắn muốn xóa phòng khám <span className="font-bold text-md-error">{deletingBranch.nameVi}</span> không? Hành động này sẽ thay đổi trạng thái hệ thống và có thể ảnh hưởng đến kết quả dữ liệu hiện tại.
+                                </p>
+                                
+                                <div className="flex gap-4 w-full">
+                                    <button
+                                        onClick={() => setDeletingBranch(null)}
+                                        className="flex-1 h-14 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-colors active:scale-95"
+                                    >
+                                        Hủy bỏ
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            removeMutation.mutate(deletingBranch.id || '')
+                                        }}
+                                        disabled={removeMutation.isPending}
+                                        className="flex-1 h-14 bg-red-600 text-white rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl hover:bg-red-700 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        {removeMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                                        Xác nhận Xóa
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
+        </div>
+    )
+}
+
+function BranchStatCard({ label, value, icon: Icon, color, isSecondary }: any) {
+    const styles: any = {
+        primary: 'bg-md-primary/10 text-md-primary border-md-primary/10',
+        error: 'bg-md-error/10 text-md-error border-md-error/10'
+    }
+    return (
+        <div className="bg-md-surface-container-lowest p-6 rounded-[2.5rem] border border-md-outline/10 shadow-sm flex items-center gap-6 group hover:shadow-elevation-2 transition-all">
+            <div className={`size-16 rounded-[1.25rem] flex items-center justify-center border shadow-sm group-hover:scale-110 transition-transform ${isSecondary ? 'bg-md-secondary-container text-md-on-secondary-container border-md-secondary/10' : styles[color]}`}>
+                <Icon size={32} strokeWidth={1.5} />
+            </div>
+            <div>
+                 <p className="text-[10px] font-black text-md-on-surface-variant uppercase tracking-widest opacity-40 italic">{label}</p>
+                 <h4 className="text-3xl font-black text-md-on-surface tracking-tighter mt-1">{value}</h4>
+            </div>
+        </div>
+    )
+}
+
+function MD3Input({ label, icon: Icon, value, onChange, placeholder, disabled, required }: any) {
+    return (
+        <div className="space-y-2 group">
+             <label className="text-xs font-bold text-md-on-surface-variant ml-2 block group-focus-within:text-md-primary transition-colors">
+                {label}
+            </label>
+            <div className="relative">
+                {Icon && <Icon className="absolute left-5 top-1/2 -translate-y-1/2 text-md-on-surface-variant opacity-40 group-focus-within:opacity-100 group-focus-within:text-md-primary transition-all" size={18} />}
+                <input 
+                    type="text" 
+                    value={value} 
+                    onChange={e => onChange(e.target.value)} 
+                    placeholder={placeholder}
+                    required={required}
+                    disabled={disabled}
+                    className={`w-full h-14 ${Icon ? 'pl-14' : 'px-6'} pr-6 bg-md-surface-container-low border border-md-outline/10 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-md-primary/10 focus:border-md-primary outline-none transition-all placeholder:font-normal placeholder:opacity-40 text-slate-900 disabled:opacity-50`}
+                />
+            </div>
         </div>
     )
 }

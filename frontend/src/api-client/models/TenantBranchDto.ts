@@ -12,6 +12,7 @@ export type TenantBranchDto = {
     district?: string;
     ward?: string;
     phone?: string;
+    email?: string;
     isActive?: boolean;
     createdAt?: string;
     updatedAt?: string;

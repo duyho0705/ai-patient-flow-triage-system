@@ -106,6 +106,7 @@ export interface TenantBranchDto {
   district?: string
   ward?: string
   phone?: string
+  email?: string
   isActive?: boolean
 }
 
@@ -138,6 +139,8 @@ export interface CreateBranchRequest {
   district?: string
   ward?: string
   phone?: string
+  email?: string
+  isActive?: boolean
 }
 
 export interface UpdateTenantSettingsRequest {
@@ -584,6 +587,7 @@ export interface AuditLogDto {
   id: string
   userId: string
   userEmail: string
+  userName?: string
   action: string
   entityName: string
   entityId: string

@@ -1,0 +1,1 @@
+ALTER TABLE tenant_branch ADD COLUMN email VARCHAR(255);

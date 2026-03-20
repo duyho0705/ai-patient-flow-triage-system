@@ -23,6 +23,8 @@ public interface AdminService {
     
     void setPassword(UUID userId, SetPasswordRequest request);
     
+    void deleteUser(UUID userId);
+    
     List<RoleDto> getRoles();
     
     List<PermissionDto> getPermissions();

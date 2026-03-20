@@ -12,7 +12,8 @@ import {
   Settings,
   Stethoscope,
   Calendar,
-  Cpu
+  Cpu,
+  Shield
 } from 'lucide-react'
 
 export type StaffNavItem = {
@@ -50,7 +51,6 @@ export const STAFF_NAV: StaffNavItem[] = [
   { to: '/dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard, type: 'link', roles: ['admin'] },
   { to: '/admin/tenants', label: 'Quản lý Phòng khám', icon: ClipboardList, roles: ['admin'], type: 'link' },
   { to: '/admin/users', label: 'Người dùng', icon: Users, roles: ['admin'], type: 'link' },
-
   { to: '/admin/audit-logs', label: 'Nhật ký hệ thống', icon: ClipboardList, roles: ['admin'], type: 'link' },
   { to: '/admin/ai-config', label: 'Cấu hình AI', icon: Cpu, roles: ['admin'], type: 'link' },
   { to: '/admin/settings', label: 'Cài đặt hệ thống', icon: Settings, roles: ['admin'], type: 'link' },

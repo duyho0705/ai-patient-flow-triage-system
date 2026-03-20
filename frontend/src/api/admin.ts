@@ -56,6 +56,10 @@ export async function setPassword(id: string, body: SetPasswordRequest): Promise
   return patch<void>(`/admin/users/${id}/password`, body)
 }
 
+export async function deleteUser(id: string): Promise<void> {
+  return del<void>(`/admin/users/${id}`)
+}
+
 export async function getRoles(): Promise<RoleDto[]> {
   return get<RoleDto[]>('/admin/roles')
 }

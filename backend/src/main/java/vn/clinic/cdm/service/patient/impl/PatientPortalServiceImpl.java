@@ -5,7 +5,8 @@ import vn.clinic.cdm.common.tenant.TenantContext;
 import vn.clinic.cdm.dto.patient.PatientDashboardDto;
 import vn.clinic.cdm.dto.patient.PatientVitalLogDto;
 import vn.clinic.cdm.dto.patient.PatientDto;
-    import vn.clinic.cdm.dto.patient.UpdatePatientProfileRequest;
+import vn.clinic.cdm.dto.patient.UpdatePatientProfileRequest;
+import vn.clinic.cdm.dto.patient.UpdatePatientRequest;
 import vn.clinic.cdm.dto.clinical.ConsultationDto;
 import vn.clinic.cdm.dto.clinical.ConsultationDetailDto;
 import vn.clinic.cdm.dto.clinical.VitalTrendDto;
@@ -31,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import vn.clinic.cdm.service.common.FileStorageService;
 import vn.clinic.cdm.entity.identity.IdentityUser;
 import vn.clinic.cdm.service.identity.IdentityService;
-    import vn.clinic.cdm.entity.patient.Patient;
+import vn.clinic.cdm.entity.patient.Patient;
 import vn.clinic.cdm.entity.scheduling.SchedulingAppointment;
 import vn.clinic.cdm.service.scheduling.SchedulingService;
 import vn.clinic.cdm.entity.tenant.TenantBranch;
@@ -59,18 +60,13 @@ import vn.clinic.cdm.service.patient.PatientService;
 @Transactional(readOnly = true)
 public class PatientPortalServiceImpl implements PatientPortalService {
         private final MedicationMapper medicationMapper;
-
         private final PatientService patientService;
         private final SchedulingService schedulingService;
         private final ClinicalService clinicalService;
         private final IdentityService identityService;
         private final MedicationService medicationService;
         private final FileStorageService fileStorageService;
-
-
-        // Repositories
         private final vn.clinic.cdm.repository.clinical.PrescriptionRepository prescriptionRepository;
-    
         private final LabResultRepository labResultRepository;
         private final DiagnosticImageRepository diagnosticImageRepository;
         private final HealthMetricRepository healthMetricRepository;
@@ -78,8 +74,6 @@ public class PatientPortalServiceImpl implements PatientPortalService {
         public Patient getAuthenticatedPatient() {
                 UUID userId = AuthPrincipal.getCurrentUserId();
                 Patient p = patientService.getByUserId(userId);
-                // Ensure tenant context is set for portal flows if header was missing from
-                // frontend
                 if (TenantContext.getTenantId().isEmpty()) {
                         TenantContext.setTenantId(p.getTenant().getId());
                 }
@@ -151,12 +145,15 @@ public class PatientPortalServiceImpl implements PatientPortalService {
 
                         TriageVitalDto latest = sorted.get(0);
                         if (VitalSignsThresholds.isAbnormal(type, latest.valueNumeric())) {
-                                if (sorted.size() >= 3 && 
-                                    VitalSignsThresholds.isAbnormal(type, sorted.get(1).valueNumeric()) && 
-                                    VitalSignsThresholds.isAbnormal(type, sorted.get(2).valueNumeric())) {
-                                        alerts.add(String.format("Cảnh báo: Chỉ số %s bất thường liên tiếp trong 3 lượt đo gần nhất.", VitalSignsThresholds.getLabel(type)));
+                                if (sorted.size() >= 3 &&
+                                                VitalSignsThresholds.isAbnormal(type, sorted.get(1).valueNumeric()) &&
+                                                VitalSignsThresholds.isAbnormal(type, sorted.get(2).valueNumeric())) {
+                                        alerts.add(String.format(
+                                                        "Cảnh báo: Chỉ số %s bất thường liên tiếp trong 3 lượt đo gần nhất.",
+                                                        VitalSignsThresholds.getLabel(type)));
                                 } else {
-                                        alerts.add(String.format("Lưu ý: Chỉ số %s hiện tại đang ở mức bất thường.", VitalSignsThresholds.getLabel(type)));
+                                        alerts.add(String.format("Lưu ý: Chỉ số %s hiện tại đang ở mức bất thường.",
+                                                        VitalSignsThresholds.getLabel(type)));
                                 }
                         }
                 }
@@ -219,7 +216,7 @@ public class PatientPortalServiceImpl implements PatientPortalService {
                 if (userNeedsUpdate)
                         identityService.saveUser(user);
 
-                Patient updates = Patient.builder()
+                UpdatePatientRequest updates = UpdatePatientRequest.builder()
                                 .fullNameVi(request.getFullNameVi())
                                 .dateOfBirth(request.getDateOfBirth())
                                 .gender(request.getGender())
@@ -240,11 +237,10 @@ public class PatientPortalServiceImpl implements PatientPortalService {
         @Transactional
         public PatientDto uploadAvatar(UUID patientId, MultipartFile file) {
                 String url = fileStorageService.saveAvatar(file, patientId);
-                Patient updates = Patient.builder().avatarUrl(url).build();
-                return PatientDto.fromEntity(patientService.update(patientId, updates));
+                Patient p = patientService.getById(patientId);
+                p.setAvatarUrl(url);
+                return PatientDto.fromEntity(patientService.save(p));
         }
-
-    
 
         @Transactional
         public AppointmentDto createAppointment(Patient p, CreateAppointmentRequest request) {

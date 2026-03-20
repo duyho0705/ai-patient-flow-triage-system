@@ -1,4 +1,4 @@
-import { get, post, put } from './client'
+import { get, post, put, del } from './client'
 import type { TenantDto, TenantBranchDto, CreateTenantRequest, CreateBranchRequest, UpdateTenantSettingsRequest } from '@/types/api'
 
 export async function listTenants(): Promise<TenantDto[]> {
@@ -31,6 +31,10 @@ export async function getBranch(id: string): Promise<TenantBranchDto> {
 
 export async function updateBranch(id: string, data: Partial<TenantBranchDto>): Promise<TenantBranchDto> {
   return put<TenantBranchDto>(`/tenants/branches/${id}`, data, null)
+}
+
+export async function deleteBranch(id: string): Promise<void> {
+  return del(`/tenants/branches/${id}`, null)
 }
 
 // System/Global Admin Settings

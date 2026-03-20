@@ -10,7 +10,7 @@ import {
   Settings, ShieldCheck, Stethoscope,
   Clock, CheckCircle2, UserCheck,
   ArrowDownRight, Pill, Sparkles,
-  TrendingUp, Zap, Bell, Monitor, Globe
+  TrendingUp, Zap, Bell, Monitor, Globe, ChevronRight, ArrowRight
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { DoctorDashboard } from './doctor/DoctorDashboard'
@@ -20,117 +20,99 @@ import { Admin } from './Admin'
 /* ─── role-based quick actions ─── */
 const ROLE_ACTIONS: Record<Role, { to: string; label: string; desc: string; icon: any; color: string }[]> = {
   admin: [
-    { to: '/reception', label: 'Tiếp nhận', desc: 'Đăng ký và check-in', icon: Users, color: 'emerald' },
-    { to: '/consultation', label: 'Khám & Điều trị', desc: 'Phiên khám & kê đơn thuốc điện tử', icon: Stethoscope, color: 'emerald' },
-    { to: '/analytics', label: 'Thống kê', desc: 'Xu hướng & chỉ số KPI', icon: BarChart2, color: 'indigo' },
-    { to: '/admin', label: 'Quản trị', desc: 'Quản trị hệ thống', icon: Settings, color: 'slate' },
+    { to: '/reception', label: 'Tiếp nhận', desc: 'Đăng ký và check-in', icon: Users, color: 'md-primary' },
+    { to: '/consultation', label: 'Khám & Điều trị', desc: 'Phiên khám & kê đơn thuốc điện tử', icon: Stethoscope, color: 'md-secondary' },
+    { to: '/analytics', label: 'Thống kê', desc: 'Xu hướng & chỉ số KPI', icon: BarChart2, color: 'md-tertiary' },
+    { to: '/admin', label: 'Quản trị', desc: 'Quản trị hệ thống', icon: Settings, color: 'md-on-surface-variant' },
   ],
   receptionist: [
-    { to: '/reception', label: 'Tiếp nhận', desc: 'Đăng ký và check-in', icon: Users, color: 'emerald' },
-    { to: '/scheduling', label: 'Lịch hẹn', desc: 'Quản lý lịch hẹn', icon: Calendar, color: 'amber' },
+    { to: '/reception', label: 'Tiếp nhận', desc: 'Đăng ký và check-in', icon: Users, color: 'md-primary' },
+    { to: '/scheduling', label: 'Lịch hẹn', desc: 'Quản lý lịch hẹn', icon: Calendar, color: 'md-secondary' },
   ],
   triage_nurse: [
-    { to: '/reception', label: 'Tiếp nhận', desc: 'Đăng ký bệnh nhân', icon: Users, color: 'emerald' },
+    { to: '/reception', label: 'Tiếp nhận', desc: 'Đăng ký bệnh nhân', icon: Users, color: 'md-primary' },
   ],
   doctor: [
-    { to: '/consultation', label: 'Khám & Điều trị', desc: 'Khám & kê đơn thuốc điện tử', icon: Stethoscope, color: 'emerald' },
-    { to: '/scheduling', label: 'Lịch hẹn', desc: 'Quản lý lịch hẹn', icon: Calendar, color: 'amber' },
-    { to: '/chat', label: 'Tư vấn từ xa', desc: 'Chat với bệnh nhân', icon: MessageSquare, color: 'indigo' },
+    { to: '/consultation', label: 'Khám & Điều trị', desc: 'Khám & kê đơn thuốc điện tử', icon: Stethoscope, color: 'md-primary' },
+    { to: '/scheduling', label: 'Lịch hẹn', desc: 'Quản lý lịch hẹn', icon: Calendar, color: 'md-secondary' },
+    { to: '/chat', label: 'Tư vấn từ xa', desc: 'Chat với bệnh nhân', icon: MessageSquare, color: 'md-tertiary' },
   ],
   clinic_manager: [
-    { to: '/analytics', label: 'Thống kê', desc: 'Xu hướng bệnh mãn tính', icon: BarChart2, color: 'indigo' },
-    { to: '/reports', label: 'Báo cáo', desc: 'Tổng kết & can thiệp', icon: FileText, color: 'rose' },
+    { to: '/analytics', label: 'Thống kê', desc: 'Xu hướng bệnh mãn tính', icon: BarChart2, color: 'md-primary' },
+    { to: '/reports', label: 'Báo cáo', desc: 'Tổng kết & can thiệp', icon: FileText, color: 'md-secondary' },
   ],
   pharmacist: [
-    { to: '/consultation', label: 'Đơn thuốc điện tử', desc: 'Quản lý đơn thuốc điện tử', icon: Pill, color: 'purple' },
+    { to: '/consultation', label: 'Đơn thuốc điện tử', desc: 'Quản lý đơn thuốc điện tử', icon: Pill, color: 'md-primary' },
   ],
   patient: [
-    { to: '/patient', label: 'Sức khỏe', desc: 'Theo dõi sinh hiệu', icon: Activity, color: 'emerald' },
-    { to: '/patient/appointments', label: 'Lịch hẹn', desc: 'Đặt hẹn bác sĩ', icon: Calendar, color: 'amber' },
-    { to: '/patient/chat', label: 'Tư vấn BS', desc: 'Hỏi đáp trực tuyến', icon: MessageSquare, color: 'indigo' },
+    { to: '/patient', label: 'Sức khỏe', desc: 'Theo dõi sinh hiệu', icon: Activity, color: 'md-primary' },
+    { to: '/patient/appointments', label: 'Lịch hẹn', desc: 'Đặt hẹn bác sĩ', icon: Calendar, color: 'md-secondary' },
+    { to: '/patient/chat', label: 'Tư vấn BS', desc: 'Hỏi đáp trực tuyến', icon: MessageSquare, color: 'md-tertiary' },
   ],
 }
 
 const ROLE_TITLES: Record<Role, { title: string; subtitle: string; icon: any }> = {
-  admin: { title: '', subtitle: 'Tổng quan hoạt động toàn hệ thống', icon: ShieldCheck },
+  admin: { title: 'Quản trị', subtitle: 'Tổng quan hoạt động toàn hệ thống', icon: ShieldCheck },
   receptionist: { title: 'Tiếp nhận', subtitle: 'Quản lý đăng ký và lịch hẹn', icon: Users },
   triage_nurse: { title: 'Tiếp nhận', subtitle: 'Hỗ trợ đăng ký bệnh nhân', icon: Activity },
   doctor: { title: 'Phòng khám', subtitle: 'Bảng điều khiển bác sĩ', icon: Stethoscope },
   clinic_manager: { title: 'Giám sát', subtitle: 'Phân tích hiệu quả và tuân thủ điều trị', icon: BarChart2 },
   pharmacist: { title: 'Dược phẩm', subtitle: 'Quản lý kho thuốc và đơn thuốc', icon: Pill },
-  patient: { title: 'Sức khỏe', subtitle: 'Theo dõi hành trình điều trị', icon: Heart },
+  patient: { title: 'Sức khỏe', subtitle: 'Theo dõi hành trình điều trị', icon: Activity },
 }
 
-function Heart(props: any) { return <Activity {...props} /> } // Fallback
-
-/* ─── Premium Stat Card ─── */
-function StatCard({ label, value, icon: Icon, color, bgColor, trend, trendUp }: {
-  label: string; value: string | number; icon: any; color: string; bgColor: string
-  trend?: string; trendUp?: boolean
+/* ─── Premium MD3 Stat Card ─── */
+function StatCard({ label, value, icon: Icon, trend, trendUp }: {
+  label: string; value: string | number; icon: any; trend?: string; trendUp?: boolean
 }) {
   return (
     <motion.div
-      whileHover={{ y: -5, scale: 1.02 }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-100 shadow-sm transition-all"
+      whileHover={{ y: -4, scale: 1.01 }}
+      className="bg-md-surface-container-low p-6 rounded-[32px] border border-md-outline/5 shadow-elevation-1 flex flex-col justify-between min-h-[160px]"
     >
-      <div className={`absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full opacity-[0.03] ${bgColor}`} />
-
-      <div className="flex items-center justify-between mb-4">
-        <div className={`w-12 h-12 ${bgColor} rounded-2xl flex items-center justify-center ${color} shadow-sm shadow-current/10`}>
-          <Icon className="w-6 h-6" />
+      <div className="flex items-center justify-between">
+        <div className="size-12 rounded-2xl bg-md-secondary-container text-md-on-secondary-container flex items-center justify-center shadow-sm">
+          <Icon className="size-6" />
         </div>
         {trend && (
-          <div className={`px-2 py-1 rounded-lg text-[10px] font-black tracking-wider flex items-center gap-1 ${trendUp ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-            {trendUp ? <TrendingUp className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+          <div className={`px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 ${trendUp ? 'bg-md-secondary-container text-md-primary font-black' : 'bg-md-error-container text-md-error font-black'}`}>
+            {trendUp ? <TrendingUp size={14} /> : <ArrowDownRight size={14} />}
             {trend}
           </div>
         )}
       </div>
 
-      <div className="space-y-1">
-        <h4 className="text-3xl font-black text-slate-900 tracking-tightest">{value}</h4>
-        <p className="text-[10px] font-bold text-slate-400 tracking-tight">{label}</p>
+      <div className="mt-4">
+        <h4 className="text-4xl font-bold text-md-on-surface tracking-tight">{value}</h4>
+        <p className="text-xs font-medium text-md-on-surface-variant opacity-70 uppercase tracking-widest mt-1">{label}</p>
       </div>
     </motion.div>
   )
 }
 
-/* ─── Premium Action Tile ─── */
-function ActionTile({ to, label, desc, icon: Icon, color, index }: {
-  to: string; label: string; desc: string; icon: any; color: string; index: number
+/* ─── Action Tile ─── */
+function ActionTile({ to, label, desc, icon: Icon, index }: {
+  to: string; label: string; desc: string; icon: any; index: number
 }) {
-  const colorMap: Record<string, string> = {
-    blue: 'from-emerald-500 to-teal-600 shadow-emerald-500/20 text-emerald-600 bg-emerald-50',
-    emerald: 'from-emerald-500 to-teal-600 shadow-emerald-500/20 text-emerald-600 bg-emerald-50',
-    indigo: 'from-indigo-500 to-purple-600 shadow-indigo-500/20 text-indigo-600 bg-indigo-50',
-    amber: 'from-amber-500 to-orange-600 shadow-amber-500/20 text-amber-600 bg-amber-50',
-    rose: 'from-rose-500 to-pink-600 shadow-rose-500/20 text-rose-600 bg-rose-50',
-    purple: 'from-purple-500 to-violet-600 shadow-purple-500/20 text-purple-600 bg-purple-50',
-    slate: 'from-slate-700 to-slate-900 shadow-slate-900/20 text-slate-700 bg-slate-50',
-  }
-
-  const colorStyles = colorMap[color] || colorMap.blue
-
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
     >
-      <Link to={to} className="group relative block h-full">
-        <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity blur-xl -z-10 rounded-xl scale-95" />
-        <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm group-hover:border-transparent group-hover:shadow-2xl transition-all h-full flex flex-col items-center text-center">
-          <div className={`w-14 h-14 rounded-2xl mb-4 flex items-center justify-center transition-all group-hover:scale-110 group-hover:-rotate-3 ${colorStyles.split(' ').slice(-2).join(' ')} group-hover:bg-gradient-to-br ${colorStyles.split(' ').slice(0, 2).join(' ')} group-hover:text-white`}>
-            <Icon className="w-7 h-7" />
-          </div>
-          <h5 className="font-black text-slate-800 tracking-tight text-sm mb-1 group-hover:text-emerald-600 transition-colors">{label}</h5>
-          <p className="text-[10px] text-slate-400 font-bold tracking-tight opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 line-clamp-1">
-            {desc}
-          </p>
-          <div className="mt-4 w-6 h-1 bg-slate-100 group-hover:bg-emerald-500 group-hover:w-10 rounded-full transition-all" />
-        </div>
+      <Link to={to} className="group block bg-white border border-md-outline/5 p-6 rounded-[28px] hover:bg-md-primary/5 hover:border-md-primary/10 transition-all hover:shadow-elevation-2 h-full">
+         <div className={`size-14 rounded-2xl mb-5 flex items-center justify-center transition-all bg-md-surface-container-high text-md-primary group-hover:bg-md-primary group-hover:text-white group-hover:rotate-3 shadow-sm`}>
+            <Icon className="size-7" />
+         </div>
+         <div className="flex items-center justify-between">
+            <div>
+              <h5 className="font-bold text-md-on-surface text-base mb-1 group-hover:text-md-primary transition-colors">{label}</h5>
+              <p className="text-xs text-md-on-surface-variant font-medium leading-relaxed opacity-70">{desc}</p>
+            </div>
+            <div className="size-8 rounded-full flex items-center justify-center text-md-primary opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all">
+               <ArrowRight size={20} />
+            </div>
+         </div>
       </Link>
     </motion.div>
   )
@@ -163,72 +145,63 @@ export function Dashboard() {
   const greeting = getGreeting()
 
   return (
-    <div className="px-4 sm:px-8 pb-20 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-      {/* ── Premium Hero Header ── */}
-      <div className="bg-slate-900 -mx-4 sm:-mx-8 p-10 lg:p-14 relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-emerald-600/20 to-transparent skew-x-12 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[100px] -translate-x-1/2 translate-y-1/2" />
+      {/* ── MD3 Surface Header ── */}
+      <div className="bg-[#F3EDF7] rounded-[48px] p-10 lg:p-14 relative overflow-hidden shadow-elevation-1 border border-md-outline/5">
+        <div className="blur-blob size-80 bg-md-primary/10 -top-20 -right-20" />
+        <div className="blur-blob size-60 bg-md-secondary/10 -bottom-20 -left-10" />
 
-        <div className="relative z-10 max-w-[1600px] mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-          <div className="space-y-4">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+          <div className="space-y-6">
             <motion.div
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-              className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/5 backdrop-blur-md"
+              className="inline-flex items-center gap-2 px-4 py-1.5 bg-md-primary/10 rounded-full border border-md-primary/10"
             >
-              <Sparkles className="w-3 h-3 text-emerald-400" />
-              <span className="text-[10px] font-black text-emerald-100 tracking-tight">{greeting}</span>
+              <Sparkles className="size-4 text-md-primary" />
+              <span className="text-xs font-bold text-md-primary uppercase tracking-widest">{greeting}</span>
             </motion.div>
 
             <div className="flex items-center gap-6">
-              <div className="hidden sm:flex w-20 h-20 bg-white rounded-3xl items-center justify-center text-slate-900 shadow-2xl relative">
-                <config.icon className="w-10 h-10" />
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center border-4 border-slate-900">
-                  <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                </div>
+              <div className="hidden sm:flex size-20 bg-white rounded-3xl items-center justify-center text-md-primary shadow-elevation-1 relative border border-md-outline/5">
+                <config.icon className="size-10" />
               </div>
               <div>
                 <motion.h1
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                  className="text-4xl lg:text-5xl font-black text-white tracking-tightest leading-none uppercase"
+                  className="text-4xl lg:text-5xl font-bold text-md-on-surface tracking-tight"
                 >
                   {config.title}
                 </motion.h1>
-                <p className="text-slate-400 font-bold mt-2 text-sm max-w-lg leading-relaxed">
-                  Xin chào, <span className="text-white font-black">{user?.fullNameVi || 'Người dùng'}</span>. {config.subtitle}.
+                <p className="text-md-on-surface-variant font-medium mt-3 text-base max-w-lg leading-relaxed opacity-80">
+                  Xin chào, <span className="text-md-primary font-bold">{user?.fullNameVi || 'Người dùng'}</span>. {config.subtitle}.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-10">
-            <div className="text-center">
-              <p className="text-[10px] font-black text-slate-500 tracking-tight mb-3">Trạng thái Live</p>
-              <div className="flex items-center gap-2 px-6 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-black text-emerald-400 tracking-tight">Ổn định</span>
-              </div>
-            </div>
-            <div className="w-px h-12 bg-white/10 hidden sm:block" />
-            <div className="hidden sm:block text-right">
-              <p className="text-[10px] font-black text-slate-500 tracking-tight mb-1">Phiên bản</p>
-              <p className="text-2xl font-black text-white italic">v2.4.0</p>
+          <div className="flex items-center gap-8">
+            <div className="text-right">
+                <p className="text-[11px] font-bold text-md-on-surface-variant uppercase tracking-widest opacity-60 mb-2">Hệ thống</p>
+                <div className="flex items-center gap-3 px-5 py-2.5 bg-white rounded-full border border-md-outline/5 shadow-sm">
+                   <div className="size-2 rounded-full bg-md-primary animate-pulse" />
+                   <span className="text-sm font-bold text-md-on-surface tracking-tight">Ổn định</span>
+                </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 space-y-12 -mt-4 relative z-20">
-
+      <div className="space-y-12">
         {/* ── Main Stats Grid ── */}
         {(showAnalytics || role === 'receptionist') && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {showAnalytics ? (
               <>
                 <StatCard
-                  label="Lượt tiếp nhận hôm nay"
+                  label="Tiếp nhận hôm nay"
                   value={todayStats?.triageCount ?? 0}
-                  icon={UserCheck} color="text-emerald-600" bgColor="bg-blue-50"
+                  icon={UserCheck}
                   trend={weekStats ? `${weekStats.avgPerDay?.toFixed(0) ?? 0}/ngày` : '—'}
                   trendUp
                 />
@@ -237,116 +210,106 @@ export function Dashboard() {
                   value={todayStats && todayStats.triageCount > 0
                     ? `${Math.round((todayStats.completedCount / todayStats.triageCount) * 100)}%`
                     : '0%'}
-                  icon={CheckCircle2} color="text-emerald-600" bgColor="bg-emerald-50"
+                  icon={CheckCircle2}
                   trend="hôm nay"
                   trendUp
                 />
                 <StatCard
                   label="Theo dõi tuần này"
                   value={weekStats?.completedCount ?? 0}
-                  icon={Activity} color="text-violet-600" bgColor="bg-violet-50"
+                  icon={Activity}
                   trend="tổng ca"
                   trendUp
                 />
               </>
             ) : (
               <>
-                <StatCard label="Tiếp nhận" value="—" icon={UserCheck} color="text-emerald-600" bgColor="bg-blue-50" />
-                <StatCard label="Đang chờ" value="—" icon={Clock} color="text-amber-600" bgColor="bg-amber-50" />
-                <StatCard label="Hoàn tất" value="—" icon={CheckCircle2} color="text-emerald-600" bgColor="bg-emerald-50" />
+                <StatCard label="Tiếp nhận" value="—" icon={UserCheck} />
+                <StatCard label="Đang chờ" value="—" icon={Clock} />
+                <StatCard label="Hoàn tất" value="—" icon={CheckCircle2} />
               </>
             )}
           </div>
         )}
 
         {/* ── Quick Actions Section ── */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-              <div className="p-2 bg-slate-100 rounded-xl">
-                <Zap className="w-5 h-5 text-slate-900" />
-              </div>
-              Truy cập nhanh
-            </h2>
-            <div className="h-px flex-1 bg-slate-100 mx-8 hidden sm:block" />
+        <div className="space-y-8">
+          <div className="flex items-center gap-4">
+            <div className="size-10 bg-md-primary-container text-md-primary rounded-xl flex items-center justify-center">
+                <Zap size={22} />
+            </div>
+            <h2 className="text-2xl font-bold text-md-on-surface tracking-tight">Truy cập nhanh</h2>
+            <div className="h-px flex-1 bg-md-outline/10 ml-4 hidden sm:block" />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {actions.map((a, i) => (
               <ActionTile key={a.to} {...a} index={i} />
             ))}
           </div>
         </div>
 
-        {/* ── System Details ── */}
+        {/* ── Additional Info ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Alerts/Activity */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between">
-              <h3 className="font-black text-slate-900 tracking-tight flex items-center gap-3 uppercase text-xs">
-                <Bell className="w-4 h-4 text-rose-500" />
-                Hoạt động gần đây
-              </h3>
-              <button className="text-[10px] font-black text-emerald-600 hover:text-emerald-500 tracking-tight">
-                Xem tất cả
-              </button>
-            </div>
-            <div className="p-8 space-y-6">
-              <div className="flex flex-col items-center justify-center py-10 text-slate-400 opacity-60">
-                <Activity className="w-8 h-8 mb-2" />
-                <p className="text-[10px] font-black tracking-tight text-center">Chưa có hoạt động mới trong hệ thống</p>
-                <p className="text-[9px] font-bold text-center mt-1">Hệ thống sẽ ghi nhận và hiển thị các hoạt động tiếp nhận và khám bệnh tại đây.</p>
+           <div className="lg:col-span-2 bg-white rounded-[40px] border border-md-outline/10 p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                 <div className="flex items-center gap-3">
+                    <div className="size-8 rounded-lg bg-md-secondary-container text-md-on-secondary-container flex items-center justify-center">
+                       <Bell size={18} />
+                    </div>
+                    <h3 className="text-lg font-bold text-md-on-surface">Hoạt động gần đây</h3>
+                 </div>
+                 <button className="text-sm font-bold text-md-primary hover:underline flex items-center gap-1">
+                    Xem tất cả <ChevronRight size={16} />
+                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* System Environment */}
-          <div className="bg-slate-900 rounded-2xl p-8 text-white relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-1000">
-              <Monitor className="w-32 h-32" />
-            </div>
-
-            <h3 className="font-black text-white tracking-tight flex items-center gap-3 uppercase text-xs mb-8">
-               <Globe className="w-4 h-4 text-emerald-400" />
-              Thông số vận hành
-            </h3>
-
-            <div className="space-y-4">
-              <EnvRow label="Vai trò" value={config.title} />
-              <EnvRow label="Tên đăng nhập" value={user?.email || '—'} />
-              <EnvRow label="Server Node" value="Primary Cluster 01" />
-              <EnvRow label="Môi trường" value="Production" status />
-            </div>
-
-            <div className="mt-12 pt-8 border-t border-white/5 space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
-                  <Monitor className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-500 tracking-tight leading-none mb-1">Thiết bị</p>
-                  <p className="text-sm font-bold text-white">Quản trị viên Desktop</p>
-                </div>
+              <div className="flex flex-col items-center justify-center py-16 opacity-40">
+                 <Activity size={48} className="text-md-on-surface-variant mb-4" />
+                 <p className="text-sm font-medium text-md-on-surface-variant text-center max-w-xs">
+                    Hiện chưa có hoạt động mới nào được ghi nhận trong phiên làm việc này.
+                 </p>
               </div>
-            </div>
-          </div>
+           </div>
+
+           <div className="bg-md-primary rounded-[40px] p-10 text-white relative overflow-hidden shadow-elevation-2">
+              <div className="absolute top-0 right-0 size-64 bg-white/5 -mr-20 -mt-20 rounded-full blur-3xl" />
+              <div className="relative z-10 space-y-8">
+                 <div className="flex items-center gap-3">
+                    <Globe size={20} className="text-md-primary-container" />
+                    <h4 className="text-[11px] font-bold uppercase tracking-widest opacity-70">Thông số vận hành</h4>
+                 </div>
+                 
+                 <div className="space-y-6">
+                    <EnvRow label="Vai trò" value={config.title} />
+                    <EnvRow label="Sử dụng" value={user?.email || '—'} />
+                    <EnvRow label="Server" value="Standard Node 01" />
+                    <EnvRow label="Phiên bản" value="v2.5.0-PRO" />
+                 </div>
+
+                 <div className="pt-8 border-t border-white/10 mt-4">
+                    <div className="flex items-center gap-4">
+                       <div className="size-12 rounded-2xl bg-white/10 flex items-center justify-center">
+                          <Monitor size={24} />
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1">Thiết bị</p>
+                          <p className="text-sm font-bold">SafeGuard Console</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
         </div>
       </div>
     </div>
   )
 }
 
-/* ─── Shared UI pieces ─── */
-
-
-function EnvRow({ label, value, status }: { label: string; value: string; status?: boolean }) {
+function EnvRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between py-1">
-      <span className="text-[10px] font-black text-slate-500 tracking-tight">{label}</span>
-      <div className="flex items-center gap-2">
-        {status && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-        <span className="text-sm font-black text-white">{value}</span>
-      </div>
+    <div className="flex items-center justify-between">
+      <span className="text-xs font-medium opacity-60 uppercase tracking-wider">{label}</span>
+      <span className="text-sm font-bold tracking-tight">{value}</span>
     </div>
   )
 }
